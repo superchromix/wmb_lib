@@ -1,5 +1,5 @@
 ;-----------------------------------------------------------------------------
-; Title: wmb_lib HDF5 libraray
+; Title: wmb_lib HDF5 library
 ;
 ; Purpose: Reading/writing/modification of HDF5 tables in IDL.
 ;
@@ -9,6 +9,9 @@
 ;               (H5TB.c, from HDF5 version 1.8.10) and modifying it to work 
 ;               with the HDF5 API currently supported by IDL (as of IDL 
 ;               version 8.2, most of the HDF5 version 1.6 API is supported).
+;
+;       For examples and documentation, see wmb_h5tb_examples.pro.
+;
 ;           
 ;       The C source code which this library is based on can be found
 ;       at the following location:
