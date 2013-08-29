@@ -144,12 +144,12 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
         
             if (wmb_h5_putdata_varexists(loc_id, group_names[i])) then begin
             
-                ; create a new group
+                ; open an existing group
                 loc_id = h5g_open(loc_id, group_names[i])
 
             endif else begin
 
-                ; open an existing group
+                ; create a new group
                 loc_id = h5g_create(loc_id, group_names[i])
 
             endelse
@@ -163,77 +163,96 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
     ; loc_id now points to where the data will be written
 
     
-    ; check if we are writing a reference - in this case the data variable
-    ; is a string containing the full path to the object to reference
+    ; check the IDL data type and dimension
     
-    if keyword_set(reference) then begin
+    tmp_dtype = size(data, /type)
+    tmp_ndims = size(data, /n_dimensions)
+
+    if tmp_dtype eq 8 and tmp_ndims eq 1 then begin
     
-        ref_id = wmb_h5_putdata_getreference(file_id, data, refgroup)
-
-        ; When we write the data we will be writing the reference id - 
-        ; note that a reference id does not need to be closed.  We will 
-        ; need to close the refgroup id however.
-
-    endif
-
-
-    ; get the HDF5 type from the IDL variable
-
-    if keyword_set(reference) then begin
+        ; we are writing a table
     
-        datatypeId = h5t_reference_create()
+        table_title = objname
+        dset_name = objname
+        nrecords = size(data, /n_elements)
+        record_definition = wmb_h5tb_data_to_record_definition(data)
+        chunk_size = round(nrecords/100) > 1
+        compress = 0
     
+        wmb_h5tb_make_table, table_title, $
+                             loc_id, $
+                             dset_name, $
+                             nrecords, $
+                             record_definition, $
+                             chunk_size, $
+                             compress, $
+                             databuffer = data
+
     endif else begin
 
-        ; test for the case of a string array, and use the longest string 
-        ; element for datatype creation
-  
-        tmp_dtype = size(data, /type)
-        tmp_ndims = size(data, /n_dimensions)
-  
-        if tmp_dtype eq 7 and tmp_ndims gt 0 then begin
-  
-            ; data is a string array - find the longest string in the array
-            tmpa = max(strlen(data),tmpind)
-            tmp_longeststring =  data[tmpind]
-            datatypeId = h5t_idl_create(tmp_longeststring)
-  
+        ; check if we are writing a reference - in this case the data variable
+        ; is a string containing the full path to the object to reference
+        
+        if keyword_set(reference) then begin
+    
+            ref_id = wmb_h5_putdata_getreference(file_id, data, refgroup)
+    
+            ; When we write the data we will be writing the reference id - 
+            ; note that a reference id does not need to be closed.  We will 
+            ; need to close the refgroup id however.
+
+            datatypeId = h5t_reference_create()
+        
         endif else begin
-
-            datatypeId = h5t_idl_create(data)
-
+    
+            ; test for the case of a string array, and use the longest string 
+            ; element for datatype creation
+      
+            if tmp_dtype eq 7 and tmp_ndims gt 0 then begin
+      
+                ; data is a string array - find the longest string in the array
+                tmpa = max(strlen(data),tmpind)
+                tmp_longeststring =  data[tmpind]
+                datatypeId = h5t_idl_create(tmp_longeststring)
+      
+            endif else begin
+    
+                datatypeId = h5t_idl_create(data)
+    
+            endelse
+    
         endelse
 
-    endelse
-
-    ; scalars and arrays are created differently
-    
-    if (size(data, /n_dimensions) eq 0L) then begin
-
-        dataspaceId = h5s_create_scalar()
-
-    endif else begin
-
-        dataspaceId = h5s_create_simple(size(data, /dimensions))
-
-    endelse
-
-    if wmb_h5_putdata_varexists(loc_id, objname) then begin
-    
-        datasetId = h5d_open(loc_id, objname)
-    
-    endif else begin
-    
-        datasetId = h5d_create(loc_id, objname, datatypeId, dataspaceId)
+        ; scalars and arrays are created differently
         
+        if (size(data, /n_dimensions) eq 0L) then begin
+    
+            dataspaceId = h5s_create_scalar()
+    
+        endif else begin
+    
+            dataspaceId = h5s_create_simple(size(data, /dimensions))
+    
+        endelse
+
+        if wmb_h5_putdata_varexists(loc_id, objname) then begin
+        
+            datasetId = h5d_open(loc_id, objname)
+        
+        endif else begin
+        
+            datasetId = h5d_create(loc_id, objname, datatypeId, dataspaceId)
+            
+        endelse
+
+        if keyword_set(reference) then h5d_write, datasetId, ref_id $
+                                  else h5d_write, datasetId, data
+
+        h5t_close, datatypeId
+        h5s_close, dataspaceId
+        h5d_close, datasetId
+
     endelse
-
-    if keyword_set(reference) then h5d_write, datasetId, ref_id $
-                              else h5d_write, datasetId, data
-
-    h5t_close, datatypeId
-    h5s_close, dataspaceId
-    h5d_close, datasetId
 
     if n_groupnames gt 0 then begin
     

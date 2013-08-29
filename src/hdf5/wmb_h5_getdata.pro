@@ -39,7 +39,16 @@ pro wmb_h5_getdata_computeslab, bounds, $
                                
     compile_opt idl2, strictarrsubs
 
-    ndims = (size(bounds, /dimensions))[1]
+
+    if size(bounds, /n_dimensions) eq 1 then begin
+   
+        ndims = 1
+    
+    endif else begin
+    
+        ndims = (size(bounds, /dimensions))[1]
+        
+    endelse
 
     ; startselect, endselect, stride, and dims are all 1D arrays
 
