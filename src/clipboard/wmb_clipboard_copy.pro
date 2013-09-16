@@ -91,8 +91,8 @@ function wmb_clipboard_copy_findlib, libpath
     
     case myarch of
     
-        'x86_64': libpath = root + 'wmb_clipboard_Win_x86_64.dll'
-        'x86_32': libpath = root + 'wmb_clipboard_Win_x86_32.dll'
+        'x86_64': fname = 'wmb_clipboard_Win_x86_64.dll'
+        'x86_32': fname = 'wmb_clipboard_Win_x86_32.dll'
         
         else: begin
         
@@ -105,9 +105,11 @@ function wmb_clipboard_copy_findlib, libpath
         
     endcase
     
+    libpath = root + fname
+    
     if ~file_test(libpath) then begin
     
-        msgtxt = 'Error: wmb_clipboard.dll not found'
+        msgtxt = 'Error: ' + fname + ' not found'
         result = DIALOG_MESSAGE(msgtxt, /ERROR)
         return, 0
         
