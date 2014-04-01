@@ -247,12 +247,15 @@ function wmb_clipboard_copy, indata
     
         ; build a format code for conversion to string type
     
-        fmtcode = '(' + string(n_rows,format='(I0)') 
+        fmtcode = '(' + string(n_rows,format='(I0)') + '('
     
-        fmtcode = fmtcode + '(' + string(n_col-1,format='(I0)') + '('
-        
-        fmtcode = fmtcode + tmpfc + ',:,"'+sep_char+'"),'
-        
+        if n_col ge 2 then begin
+
+            fmtcode = fmtcode + string(n_col-1,format='(I0)') + '(' + $
+                                tmpfc + ',:,"' + sep_char + '"),'
+            
+        endif
+
         fmtcode = fmtcode + '1(' + tmpfc + '),:,"'+crlf_char+'"))' 
     
     endelse
