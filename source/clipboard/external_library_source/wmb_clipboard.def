@@ -1,0 +1,7 @@
+LIBRARY		    wmb_clipboard
+DESCRIPTION		'Windows clipboard routines for IDL'
+
+EXPORTS				wmb_copy_to_clipboard			@1
+					wmb_test_clipboard_text			@2
+					wmb_paste_from_clipboard		@3
+
