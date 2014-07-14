@@ -603,7 +603,6 @@ end
 ;   memory - this is transparent to the user.  When stored on 
 ;   disk, the data is stored in the HDF5 table format.
 ;
-;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
