@@ -1,20 +1,20 @@
 
 
-; wmb_h5_dataset_exists
+; wmb_h5_group_exists
 ;
-; Purpose: Verify that a given dataset exists within an HDF5 file.
+; Purpose: Verify that a given group exists within an HDF5 file.
 ; 
-; Note that dataset_full_name is case sensitive.
+; Note that groupname is case sensitive.
 ;
-; Returns 1 if the dataset exists.
+; Returns 1 if the group exists.
 
 
-function wmb_h5_dataset_exists, filename, dataset_full_name
+function wmb_h5_group_exists, filename, groupname
 
     compile_opt idl2, strictarrsubs
 
     if filename eq '' then message, 'Error: Invalid file name'
-    if dataset_full_name eq '' then message, 'Error: Invalid dataset name'
+    if groupname eq '' then message, 'Error: Invalid dataset name'
 
     ; check if filename exists, is writable, and is a valid hdf5 file
 
@@ -29,21 +29,17 @@ function wmb_h5_dataset_exists, filename, dataset_full_name
         return, 0
         
     endif
-    
 
-    ; strip off the leading '/' in dataset_full_name if it is present
 
-    if strmid(dataset_full_name,0,1) eq '/' then begin
-        
-        dataset_full_name = strmid(dataset_full_name,1)
+    ; strip off the leading '/' in groupname if it is present
 
-    endif
+    if strmid(groupname,0,1) eq '/' then groupname = strmid(groupname,1)
 
 
     ; open the HDF5 file and parse the contents
 
-    h5_list, filename, filter=dataset_full_name, output=h5listoutput
-
+    h5_list, filename, filter=groupname, output=h5listoutput
+   
     output_ndims = size(h5listoutput,/n_dimensions)
     outputdims = size(h5listoutput,/dimensions)
     
@@ -57,23 +53,22 @@ function wmb_h5_dataset_exists, filename, dataset_full_name
     n_found = outputdims[1] - 1
     if n_found eq 0 then return, 0
     
-    dataset_found = 0
+    groupname_found = 0
     
     for i = 0, n_found-1 do begin
         
-        tmptype = h5listoutput[0,i+1]
-        tmpname = h5listoutput[1,i+1]
-        
-        if strmid(tmpname,0,1) eq '/' then tmpname = strmid(tmpname,1)
-        
-        if tmptype eq 'dataset' and tmpname eq dataset_full_name then begin
+        if h5listoutput[0,i+1] eq 'group' then begin
             
-            dataset_found = 1
+            tmpstr = h5listoutput[1,i+1]
+            
+            if strmid(tmpstr,0,1) eq '/' then tmpstr = strmid(tmpstr,1)
+            
+            if tmpstr eq groupname then groupname_found = 1
             
         endif
-        
+
     endfor
     
-    return, dataset_found
+    return, groupname_found
     
 end
