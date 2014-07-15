@@ -16,14 +16,10 @@ function wmb_h5_group_exists, filename, groupname
     if filename eq '' then message, 'Error: Invalid file name'
     if groupname eq '' then message, 'Error: Invalid dataset name'
 
-    ; check if filename exists, is writable, and is a valid hdf5 file
 
-    fn_exists = (file_info(filename)).exists
+    ; check if filename is a valid hdf5 file
 
-    if fn_exists then fn_is_hdf5 = h5f_is_hdf5(filename) $
-                 else fn_is_hdf5 = 0
-
-    if ~fn_exists or ~fn_is_hdf5 then begin
+    if ~wmb_h5_file_test(filename) then begin
         
         message, 'Error: invalid HDF5 file'
         return, 0

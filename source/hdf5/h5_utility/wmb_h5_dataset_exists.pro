@@ -4,26 +4,23 @@
 ;
 ; Purpose: Verify that a given dataset exists within an HDF5 file.
 ; 
-; Note that dataset_full_name is case sensitive.
+; Note that full_group_name and dataset_name are case sensitive.
 ;
 ; Returns 1 if the dataset exists.
 
 
-function wmb_h5_dataset_exists, filename, dataset_full_name
+function wmb_h5_dataset_exists, filename, full_group_name, dataset_name
 
     compile_opt idl2, strictarrsubs
 
     if filename eq '' then message, 'Error: Invalid file name'
-    if dataset_full_name eq '' then message, 'Error: Invalid dataset name'
+    if dataset_name eq '' then message, 'Error: Invalid dataset name'
+    if full_group_name eq '' then full_group_name = '/'
 
-    ; check if filename exists, is writable, and is a valid hdf5 file
 
-    fn_exists = (file_info(filename)).exists
+    ; check if filename is a valid hdf5 file
 
-    if fn_exists then fn_is_hdf5 = h5f_is_hdf5(filename) $
-                 else fn_is_hdf5 = 0
-
-    if ~fn_exists or ~fn_is_hdf5 then begin
+    if ~wmb_h5_file_test(filename) then begin
         
         message, 'Error: invalid HDF5 file'
         return, 0
@@ -31,18 +28,12 @@ function wmb_h5_dataset_exists, filename, dataset_full_name
     endif
     
 
-    ; strip off the leading '/' in dataset_full_name if it is present
-
-    if strmid(dataset_full_name,0,1) eq '/' then begin
-        
-        dataset_full_name = strmid(dataset_full_name,1)
-
-    endif
+    full_dataset_name = wmb_h5_form_dataset_path(full_group_name, dataset_name)
 
 
     ; open the HDF5 file and parse the contents
 
-    h5_list, filename, filter=dataset_full_name, output=h5listoutput
+    h5_list, filename, filter=full_dataset_name, output=h5listoutput
 
     output_ndims = size(h5listoutput,/n_dimensions)
     outputdims = size(h5listoutput,/dimensions)
@@ -64,9 +55,7 @@ function wmb_h5_dataset_exists, filename, dataset_full_name
         tmptype = h5listoutput[0,i+1]
         tmpname = h5listoutput[1,i+1]
         
-        if strmid(tmpname,0,1) eq '/' then tmpname = strmid(tmpname,1)
-        
-        if tmptype eq 'dataset' and tmpname eq dataset_full_name then begin
+        if tmptype eq 'dataset' and tmpname eq full_dataset_name then begin
             
             dataset_found = 1
             

@@ -19,12 +19,7 @@ function wmb_h5_create_group, filename, groupname
 
     ; check if filename exists, is writable, and is a valid hdf5 file
 
-    fn_exists = (file_info(filename)).exists
-
-    if fn_exists then fn_is_hdf5 = h5f_is_hdf5(filename) $
-                 else fn_is_hdf5 = 0
-
-    if ~fn_exists or ~fn_is_hdf5 then begin
+    if ~wmb_h5_file_test(filename, /WRITE) then begin
         
         message, 'Error: invalid HDF5 file'
         return, 0
