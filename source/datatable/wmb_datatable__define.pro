@@ -110,133 +110,6 @@ pro wmb_DataTable::AppendRecords, indata
     
 end
 
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   This is the Save method
-;
-;   Save a table from memory into an HDF5 file.  From this point
-;   on, the datatable will be accessed as a virtual table.
-;
-;   Returns 1 if the save operation was successful.
-;
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-
-function wmb_DataTable::Save, filename, $
-                              Title = title, $
-                              DatasetName = dset_name, $
-                              OverwriteFlag = overwriteflag, $
-                              Chunksize = chunksize, $
-                              CompressFlag = compressflag
-
-    
-    compile_opt idl2, strictarrsubs
-    
-    if N_elements(filename) eq 0 then begin
-        message, 'Error: invalid filename'
-        return, 0
-    endif
-
-    if N_elements(title) eq 0 then title = self.dt_title
-    if N_elements(dset_name) eq 0 then dset_name = self.dt_dataset_name
-    if N_elements(overwriteflag) eq 0 then overwriteflag = 0
-    if N_elements(chunksize) eq 0 then chunksize = 1000
-    if N_elements(compressflag) eq 0 then compressflag = 0
-
-    if self.dt_flag_table_empty then begin
-        message, 'Error: empty table'
-        return, 0
-    endif
-
-    if self.dt_flag_vtable then begin
-        message, 'Error: table already written to disk'
-        return, 0
-    endif
- 
-    if size(title,/type) ne 7 or size(dset_name,/type) ne 7 then begin
-        message, 'Error: Title and DatasetName must be scalar strings'
-        return, 0
-    endif
-
-    if size(title,/n_dimensions) ne 0 or $
-       size(dset_name,/n_dimensions) ne 0 then begin
-        message, 'Error: Title and DatasetName must be scalar strings'
-        return, 0
-    endif
-
-    ; check if filename exists and is writable
-    
-    fn_exists = (file_info(filename)).exists
-
-    if fn_exists then fn_writable = file_test(fn, /WRITE) $
-                 else fn_writable = 0
-
-    ; delete the file if it exists (overwrite flag must be specified)
-
-    if fn_exists then begin
-        
-        if overwriteflag then begin
-            
-            if ~fn_writable then begin
-                
-                message, 'Error: cannot overwrite existing file'
-                return, 0
-            
-            endif else begin
-                
-                ; delete the file
-                file_delete, filename
-                
-            endelse
-            
-        endif else begin
-            
-            message, 'Error: file exists'
-            return, 0
-            
-        endelse
-
-    endif
-    
-    ; we now have a valid filename, title, and dataset name
-    
-    tmp_recdef = *(self.dt_record_def_ptr)
-    tmp_data = temporary(*(self.dt_dataptr))
-    tmp_nrecords = self.dt_nrecords
-    
-    ; create the file
-    
-    fid = h5f_create(filename)
-    
-    ; write the table
-    
-    wmb_h5tb_make_table, title, $
-                         fid, $
-                         dset_name, $
-                         tmp_nrecords, $
-                         tmp_recdef, $
-                         chunksize, $
-                         compress, $
-                         databuffer = tmp_data
-    
-
-    ; we are done!  populate the self fields
-
-    self.dt_dataset_name = dset_name
-    self.dt_title = title
-    self.dt_flag_vtable = 1
-    self.vtable_filename = filename
-    self.dt_vtable_loc_id = fid
-
-
-    ; note that we are leaving the file open - when the table is in vtable
-    ; mode, the file will only be closed when the object is destroyed
-
-    return, 1
-
-end
-
-
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -251,12 +124,17 @@ end
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_DataTable::Load, filename, dset_name
+function wmb_DataTable::Load, filename, full_group_name, dset_name
 
     compile_opt idl2, strictarrsubs
 
     if N_elements(filename) eq 0 then begin
         message, 'Error: invalid filename'
+        return, 0
+    endif
+
+    if N_elements(full_group_name) eq 0 then begin
+        message, 'Error: invalid group name'
         return, 0
     endif
 
@@ -272,17 +150,7 @@ function wmb_DataTable::Load, filename, dset_name
         
     ; check if filename exists, is writable, and is a valid hdf5 file
 
-    fn_exists = (file_info(filename)).exists
-
-    if fn_exists then fn_writable = file_test(fn, /WRITE) $
-                 else fn_writable = 0
-
-    if fn_exists and fn_writable then fn_is_hdf5 = h5f_is_hdf5(filename) $
-                                 else fn_is_hdf5 = 0
-
-    if ~fn_exists or $
-       ~fn_writable or $
-       ~fn_is_hdf5 then begin
+    if ~wmb_h5_file_test(filename, /WRITE) then begin
         
         message, 'Error: invalid HDF5 file'
         return, 0
@@ -291,13 +159,11 @@ function wmb_DataTable::Load, filename, dset_name
 
     ; verify that the dataset exists
     
-    dset_exists = wmb_h5_dataset_exists(filename,dset_name)
+    chk_dset_exists = wmb_h5_dataset_exists(filename,full_group_name,dset_name)
 
-    if ~dset_exists then begin
-        
+    if ~chk_dset_exists then begin
         message, 'Error: HDF5 dataset not found'
         return, 0
-        
     endif
 
     ; this appears to be a valid HDF5 file and the specfied dataset exists
@@ -305,17 +171,16 @@ function wmb_DataTable::Load, filename, dset_name
     ; open the file
     
     fid = h5f_open(filename, /WRITE)
-    loc_id = fid
+    
+    loc_id = h5g_open(fid, full_group_name)
 
     ; verify that this dataset is a table
 
     wmb_h5lt_get_attribute_disk, loc_id, 'CLASS', dset_class
     
     if strupcase(dset_class) ne 'TABLE' then begin
-
         message, 'Error: HDF5 dataset is not a table type'
         return, 0
-
     endif
 
     ; get information about the table size
@@ -333,14 +198,16 @@ function wmb_DataTable::Load, filename, dset_name
 
     ; we are done!  populate the self fields
     
-    self.dt_dataset_name = dset_name
     self.dt_title = table_title
+    self.dt_dataset_name = dset_name
+    self.dt_full_group_name = full_group_name
     self.dt_record_def_ptr = ptr_new(record_definition)
     self.dt_flag_record_def_init = 1
     self.dt_nfields = nfields
     self.dt_nrecords = nrecords
     self.dt_flag_vtable = 1
     self.vtable_filename = filename
+    self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
     self.dt_flag_table_empty = 0
 
@@ -350,6 +217,177 @@ function wmb_DataTable::Load, filename, dset_name
     return, 1
 
 end
+
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Save method
+;
+;   Save a table from memory into an HDF5 file.  From this point
+;   on, the datatable will be accessed as a virtual table.
+;
+;   Returns 1 if the save operation was successful.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+function wmb_DataTable::Save, filename, $
+                              Title = title, $
+                              DatasetName = dset_name, $
+                              FullGroupName = full_group_name, $
+                              Chunksize = chunksize, $
+                              CompressFlag = compressflag
+
+
+    compile_opt idl2, strictarrsubs
+
+    if N_elements(filename) eq 0 then begin
+        message, 'Error: invalid filename'
+        return, 0
+    endif
+
+    if N_elements(title) eq 0 then title = self.dt_title
+    if N_elements(dset_name) eq 0 then dset_name = self.dt_dataset_name
+    
+    if N_elements(full_group_name) eq 0 then $
+        full_group_name = self.dt_full_group_name
+
+    if N_elements(chunksize) eq 0 then chunksize = 1000
+    if N_elements(compressflag) eq 0 then compressflag = 0
+
+    if self.dt_flag_table_empty then begin
+        message, 'Error: empty table'
+        return, 0
+    endif
+
+    if self.dt_flag_vtable then begin
+        message, 'Error: table already written to disk'
+        return, 0
+    endif
+
+    if size(title,/type) ne 7 or $
+       size(dset_name,/type) ne 7 or $
+       size(full_group_name,/type) ne 7 then begin
+        
+        message, 'Error: Title, Group and Dataset names must be scalar strings'
+        return, 0
+        
+    endif
+
+    if size(title,/n_dimensions) ne 0 or $
+       size(dset_name,/n_dimensions) ne 0 or $
+       size(full_group_name,/n_dimensions) ne 0 then begin
+        
+        message, 'Error: Title, Group and Dataset names must be scalar strings'
+        return, 0
+        
+    endif
+
+    ; check if filename exists and is writable
+
+    fn_exists = (file_info(filename)).exists
+
+    if fn_exists then chk_hdf5 = wmb_h5_file_test(filename, /WRITE) $
+                 else chk_hdf5 = 0
+
+    if fn_exists and ~chk_hdf5 then begin
+        message, 'Error: invalid HDF5 file'
+        return, 0   
+    end
+    
+    
+    ; if the file exists, check whether the group or dataset exist
+
+    if fn_exists then begin
+
+        chk_group_exists = 0
+        chk_dset_exists = 0
+
+        chk_group_exists = wmb_h5_group_exists(filename, full_group_name)
+        
+        if chk_group_exists then begin
+            
+            chk_dset_exists = wmb_h5_dataset_exists(filename, $
+                                                    full_group_name, $
+                                                    dset_name)
+                                                    
+            if chk_dset_exists then begin
+                message, 'Error: dataset exists'
+                return, 0
+            endif
+            
+        endif else begin
+            
+            ; create the group
+            
+            if ~wmb_h5_create_group(filename, full_group_name) then begin
+                message, 'Error: HDF5 group could not be created'
+                return, 0
+            endif
+            
+        endelse
+
+    endif
+
+
+    ; we now have a valid filename, title, group name, and dataset name
+
+    tmp_recdef = *(self.dt_record_def_ptr)
+    tmp_data = temporary(*(self.dt_dataptr))
+    tmp_nrecords = self.dt_nrecords
+
+
+    ; open or create the file
+
+    if fn_exists then begin
+
+        fid = h5f_open(filename, /WRITE)
+        
+    endif else begin
+        
+        fid = h5f_create(filename)
+        
+    endelse
+
+
+    ; open the group
+    
+    loc_id = h5g_open(fid, full_group_name)
+
+
+    ; write the table
+
+    wmb_h5tb_make_table, title, $
+                         loc_id, $
+                         dset_name, $
+                         tmp_nrecords, $
+                         tmp_recdef, $
+                         chunksize, $
+                         compress, $
+                         databuffer = tmp_data
+
+
+    ; we are done!  populate the self fields
+
+    self.dt_title = title
+    self.dt_dataset_name = dset_name
+    self.dt_full_group_name = full_group_name
+    
+    self.dt_flag_vtable = 1
+    self.vtable_filename = filename
+    self.vtable_fid = fid
+    self.dt_vtable_loc_id = loc_id
+
+
+    ; note that we are leaving the file open - when the table is in vtable
+    ; mode, the file will only be closed when the object is destroyed
+
+    return, 1
+
+end
+
+
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -535,14 +573,15 @@ function wmb_DataTable::Init, Indata=indata, $
         
     endcase
 
+
     ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
     ;
     ;   populate the self fields
     ;
 
-
-    self.dt_dataset_name           = dset_name
     self.dt_title                  = title
+    self.dt_dataset_name           = dset_name
+    self.dt_full_group_name        = '/'
     self.dt_record_def_ptr         = tmp_recorddefptr
     self.dt_flag_record_def_init   = tmp_recorddef_init
      
@@ -551,9 +590,10 @@ function wmb_DataTable::Init, Indata=indata, $
     
     self.dt_dataptr                = tmp_dataptr
   
-    self.dt_flag_vtable            = 0
+    self.dt_flag_vtable            = 0L
     self.dt_vtable_filename        = ''
-    self.dt_vtable_loc_id          = 0
+    self.dt_vtable_fid             = 0L
+    self.dt_vtable_loc_id          = 0L
     
     self.dt_flag_table_empty       = tmp_table_empty
 
@@ -583,7 +623,13 @@ pro wmb_DataTable::Cleanup
 
     ptr_free, self.dt_record_def_ptr
     ptr_free, self.dt_dataptr
-    if self.dt_flag_vtable then h5f_close, slef.dt_vtable_loc_id
+    
+    if self.dt_flag_vtable then begin
+        
+        h5g_close, self.dt_vtable_loc_id
+        h5f_close, self.dt_vtable_fid
+        
+    endif
 
 end
 
@@ -614,8 +660,9 @@ pro wmb_DataTable__define
     struct = { wmb_DataTable,                              $
         INHERITS IDL_Object,                               $
                                                            $
-        dt_dataset_name             : '',                  $
         dt_title                    : '',                  $
+        dt_dataset_name             : '',                  $
+        dt_full_group_name          : '',                  $            
                                                            $
         dt_record_def_ptr           : ptr_new(),           $
         dt_flag_record_def_init     : fix(0),              $
@@ -627,6 +674,7 @@ pro wmb_DataTable__define
                                                            $
         dt_flag_vtable              : fix(0),              $
         dt_vtable_filename          : '',                  $
+        dt_vtable_fid               : long(0),             $
         dt_vtable_loc_id            : long(0),             $
                                                            $
         dt_flag_table_empty         : fix(0)               }
