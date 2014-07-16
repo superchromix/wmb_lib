@@ -43,7 +43,7 @@ function wmb_h5tb_data_to_record_definition, data
                 ; grab the entire string array from the data
                 
                 string_data = data.(i)
-                tmpa = max(strlen(string_data),tmpind)
+                tmpa = max(strlen(string_data),tmpind) > 1
                 tmpstr = string(replicate(95b,tmpa)) 
                 
                 recdef.(i) = tmpstr
