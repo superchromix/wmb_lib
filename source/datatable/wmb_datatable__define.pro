@@ -1,3 +1,66 @@
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   Helper methods for testing valid indices and ranges
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_DataTable::Rangevalid, range, positive_range=positive_range
+
+    compile_opt idl2, strictarrsubs
+        
+    chkdim = *self.dt_nrecords
+    
+    rangestart = range[0]
+    if rangestart lt 0 then rangestart = rangestart + chkdim
+    rangeend = range[1]
+    if rangeend lt 0 then rangeend = rangeend + chkdim
+    rangestride = range[2]
+
+    minrange = 0L
+    maxrange = chkdim - 1L
+    
+    maxstride = abs(rangeend-rangestart) > 1
+    minstride = -maxstride
+
+    chkpass = 1
+    
+    if (rangestart lt minrange) or (rangestart gt maxrange) then chkpass = 0
+    if (rangeend lt minrange) or (rangeend gt maxrange) then chkpass = 0
+    
+    if (rangestride eq 0) then chkpass=0
+    if (rangestride lt minstride) or (rangestride gt maxstride) then chkpass = 0
+    
+    if (rangestart lt rangeend) and (rangestride lt 0) then chkpass = 0
+    if (rangestart gt rangeend) and (rangestride gt 0) then chkpass = 0 
+
+    positive_range = [rangestart,rangeend,rangestride]
+
+    return, chkpass
+
+end
+
+
+function wmb_DataTable::Indexvalid, index, positive_index = positive_index
+
+    compile_opt idl2, strictarrsubs
+
+    chkdim = *self.dt_nrecords
+    
+    test_index = index
+    if test_index lt 0 then test_index = test_index + chkdim
+    
+    minrange = 0L
+    maxrange = chkdim - 1L
+    
+    chkpass = 1
+    
+    if (test_index lt minrange) or (test_index gt maxrange) then chkpass = 0
+    
+    positive_index = test_index
+    
+    return, chkpass
+    
+end
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -11,61 +74,110 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
     sub2, sub3, sub4, sub5, sub6, sub7, sub8
 
     compile_opt idl2, strictarrsubs
-    @dv_func_err_handler
-
 
     if N_elements(sub1) eq 0 then begin
-        message, 'No array subscript specified'
+        message, 'Error: no array subscript specified'
         return, 0
     endif
 
-    if N_elements(sub2) eq 0 then sub2=[0,0,1]
-    if N_elements(sub3) eq 0 then sub3=[0,0,1]
-    if N_elements(sub4) eq 0 then sub4=[0,0,1]
-    if N_elements(sub5) eq 0 then sub5=[0,0,1]
-    if N_elements(sub6) eq 0 then sub6=[0,0,1]
-    if N_elements(sub7) eq 0 then sub7=[0,0,1]
-    if N_elements(sub8) eq 0 then sub8=[0,0,1]
-
+    if self.dt_flag_table_empty then begin
+        message, 'Error: table empty'
+        return, 0
+    endif
 
     ; determine the number of indices/ranges specified
     n_inputs = N_elements(isrange)
 
-    if n_inputs eq 0 then begin
-        message, 'No array subscript specified'
+    if n_inputs ne 1 then begin
+        message, 'Error: invalid array subscript'
         return, 0
     endif
 
-
-    ; make a list of the input indices/ranges
-    inputlist = list(sub1,sub2,sub3,sub4,sub5,sub6,sub7,sub8)
-
+    chk_range = isRange[0]
 
     ; test validity of indices and ranges
     chkpass = 1
-    for i = 0, n_inputs-1 do begin
-        if isrange[i] eq 1 then begin
-            tmpinput = inputlist[i]
-            if ~ self->Rangevalid( tmpinput, i ) then chkpass = 0
-        endif else begin
-            tmpinput = inputlist[i]
-            if ~ self->Indexvalid( tmpinput, i ) then chkpass = 0
-        endelse
-    endfor
+
+    if chk_range eq 1 then begin
+        if ~ self->Rangevalid(sub1, positive_range=psub1) then chkpass = 0
+    endif else begin
+        if ~ self->Indexvalid(sub1, positive_index=psub1) then chkpass = 0
+    endelse
 
     if chkpass eq 0 then begin
-        message, 'Array subscript out of range'
+        message, 'Error: array subscript out of range'
         return, 0
     endif
 
+    if chk_range eq 1 then begin
+        
+        startrecord = psub1[0]
+        endrecord = psub1[1]
+        stride = psub1[2]
+        
+    endif else begin
+        
+        startrecord = psub1[0]
+        endrecord = psub1[0]
+        stride = 1
+        
+    endelse
 
-    ; check that the correct number of subscripts have been provided
-    if n_inputs ne self.ds_rank then begin
-        message, 'Invalid number of array subscripts'
-        return, 0
-    endif
 
+    ; is the data stored in memory or on disk?
+    
+    if self.dt_flag_vtable then begin
 
+        ; get the data from disk
+        
+        loc_id = self.dt_vtable_loc_id
+        dset_name = self.dt_dataset_name
+        
+        tmp_disk_start = startrecord < endrecord
+        tmp_disk_end = startrecord > endrecord
+        tmp_disk_nrecords = tmp_disk_end - tmp_disk_start + 1
+        
+        wmb_h5tb_read_records, loc_id, $
+                               dset_name, $
+                               tmp_disk_start, $
+                               tmp_disk_nrecords, $
+                               databuffer
+
+        if stride ne 1 then begin
+            
+            if stride gt 0 then begin
+                
+                ; stride is positive so endrecord > startrecord
+                tmp_data = databuffer[0:tmp_disk_nrecords-1:stride]
+                
+            endif else begin
+                
+                ; stride is negative so endrecord < startrecord
+                tmp_data = databuffer[tmp_disk_nrecords-1:0:stride]
+                
+            endelse
+
+            databuffer = temporary(tmp_data)
+            
+        endif
+
+    endif else begin
+        
+        ; get the data from memory
+        
+        if chk_range eq 1 then begin
+        
+            databuffer = (*self.dt_dataptr)[startrecord:endrecord:stride]
+        
+        endif else begin
+            
+            databuffer = (*self.dt_dataptr)[startrecord]
+            
+        endelse
+        
+    endelse
+
+    return, databuffer
 
 end
 
