@@ -9,7 +9,8 @@
 pro wmb_h5tb_get_table_info, loc_id, $
                              dset_name, $
                              nfields, $
-                             nrecords
+                             nrecords, $
+                             class=class
 
     compile_opt idl2, strictarrsubs
 
@@ -44,6 +45,12 @@ pro wmb_h5tb_get_table_info, loc_id, $
     ; get the number of records
     
     nrecords = ulong64(dims[0])
+    
+    ; get the table class attribute
+    
+    wmb_h5lt_get_attribute_disk, did, 'CLASS', did_class
+    
+    class = did_class
     
     ; close
     
