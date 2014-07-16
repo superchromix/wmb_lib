@@ -433,9 +433,9 @@ end
 
 
 function wmb_DataTable::Save, filename, $
+                              full_group_name, $
+                              dset_name, $
                               Title = title, $
-                              DatasetName = dset_name, $
-                              FullGroupName = full_group_name, $
                               Chunksize = chunksize, $
                               CompressFlag = compressflag
 
@@ -447,12 +447,12 @@ function wmb_DataTable::Save, filename, $
         return, 0
     endif
 
-    if N_elements(title) eq 0 then title = self.dt_title
-    if N_elements(dset_name) eq 0 then dset_name = self.dt_dataset_name
-    
     if N_elements(full_group_name) eq 0 then $
         full_group_name = self.dt_full_group_name
 
+    if N_elements(dset_name) eq 0 then dset_name = self.dt_dataset_name
+
+    if N_elements(title) eq 0 then title = self.dt_title
     if N_elements(chunksize) eq 0 then chunksize = 1000
     if N_elements(compressflag) eq 0 then compressflag = 0
 
