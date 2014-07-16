@@ -10,6 +10,9 @@
 ; Notes: String values will be represented in the structure as a string 
 ;        type field, with a length equal to the longest element in the
 ;        table.
+;        
+; WARNING: This routine makes internal copies of large segments of the
+;          data, which could result in poor performance.
 ;
 
 
