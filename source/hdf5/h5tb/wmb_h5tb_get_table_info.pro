@@ -2,7 +2,9 @@
 
 ; wmb_h5tb_get_table_info
 ; 
-; Purpose: Gets the number of records and fields of a table.
+; Purpose: Gets the number of records and fields of a table.  Optionally, 
+;          this procedure will also return the values of the TITLE and CLASS
+;          attributes of the dataset.
 ;
 
 
@@ -10,6 +12,7 @@ pro wmb_h5tb_get_table_info, loc_id, $
                              dset_name, $
                              nfields, $
                              nrecords, $
+                             title=title, $
                              class=class
 
     compile_opt idl2, strictarrsubs
@@ -46,10 +49,15 @@ pro wmb_h5tb_get_table_info, loc_id, $
     
     nrecords = ulong64(dims[0])
     
+    ; get the table title attribute
+    
+    wmb_h5tba_get_title, did, table_title
+    
     ; get the table class attribute
     
     wmb_h5lt_get_attribute_disk, did, 'CLASS', did_class
     
+    title = table_title
     class = did_class
     
     ; close
