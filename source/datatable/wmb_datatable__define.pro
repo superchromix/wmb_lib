@@ -8,7 +8,7 @@ function wmb_DataTable::Rangevalid, range, positive_range=positive_range
 
     compile_opt idl2, strictarrsubs
         
-    chkdim = *self.dt_nrecords
+    chkdim = self.dt_nrecords
     
     rangestart = range[0]
     if rangestart lt 0 then rangestart = rangestart + chkdim
@@ -44,7 +44,7 @@ function wmb_DataTable::Indexvalid, index, positive_index = positive_index
 
     compile_opt idl2, strictarrsubs
 
-    chkdim = *self.dt_nrecords
+    chkdim = self.dt_nrecords
     
     test_index = index
     if test_index lt 0 then test_index = test_index + chkdim
@@ -183,18 +183,77 @@ end
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-;   This is the AppendRecords method
+;   This is the Append method
+;   
+;   Returns 1 if successful
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-pro wmb_DataTable::AppendRecords, indata
+function wmb_DataTable::Append, indata, Datacopy=datacopy
 
     compile_opt idl2, strictarrsubs
 
     if N_elements(indata) eq 0 then message, 'Error: no input data'
 
+    if N_elements(datacopy) eq 0 then datacopy = 0
+
+    indata_is_struct = size(indata,/type) eq 8
+    
+    if ~indata_is_struct then begin
+        message, 'Error: Indata must be a structure type'
+        return, 0
+    endif
+        
+    if size(indata,/n_dimensions) gt 1 then begin
+        message, 'Error: Input data must be scalar or 1-dimensional'
+        return, 0
+    endif
+
+    recorddef_init = self.dt_flag_record_def_init
+
+    ; if the record definition is already initialized, then compare it to
+    ; the input data.  if not, create a new record definition based on the 
+    ; input data.
+
+    indata_sample = indata[0]
+
+    if recorddef_init then begin
+        
+        recdef = *(self.dt_record_def_ptr)
+           
+        structs_match = wmb_compare_struct(indata_sample, $
+                                           recdef, $
+                                           /COMPARE_FIELD_NAMES, $
+                                           /IGNORE_FIELD_VALUES)
+
+        if ~structs_match then begin
+            message, 'Error: indata structure does not match table structure'
+            return, 0
+        endif
+        
+    endif else begin
+        
+        recdef = wmb_h5tb_data_to_record_definition(indata)
+        
+        self.dt_nfields = n_tags(recdef)
+        self.dt_record_def_ptr = ptr_new(recdef)
+        self.dt_flag_record_def_init = 1
+        
+    endelse
+
+
+    ; is the table stored in memory or on disk?
+    
     if self.dt_flag_vtable then begin
+        
+        ; if the table is on disk, then the table is not empty
+        ; (you cannot save an empty table)
+        
+        if self.dt_flag_table_empty then begin
+            message, 'Error: empty table stored on disk'
+            return, 0
+        endif
         
         ; write the new records to disk
         
@@ -205,21 +264,53 @@ pro wmb_DataTable::AppendRecords, indata
         wmb_h5tb_append_records, loc_id, $
                                  dset_name, $
                                  nrecords, $
-                                 databuffer
+                                 indata
+        
+        self.dt_nrecords = self.dt_nrecords + nrecords
 
     endif else begin
         
-        ; add the new records to memory
+        ; the table is in memory
         
-        tmpdat = temporary(*(self.dt_dataptr))
-        ptr_free, self.dt_dataptr
-        newdat = [temporary(tmpdat),indata]
-        self.dt_nrecords = N_elements(newdat)
-        self.dt_dataptr = ptr_new(newdat, /no_copy)
+        tmp_nrecords = size(indata, /dimensions)
+
+        if datacopy eq 1 then begin
+
+            tmp_indata = indata
+
+        endif else begin
+
+            tmp_indata = temporary(indata)
+
+        endelse
+        
+        ; is the table empty?
+        
+        if self.dt_flag_table_empty then begin
+
+            self.dt_dataptr = ptr_new(tmp_indata, /NO_COPY)
+            self.dt_nrecords = tmp_nrecords
+            self.dt_flag_table_empty = 0
+            
+        endif else begin
+        
+            ; add the new records to memory
+            
+            tmpdat = temporary(*(self.dt_dataptr))
+            ptr_free, self.dt_dataptr
+            newdat = [temporary(tmpdat),temporary(tmp_indata)]
+            
+            self.dt_nrecords = N_elements(newdat)
+
+            ; note that newdat is undefined after this call
+            self.dt_dataptr = ptr_new(newdat, /NO_COPY)
+
+        endelse
         
     endelse
 
-    
+    return, 1
+
 end
 
 
@@ -286,31 +377,28 @@ function wmb_DataTable::Load, filename, full_group_name, dset_name
     
     loc_id = h5g_open(fid, full_group_name)
 
-    ; verify that this dataset is a table
-
-    wmb_h5lt_get_attribute_disk, loc_id, 'CLASS', dset_class
+    ; get information about the table size
     
-    if strupcase(dset_class) ne 'TABLE' then begin
+    wmb_h5tb_get_table_info, loc_id, $
+                             dset_name, $
+                             nfields, $
+                             nrecords, $
+                             TITLE=dset_title_attr, $
+                             CLASS=dset_class_attr
+
+    if strupcase(dset_class_attr) ne 'TABLE' then begin
         message, 'Error: HDF5 dataset is not a table type'
         return, 0
     endif
-
-    ; get information about the table size
-    
-    wmb_h5tb_get_table_info, loc_id, dset_name, nfields, nrecords
 
     ; get the record data structure
     
     wmb_h5tb_get_field_info, loc_id, dset_name, record_definition
 
-    ; get the table title
-    
-    wmb_h5tba_get_title, loc_id, table_title
-    
 
     ; we are done!  populate the self fields
     
-    self.dt_title = table_title
+    self.dt_title = dset_title_attr
     self.dt_dataset_name = dset_name
     self.dt_full_group_name = full_group_name
     self.dt_record_def_ptr = ptr_new(record_definition)
@@ -318,7 +406,7 @@ function wmb_DataTable::Load, filename, full_group_name, dset_name
     self.dt_nfields = nfields
     self.dt_nrecords = nrecords
     self.dt_flag_vtable = 1
-    self.vtable_filename = filename
+    self.dt_vtable_filename = filename
     self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
     self.dt_flag_table_empty = 0
@@ -406,7 +494,7 @@ function wmb_DataTable::Save, filename, $
     if fn_exists and ~chk_hdf5 then begin
         message, 'Error: invalid HDF5 file'
         return, 0   
-    end
+    endif
     
     
     ; if the file exists, check whether the group or dataset exist
@@ -476,7 +564,7 @@ function wmb_DataTable::Save, filename, $
                          tmp_nrecords, $
                          tmp_recdef, $
                          chunksize, $
-                         compress, $
+                         compressflag, $
                          databuffer = tmp_data
 
 
@@ -487,8 +575,8 @@ function wmb_DataTable::Save, filename, $
     self.dt_full_group_name = full_group_name
     
     self.dt_flag_vtable = 1
-    self.vtable_filename = filename
-    self.vtable_fid = fid
+    self.dt_vtable_filename = filename
+    self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
 
 
@@ -532,182 +620,98 @@ end
 
 function wmb_DataTable::Init, Indata=indata, $
                               Datacopy=datacopy, $
-                              RecordDef=recorddef, $
-                              Title = title, $
-                              DatasetName = dset_name
+                              RecordDef=recorddef
+
 
     compile_opt idl2, strictarrsubs
 
 
-    ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-    ;
-    ;   Check that the positional parameters are present.
-    ;
-
-
-    ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-    ;
-    ;   Check which keyword parameters are present.
-    ;
-
     if N_elements(datacopy) eq 0 then datacopy = 0
-    if N_elements(title) eq 0 then title = 'Table'
-    if N_elements(dset_name) eq 0 then dset_name = 'Data'
-    
-    if size(title,/type) ne 7 or size(dset_name,/type) ne 7 then $
-        message, 'Error: Title and DatasetName must be scalar strings'
-        
-    if size(title,/n_dimensions) ne 0 or $
-       size(dset_name,/n_dimensions) ne 0 then $
-       message, 'Error: Title and DatasetName must be scalar strings'
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0
-    
-    
-    ; check the input data
-    
-    if indata_present then begin
-        
-        indata_is_struct = size(indata,/type) eq 8
-        
-        if ~indata_is_struct then $
-            message, 'Error: Indata must be a structure type'
-            
-        if size(indata,/n_dimensions) gt 1 then $
-            message, 'Error: Input data must be 1-dimensional'
-        
-    endif
     
     
     ; check the record definition
         
     if recorddef_present then begin
         
-        recorddef_is_struct = size(indata,/type) eq 8
-        
-        if recorddef_is_struct then recorddef_ntags = n_tags(indata) $
-                               else recorddef_ntags = 0
-                         
-        if size(recorddef,/n_dimensions) gt 1 then $
+        if size(recorddef,/n_dimensions) gt 1 then begin
             message, 'Error: Record definition must be scalar'
-            
-        if size(recorddef,/dimensions) gt 1 then $
-            message, 'Error: Record definition must be scalar'
-                         
-        ; If both input data and a record definition are provided, check
-        ; to ensure that the strucure types are identical (including field
-        ; names).
-                            
-        if indata_present then begin
-            
-            firstrec = indata[0]
-            
-            type_matched = wmb_compare_struct(firstrec, recorddef, $
-                                              /compare_field_names, $
-                                              /ignore_field_values)
-                                              
-            if ~type_matched then $
-                message, 'Error: Input data type and record definition ' + $
-                         'do not match'
-            
+            return, 0
         endif
         
+        if size(recorddef,/dimensions) gt 1 then begin
+            message, 'Error: Record definition must be scalar'
+            return, 0
+        endif
+
+        if size(recorddef,/type) ne 8 then begin
+            message, 'Error: invalid record definition'
+            return, 0
+        endif
+        
+        if n_tags(recorddef) eq 0 then begin
+            message, 'Error: invalid record definition'
+            return, 0
+        endif
+
     endif
-        
-    ; initialize variables that will be stored in self
     
-    tmp_recorddefptr = ptr_new()
-    tmp_recorddef_init = 0
-    tmp_nfields = 0
-    tmp_nrecords = 0
-    tmp_dataptr = ptr_new()
-    tmp_table_empty = 1
     
-
-    if indata_present then inittype = 'inputvar' $
-                      else inittype = 'empty_table'
-
-    case inittype of
-
-        'inputvar': begin
-
-            ; the object has been initialized with a data variable - measure its
-            ; dimensions and store a pointer to the data
-
-            ; create a record definition if necessary
-            
-            if recorddef_present then begin
-                
-                tmp_recorddefptr = ptr_new(recorddef)
-                
-            endif else begin
-                
-                tmp_recorddef = wmb_h5tb_data_to_record_definition(indata)
-                tmp_recorddefptr = ptr_new(tmp_recorddef)
-                
-            endelse
-            
-            tmp_recorddef_init = 1
-            
-            tmp_nfields = n_tags(indata)
-            tmp_nrecords = size(indata, /dimensions)
-
-            if datacopy eq 1 then begin
-
-                tmpdata = indata
-
-            endif else begin
-
-                tmpdata = temporary(indata)
-
-            endelse
-
-            tmp_dataptr = ptr_new(tmpdata, /NO_COPY)
-            
-            tmp_table_empty = 0
-
-        end
-
-
-        'empty_table': begin
-            
-            if recorddef_present then begin
-                
-                tmp_recorddefptr = ptr_new(recorddef)
-                tmp_recorddef_init = 1
-                
-                tmp_nfields = n_tags(recorddef)
-                
-            endif
-            
-        end
-        
-    endcase
-
-
     ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
     ;
     ;   populate the self fields
     ;
 
-    self.dt_title                  = title
-    self.dt_dataset_name           = dset_name
+    self.dt_title                  = 'Table'
+    self.dt_dataset_name           = 'Data'
     self.dt_full_group_name        = '/'
-    self.dt_record_def_ptr         = tmp_recorddefptr
-    self.dt_flag_record_def_init   = tmp_recorddef_init
+    self.dt_record_def_ptr         = ptr_new()
+    self.dt_flag_record_def_init   = 0
      
-    self.dt_nfields                = tmp_nfields
-    self.dt_nrecords               = tmp_nrecords
+    self.dt_nfields                = 0
+    self.dt_nrecords               = 0
     
-    self.dt_dataptr                = tmp_dataptr
+    self.dt_dataptr                = ptr_new()
   
     self.dt_flag_vtable            = 0L
     self.dt_vtable_filename        = ''
     self.dt_vtable_fid             = 0L
     self.dt_vtable_loc_id          = 0L
     
-    self.dt_flag_table_empty       = tmp_table_empty
+    self.dt_flag_table_empty       = 1
+
+    
+    if recorddef_present then begin
+        
+        self.dt_record_def_ptr = ptr_new(recorddef)
+        self.dt_flag_record_def_init = 1
+        self.dt_nfields = n_tags(recorddef)
+        
+    endif
+
+
+    if indata_present then inittype = 'inputvar' $
+                      else inittype = 'empty_table'
+
+
+    case inittype of
+
+        'inputvar': begin
+
+            if ~self->Append(indata) then return, 0
+
+        end
+
+
+        'empty_table': begin
+            
+
+            
+        end
+        
+    endcase
 
 
     ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
