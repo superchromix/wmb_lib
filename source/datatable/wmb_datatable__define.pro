@@ -662,13 +662,16 @@ end
 
 function wmb_DataTable::Init, Indata=indata, $
                               Nocopy=nocopy, $
-                              RecordDef=recorddef
-
+                              RecordDef=recorddef, $
+                              Title = title
+                              
 
     compile_opt idl2, strictarrsubs
 
 
     if N_elements(nocopy) eq 0 then nocopy = 0
+
+    if N_elements(title) eq 0 then title = 'Table'
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0
@@ -706,8 +709,8 @@ function wmb_DataTable::Init, Indata=indata, $
     ;   populate the self fields
     ;
 
-    self.dt_title                  = 'Table'
-    self.dt_dataset_name           = 'Data'
+    self.dt_title                  = title
+    self.dt_dataset_name           = 'Dataset'
     self.dt_full_group_name        = '/'
     self.dt_record_def_ptr         = ptr_new()
     self.dt_flag_record_def_init   = 0
