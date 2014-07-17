@@ -593,6 +593,47 @@ end
 
 
 
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the GetProperty method
+;
+;   This procedure uses the _Ref_Extra keyword inheritance
+;   mechanism as described in David Fanning's book (page 380).
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::GetProperty,  recorddef = recorddef, $
+                                 nfields = nfields, $
+                                 nrecords = nrecords, $
+                                 title = title, $
+                                 datasetname = datasetname, $
+                                 groupname = groupname, $
+                                 vtable_flag = vtable_flag, $
+                                 filename = filename, $
+                                 table_empty = table_empty, $
+                                 _Ref_Extra=extra
+
+    compile_opt idl2, strictarrsubs
+
+
+    if Arg_present(recorddef) ne 0 then recorddef=(*self.dt_record_def_ptr)
+    if Arg_present(nfields) ne 0 then nfields=self.dt_nfields
+    if Arg_present(nrecords) ne 0 then nrecords=self.dt_nrecords
+    if Arg_present(title) ne 0 then title=self.dt_title
+    if Arg_present(datasetname) ne 0 then datasetname=self.dt_dataset_name
+    if Arg_present(groupname) ne 0 then groupname=self.dt_full_group_name
+    if Arg_present(vtable_flag) ne 0 then vtable_flag=self.dt_flag_vtable
+    if Arg_present(filename) ne 0 then filename=self.dt_vtable_filename
+    if Arg_present(table_empty) ne 0 then table_empty=self.dt_flag_table_empty
+    
+    ; pass extra keywords
+
+    self->IDL_Object::GetProperty, _Extra=extra
+    
+end
+
+
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
