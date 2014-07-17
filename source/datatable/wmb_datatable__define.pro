@@ -190,13 +190,13 @@ end
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_DataTable::Append, indata, Datacopy=datacopy
+function wmb_DataTable::Append, indata, nocopy=nocopy
 
     compile_opt idl2, strictarrsubs
 
     if N_elements(indata) eq 0 then message, 'Error: no input data'
 
-    if N_elements(datacopy) eq 0 then datacopy = 0
+    if N_elements(nocopy) eq 0 then nocopy = 0
 
     indata_is_struct = size(indata,/type) eq 8
     
@@ -243,6 +243,19 @@ function wmb_DataTable::Append, indata, Datacopy=datacopy
     endelse
 
 
+    ; handle the NOCOPY keyword
+
+    if nocopy eq 0 then begin
+
+        tmp_indata = indata
+
+    endif else begin
+
+        tmp_indata = temporary(indata)
+
+    endelse
+
+
     ; is the table stored in memory or on disk?
     
     if self.dt_flag_vtable then begin
@@ -259,30 +272,21 @@ function wmb_DataTable::Append, indata, Datacopy=datacopy
         
         loc_id = self.dt_vtable_loc_id
         dset_name = self.dt_dataset_name
-        nrecords = N_elements(indata)
+        nrecords = N_elements(tmp_indata)
         
         wmb_h5tb_append_records, loc_id, $
                                  dset_name, $
                                  nrecords, $
-                                 indata
+                                 tmp_indata
         
         self.dt_nrecords = self.dt_nrecords + nrecords
 
+        ; release the tmp_indata variable
+        tmp_indata = 0
+
     endif else begin
         
-        ; the table is in memory
-        
-        tmp_nrecords = size(indata, /dimensions)
-
-        if datacopy eq 1 then begin
-
-            tmp_indata = indata
-
-        endif else begin
-
-            tmp_indata = temporary(indata)
-
-        endelse
+        tmp_nrecords = size(tmp_indata, /dimensions)
         
         ; is the table empty?
         
@@ -619,14 +623,14 @@ end
 
 
 function wmb_DataTable::Init, Indata=indata, $
-                              Datacopy=datacopy, $
+                              Nocopy=nocopy, $
                               RecordDef=recorddef
 
 
     compile_opt idl2, strictarrsubs
 
 
-    if N_elements(datacopy) eq 0 then datacopy = 0
+    if N_elements(nocopy) eq 0 then nocopy = 0
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0
@@ -700,7 +704,7 @@ function wmb_DataTable::Init, Indata=indata, $
 
         'inputvar': begin
 
-            if ~self->Append(indata) then return, 0
+            if ~self->Append(indata, nocopy=nocopy) then return, 0
 
         end
 
