@@ -597,9 +597,6 @@ end
 ;
 ;   This is the GetProperty method
 ;
-;   This procedure uses the _Ref_Extra keyword inheritance
-;   mechanism as described in David Fanning's book (page 380).
-;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
