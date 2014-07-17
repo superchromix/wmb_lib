@@ -128,10 +128,11 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
     
     if self.dt_flag_vtable then begin
 
-        ; get the data from disk
-        
-        loc_id = self.dt_vtable_loc_id
+        ; open the file
+        loc_id = self -> Vtable_Open()
         dset_name = self.dt_dataset_name
+        
+        ; get the data from disk
         
         tmp_disk_start = startrecord < endrecord
         tmp_disk_end = startrecord > endrecord
@@ -142,6 +143,9 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
                                tmp_disk_start, $
                                tmp_disk_nrecords, $
                                databuffer
+
+        ; close the file
+        self -> Vtable_Close
 
         if stride ne 1 then begin
             
@@ -270,7 +274,7 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
         
         ; write the new records to disk
         
-        loc_id = self.dt_vtable_loc_id
+        loc_id = self -> Vtable_Open()
         dset_name = self.dt_dataset_name
         nrecords = N_elements(tmp_indata)
         
@@ -283,6 +287,9 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
 
         ; release the tmp_indata variable
         tmp_indata = 0
+        
+        ; close the file
+        self -> Vtable_Close
 
     endif else begin
         
@@ -410,13 +417,13 @@ function wmb_DataTable::Load, filename, full_group_name, dset_name
     self.dt_nfields = nfields
     self.dt_nrecords = nrecords
     self.dt_flag_vtable = 1
+    self.dt_vtable_open = 1
     self.dt_vtable_filename = filename
     self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
     self.dt_flag_table_empty = 0
 
-    ; note that we are leaving the file open - when the table is in vtable
-    ; mode, the file will only be closed when the object is destroyed
+    self -> Vtable_Close
 
     return, 1
 
@@ -579,18 +586,89 @@ function wmb_DataTable::Save, filename, $
     self.dt_full_group_name = full_group_name
     
     self.dt_flag_vtable = 1
+    self.dt_vtable_open = 1
     self.dt_vtable_filename = filename
     self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
 
 
-    ; note that we are leaving the file open - when the table is in vtable
-    ; mode, the file will only be closed when the object is destroyed
+    self -> Vtable_Close
+        
 
     return, 1
 
 end
 
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Vtable_Open method
+;
+;   Open the HDF5 file for reading/writing
+;
+;   Returns the loc_id for the group in which the dataset is found
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+function wmb_DataTable::Vtable_Open
+
+
+    compile_opt idl2, strictarrsubs
+
+        
+    loc_id = self.dt_vtable_loc_id
+        
+    if self.dt_vtable_open eq 0 then begin
+        
+        filename = self.dt_vtable_filename
+        groupname = self.dt_full_group_name
+        
+        fid = h5f_open(filename,/WRITE)
+        loc_id = h5g_open(fid, groupname)
+    
+        self.dt_vtable_fid = fid
+        self.dt_vtable_loc_id = loc_id
+    
+        self.dt_vtable_open = 1
+    
+    endif
+    
+    return, loc_id
+
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Vtable_Close method
+;
+;   Close the HDF5 file
+;
+;   Returns 1 if the save operation was successful.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::Vtable_Close
+
+
+    compile_opt idl2, strictarrsubs
+
+        
+    if self.dt_vtable_open eq 1 then begin
+            
+        fid = self.dt_vtable_fid
+        loc_id = self.dt_vtable_loc_id
+        
+        h5g_close, loc_id
+        h5f_close, fid
+    
+        self.dt_vtable_open = 0
+    
+    endif
+
+end
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -721,6 +799,7 @@ function wmb_DataTable::Init, Indata=indata, $
     self.dt_dataptr                = ptr_new()
   
     self.dt_flag_vtable            = 0L
+    self.dt_vtable_open            = 0
     self.dt_vtable_filename        = ''
     self.dt_vtable_fid             = 0L
     self.dt_vtable_loc_id          = 0L
@@ -785,7 +864,7 @@ pro wmb_DataTable::Cleanup
     ptr_free, self.dt_record_def_ptr
     ptr_free, self.dt_dataptr
     
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable && self.dt_vtable_open then begin
         
         h5g_close, self.dt_vtable_loc_id
         h5f_close, self.dt_vtable_fid
@@ -835,6 +914,7 @@ pro wmb_DataTable__define
                                                            $
         dt_flag_vtable              : fix(0),              $
         dt_vtable_filename          : '',                  $
+        dt_vtable_open              : fix(0),              $
         dt_vtable_fid               : long(0),             $
         dt_vtable_loc_id            : long(0),             $
                                                            $
