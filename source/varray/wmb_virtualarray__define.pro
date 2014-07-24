@@ -151,7 +151,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
 
     for i = 0, n_inputs-1 do begin
         
-        tmp_input = inputlist[i]
+        tmp_input = subscript_list[i]
         
         if isrange[i] eq 1 then begin
             if ~ self->Rangevalid( tmp_input, i ) then chkpass = 0
@@ -184,10 +184,11 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     dtype = self.va_dtype
     dtype_size = self.va_dtype_size
     funit = self.va_lun
+    foffset = self.va_offset
     
     file_read_size = dtype_size * read_size
-    file_read_start = dtype_size * read_start
-    file_read_pos_list = dtype_size * temporary(read_pos_list)
+    file_read_start = (dtype_size * read_start) + foffset
+    
     
     ; make an output array of the appropriate size
     
@@ -205,6 +206,8 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
         
         ; read from multiple blocks of the file
         
+        file_read_pos_list = (dtype_size * temporary(read_pos_list)) + foffset
+        
         ; make a temporary data array for reading data chunks
         
         tmp_readarr = make_array(read_size, type=dtype, /nozero)
@@ -217,17 +220,24 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
             readu, funit, tmp_readarr
             od[tmp_write_pos] = tmp_readarr
             
+            tmp_write_pos = tmp_write_pos + read_size
+            
         endforeach
         
     endelse
         
         
+    ; ensure that the output array has the correct dimensions
 
     if output_scalar then begin
     
         od = od[0]
         
-    endif 
+    endif else begin
+        
+        od = reform(od, output_dims, /overwrite)
+        
+    endelse
 
     return, od
 
