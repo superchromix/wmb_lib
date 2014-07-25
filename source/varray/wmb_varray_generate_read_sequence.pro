@@ -245,7 +245,14 @@ pro wmb_varray_generate_read_sequence, isrange, $
 
         endif
         
-    endif 
+    endif else begin
+        
+        ; tmp_n_reads equals one
+        
+        tmp_read_pos_list = [first_read_pos]
+        
+    endelse
+
 
     output_scalar = tmp_output_scalar
     output_dims = tmp_output_dims
