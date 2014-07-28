@@ -6,13 +6,16 @@ pro wmb_varray_generate_read_sequence, isrange, $
                                        output_dims, $
                                        n_reads, $                                       
                                        read_size, $
-                                       read_start, $
-                                       n_steps_index = n_steps_index, $
-                                       step_size_index = step_size_index, $                                       
-                                       read_pos_list = read_pos_list
+                                       read_start, $                                    
+                                       readstart_pos_array
 
 
     compile_opt idl2, strictarrsubs
+
+    if N_elements(isrange) eq 0 then begin
+        message, 'Invalid isrange input array'
+        return
+    endif
 
     n_subscripts = N_elements(isrange)
     
@@ -166,7 +169,7 @@ pro wmb_varray_generate_read_sequence, isrange, $
     
     output_num_steps = []        
     output_step_size = []
-    tmp_read_pos_list = []
+    tmp_readstart_pos_array = []
     
     if tmp_n_reads ne 1 then begin
        
@@ -224,32 +227,30 @@ pro wmb_varray_generate_read_sequence, isrange, $
             endif
         endfor
         
-        if Arg_present(read_pos_list) then begin
+
+        tmp_steplist = ulon64arr(total(output_num_steps,/integer)+1)
+        tmp_steplist[0] = first_read_pos
+        cnta = 1ULL
         
-            tmp_steplist = ulon64arr(total(output_num_steps,/integer)+1)
-            tmp_steplist[0] = first_read_pos
-            cnta = 1ULL
+        foreach tmp_stepsize, output_step_size, indexa do begin
             
-            foreach tmp_stepsize, output_step_size, indexa do begin
-                
-                tmpnum = output_num_steps[indexa]
-                tmparr = replicate(tmp_stepsize, tmpnum)
-                tmp_steplist[cnta] = temporary(tmparr)
-                cnta = cnta + tmpnum
-                
-            endforeach
+            tmpnum = output_num_steps[indexa]
+            tmparr = replicate(tmp_stepsize, tmpnum)
+            tmp_steplist[cnta] = temporary(tmparr)
+            cnta = cnta + tmpnum
+            
+        endforeach
 
-            tmp_read_pos_list = total(temporary(tmp_steplist), $
-                                      /cumulative, $
-                                      /integer)
+        tmp_readstart_pos_array = total(temporary(tmp_steplist), $
+                                        /cumulative, $
+                                        /integer)
 
-        endif
-        
+
     endif else begin
         
         ; tmp_n_reads equals one
         
-        tmp_read_pos_list = [first_read_pos]
+        tmp_readstart_pos_array = [first_read_pos]
         
     endelse
 
@@ -260,13 +261,7 @@ pro wmb_varray_generate_read_sequence, isrange, $
     read_start = first_read_pos
     n_reads = tmp_n_reads
 
-    n_steps_index = output_num_steps
-    step_size_index = output_step_size
-    
-    if Arg_present(read_pos_list) then begin
-        
-        read_pos_list = temporary(tmp_read_pos_list)
-        
-    endif
+    readstart_pos_array = temporary(tmp_readstart_pos_array)
+
 
 end

@@ -177,7 +177,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
                                        n_reads, $                                       
                                        read_size, $
                                        read_start, $                                    
-                                       read_pos_list = read_pos_list
+                                       readstart_pos_array
 
     
 
@@ -186,71 +186,99 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     dtype = self.va_dtype
     od = make_array(output_dims, type=dtype, /nozero)
         
+    ; calculate the read end positions
+    
+    readend_pos_array = readstart_pos_array + (read_size-1)
+    
     
     ; for each element of the read position list, calculate in which
     ; data chunk it is contained
     
     tmp_data_chunk_size = self.va_data_chunk_size
-    read_chunk_list = read_pos_list / tmp_data_chunk_size
-    read_relative_pos = read_pos_list mod tmp_data_chunk_size
     
-    read_pos_delta = read_size - 1
+    readstart_chunk_arr = readstart_pos_array / tmp_data_chunk_size
+    readend_chunk_arr = readend_pos_array / tmp_data_chunk_size
+    
+    readstart_relative_pos = readstart_pos_array mod tmp_data_chunk_size
+    readend_relative_pos = readend_pos_array mod tmp_data_chunk_size
+    
+    span_chunks = readstart_chunk_arr ne readend_chunk_arr
+
+
+    ; read the data and transfer it to the output array
     
     tmp_write_pos = 0ULL
     loaded_chunk = -1
     
-    foreach tmp_read_chunk, read_chunk_list, indexa do begin
+    
+    foreach tmp_readstart, readstart_pos_array, indexa do begin
+    
+        if span_chunks[indexa] eq 0 then begin
         
-        if tmp_read_chunk ne loaded_chunk then begin
+            ; this read operation does not span a chunk boundary
+        
+            tmp_read_chunk = readstart_chunk_arr[indexa]
+        
+            if tmp_read_chunk ne loaded_chunk then begin
+                
+                tmp_data_block = (*self.va_assoc_ptr)[tmp_read_chunk]
+
+                loaded_chunk = tmp_read_chunk
+                
+            endif 
+        
+            readstart = readstart_relative_pos[indexa]
+            readend = readend_relative_pos[indexa]
+        
+            od[tmp_write_pos] = tmp_data_block[readstart:readend]
+        
+            tmp_write_pos = tmp_write_pos + read_size
             
-            tmp_data_block = (*self.va_assoc_ptr)[tmp_read_chunk]
+        endif else begin
             
-            loaded_chunk = tmp_read_chunk
+            ; the read operation spans a chunk boundary
             
-        endif 
+            startchunk = readstart_chunk_arr[indexa]
+            endchunk = readend_chunk_arr[indexa]
+            
+            nchunks_span = endchunk - startchunk + 1
+            
+            for i = 0, nchunks_span-1 do begin
+                
+                tmp_read_chunk = startchunk + i
+                
+                if tmp_read_chunk ne loaded_chunk then begin
+                    
+                    tmp_data_block = (*self.va_assoc_ptr)[tmp_read_chunk]
+
+                    loaded_chunk = tmp_read_chunk
+                    
+                endif 
+                
+                if i eq 0 then readstart = readstart_relative_pos[indexa] $
+                          else readstart = 0LL
+                          
+                if i eq (nchunks_span-1) then begin
+                    
+                    readend = readend_relative_pos[indexa]
+                    
+                endif else begin
+                    
+                    ; last element in the chunk
+                    readend = tmp_data_chunk_size - 1  
+                    
+                endelse
+                
+                od[tmp_write_pos] = tmp_data_block[readstart:readend]
         
-        readstart = read_relative_pos[indexa]
-        readend = readstart + read_pos_delta
-        
-        od[tmp_write_pos] = tmp_data_block[readstart:readend]
-        
-        tmp_write_pos = tmp_write_pos + read_size
+                tmp_write_pos = tmp_write_pos + ((readend - readstart) + 1)
+                
+            endfor
+        endelse
         
     endforeach
     
 
-;    if n_reads eq 1 then begin
-;        
-;        ; read a single block of the file
-;        
-;        point_lun, funit, file_read_start
-;        readu, funit, od
-;        
-;    endif else begin
-;        
-;        ; read from multiple blocks of the file
-;        
-;        file_read_pos_list = (dtype_size * temporary(read_pos_list)) + foffset
-;        
-;        ; make a temporary data array for reading data chunks
-;        
-;        tmp_readarr = make_array(read_size, type=dtype, /nozero)
-;        
-;        tmp_write_pos = 0ULL
-;        
-;        foreach readpos, file_read_pos_list do begin
-;            
-;            point_lun, funit, readpos
-;            readu, funit, tmp_readarr
-;            od[tmp_write_pos] = tmp_readarr
-;            
-;            tmp_write_pos = tmp_write_pos + read_size
-;            
-;        endforeach
-;        
-;    endelse
-        
-        
     ; ensure that the output array has the correct dimensions
 
     if output_scalar then begin
@@ -367,7 +395,7 @@ function wmb_VirtualArray::Init, filename, $
     
     tmp_chunksize_bytes = ulong64(chunksize_bytes)
 
-    if N_elements(fileoffset) eq 0 then fileoffset = 0
+    if N_elements(fileoffset_bytes) eq 0 then fileoffset_bytes = 0
     if N_elements(fileswapendian) eq 0 then fileswapendian = 0
 
 
@@ -403,7 +431,7 @@ function wmb_VirtualArray::Init, filename, $
 
     tmp_dimproduct = product(tmp_datadims, /integer)
     tmp_dtype_size = wmb_sizeoftype(datatype)
-    expected_filesize = (tmp_dimproduct * tmp_dtype_size) + fileoffset
+    expected_filesize = (tmp_dimproduct * tmp_dtype_size) + fileoffset_bytes
     
     if tmp_size lt expected_filesize then begin
         message, 'File size smaller than expected'
@@ -497,7 +525,7 @@ function wmb_VirtualArray::Init, filename, $
     ; offset and chunk size
     
     tmparr = make_array(adjusted_data_chunk_size, TYPE=datatype, /NOZERO)
-    filedata_assoc = assoc(tmplun, tmparr, fileoffset)
+    filedata_assoc = assoc(tmplun, tmparr, fileoffset_bytes)
 
     filedata_assoc_ptr = ptr_new(filedata_assoc)
 
@@ -516,7 +544,7 @@ function wmb_VirtualArray::Init, filename, $
     
     self.va_filename = filename
     self.va_lun = tmplun
-    self.va_offset = fileoffset
+    self.va_offset = fileoffset_bytes
     self.va_writeable = chk_write
     self.va_data_chunk_size = adjusted_data_chunk_size
     self.va_assoc_ptr = filedata_assoc_ptr
@@ -553,6 +581,7 @@ pro wmb_VirtualArray::Cleanup
     compile_opt idl2, strictarrsubs
 
     ptr_free, self.va_dimsptr
+    
     ptr_free, self.va_assoc_ptr
 
     close, self.va_lun
@@ -606,21 +635,21 @@ pro wmb_VirtualArray__define
     compile_opt idl2, strictarrsubs
     
 
-    struct = { wmb_VirtualArray,                   $
-                INHERITS IDL_Object,               $
-                                                   $
-                va_rank            : fix(0),       $
-                va_dimsptr         : ptr_new(),    $
-                va_dtype           : fix(0),       $
-                                                   $
-                va_dtype_size      : fix(0),       $               
-                                                   $
-                va_filename        : '',           $
-                va_lun             : fix(0),       $               
-                va_offset          : ulong64(0),   $            
-                va_writeable       : fix(0),       $
-                va_data_chunk_size : ulong64(0),   $
-                va_assoc_ptr       : ptr_new()     }
+    struct = {  wmb_VirtualArray,                     $
+                INHERITS IDL_Object,                  $
+                                                      $
+                va_rank               : fix(0),       $
+                va_dimsptr            : ptr_new(),    $
+                va_dtype              : fix(0),       $
+                                                      $
+                va_dtype_size         : fix(0),       $               
+                                                      $
+                va_filename           : '',           $
+                va_lun                : fix(0),       $               
+                va_offset             : ulong64(0),   $            
+                va_writeable          : fix(0),       $
+                va_data_chunk_size    : ulong64(0),   $
+                va_assoc_ptr          : ptr_new()     }
 
 end
 
