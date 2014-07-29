@@ -211,7 +211,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     loaded_chunk = -1
     
     
-    foreach tmp_readstart, readstart_pos_array, indexa do begin
+    foreach tmp_readstart_rel, readstart_relative_pos, indexa do begin
     
         if span_chunks[indexa] eq 0 then begin
         
@@ -227,10 +227,9 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
                 
             endif 
         
-            readstart = readstart_relative_pos[indexa]
             readend = readend_relative_pos[indexa]
         
-            od[tmp_write_pos] = tmp_data_block[readstart:readend]
+            od[tmp_write_pos] = tmp_data_block[tmp_readstart_rel:readend]
         
             tmp_write_pos = tmp_write_pos + read_size
             
@@ -255,7 +254,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
                     
                 endif 
                 
-                if i eq 0 then readstart = readstart_relative_pos[indexa] $
+                if i eq 0 then readstart = tmp_readstart_rel $
                           else readstart = 0LL
                           
                 if i eq (nchunks_span-1) then begin
