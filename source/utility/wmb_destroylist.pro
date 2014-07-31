@@ -6,8 +6,8 @@ pro wmb_destroylist, inputlist
     
         foreach value, inputlist do begin
         
-            if isa(value, 'HASH') then dv_destroyhash, value
-            if isa(value, 'LIST') then dv_destroylist, value
+            if isa(value, 'HASH') then wmb_destroyhash, value
+            if isa(value, 'LIST') then wmb_destroylist, value
             if isa(value, 'POINTER') then ptr_free, value
             if isa(value, 'OBJREF') then obj_destroy, value
         
