@@ -26,8 +26,10 @@
 ;   data type, depending on the clipboard contents.
 ;   
 ; RESTRICTIONS:
-;   This routine depends on an externally compiled library: wmb_clipboard.dll.
-;   It does not handle complex numeric data types.
+;   If using IDL 8.2 or earlier, then this routine depends on an externally 
+;   compiled library: wmb_clipboard.dll.  
+;   
+;   This routine does not handle complex numeric data types.
 ;
 ; PROCEDURE:
 ;   WMB_CLIPBOARD_PASTE copies the content of the clipboard to a variable and 
@@ -313,47 +315,117 @@ function wmb_clipboard_paste_convert, convtype, $
 end
 
 
-function wmb_clipboard_paste, outdata
+function wmb_clipboard_paste, outdata, force_dll = force_dll
+
+    if N_elements(force_dll) eq 0 then force_dll = 0
+
+
+    ; what version of IDL is running?
+    
+    ver = float(!version.release)
+    
+    if ver lt 8.3 or force_dll eq 1 then begin
+
+        ; we will use the external DLL to perform the copy
+    
+        use_dlm = 1
+        if ~wmb_clipboard_copy_findlib(shlib) then return, 0
+        
+    endif else begin
+        
+        ; we will use IDL's internal clipboard routine
+        
+        use_dlm = 0
+        
+    endelse
+
 
     crlf_char = string([13b,10b])
     sep_char = string(9B)
     lf_char = string(10b)
 
 
-    ; check for the presence of the external library
+    if use_dlm eq 1 then begin
 
-    if ~wmb_clipboard_paste_findlib(shlib) then return, 0
-
-
-    ; get the data from the clipboard (a string)
-    
-    nb = call_external(shlib, 'wmb_test_clipboard_text')
-    
-    if (nb le 1L) then begin
-    
-        ; no CF_TEXT object found
-        outdata = ''
-        return, 1
+        ; get the data from the clipboard (a string)
         
-    endif  
+        nb = call_external(shlib, 'wmb_test_clipboard_text')
+        
+        if (nb le 1L) then begin
+        
+            ; no CF_TEXT object found
+            outdata = ''
+            return, 1
+            
+        endif  
     
-    tmpdata = bytarr(nb) 
-    tmplen = nb
+        tmpdata = bytarr(nb) 
+        tmplen = nb
+        
+        tmp_rslt = call_external(shlib,'wmb_paste_from_clipboard', $
+                                 tmpdata, $
+                                 tmplen) 
+        
+        if tmp_rslt then begin
+        
+            outdata = ''
+            return, 1
+        
+        endif
     
-    tmp_rslt = call_external(shlib,'wmb_paste_from_clipboard',tmpdata,tmplen) 
     
-    if tmp_rslt then begin
+        ; check the length and trim the byte array if necessary
+        
+        if tmplen lt nb then tmpdata = temporary(tmpdata[0:tmplen-1])
+        
     
-        outdata = ''
-        return, 1
-    
-    endif
-    
-    
-    ; check the length and trim the byte array if necessary
-    
-    if tmplen lt nb then tmpdata = temporary(tmpdata[0:tmplen-1])
-    
+    endif else begin
+
+
+        tmptxt = Clipboard.Get()
+        
+        ; convert the text to 1D byte array,  with crlf characters 
+        ; inserted after every line
+        
+        n_lines = n_elements(tmptxt)
+        n_chars = total(strlen(tmptxt),/integer)
+        
+        n_bytes = n_chars + (n_lines * 2)
+        if tmptxt[n_lines-1] eq '' then n_bytes = n_bytes - 2
+        
+        tmpdata = make_array(n_bytes, /BYTE, /NOZERO)
+        
+        writeptr = 0ULL
+        
+        for i = 0L, n_lines-2 do begin
+            
+            tmpline = [byte(tmptxt[i]),13b,10b]
+            tmplen = n_elements(tmpline)
+            tmpdata[writeptr] = temporary(tmpline)
+            writeptr = writeptr + tmplen
+                
+        endfor
+        
+        ; handle the last line - if it is an empty line, this means that
+        ; the last character in the copied text was cr/lf
+        
+        if tmptxt[n_lines-1] ne '' then begin
+            
+            tmpline = [byte(tmptxt[n_lines-1]),13b,10b]
+            tmplen = n_elements(tmpline)
+            tmpdata[writeptr] = temporary(tmpline)
+            writeptr = writeptr + tmplen
+            
+        endif
+        
+        if writeptr ne n_bytes then begin
+            message, 'Error converting string to bytes'
+            return, 0
+        endif
+        
+        tmplen = n_bytes
+        
+    endelse
     
     ; append final cr/lf if missing (two cases for when the data is 
     ; null terminated or not)
