@@ -719,10 +719,8 @@ end
 ;   fields such as nfields and nrecords are filled in based on
 ;   the data.
 ;
-;   If the DATACOPY keyword is set to 1, a copy of the data will
-;   be created before it is stored in the object.  Otherwise, the
-;   input data variable will be undefined after the object is
-;   created.
+;   If the NOCOPY keyword is set to 1, the input data variable 
+;   will be undefined after the object is created.
 ;
 ;   A RecordDef structure may be provided to define the record 
 ;   structure of the table.  This is a structure variable whose tag

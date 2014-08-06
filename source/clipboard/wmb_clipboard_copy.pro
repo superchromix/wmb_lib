@@ -34,8 +34,10 @@
 ;   occurred.
 ;   
 ; RESTRICTIONS:
-;   This routine depends on an externally compiled library: wmb_clipboard.dll.
-;   It does not handle complex numeric data types.
+;   If using IDL 8.2 or earlier, then this routine depends on an externally 
+;   compiled library: wmb_clipboard.dll.  
+;   
+;   This routine does not handle complex numeric data types.
 ;
 ; PROCEDURE:
 ;   All data is converted to string type before being copied to the clipboard.
@@ -58,6 +60,9 @@
 ; MODIFICATION HISTORY:
 ; 
 ;   Written by: Mark Bates, 15 August 2013. 
+;   
+;   Updated to use the Clipboard.Set() and Clipboard.Get() routines
+;   introduced in IDL 8.3.  MB, 5 August 2014.
 ;-
 
 
@@ -154,9 +159,30 @@ function wmb_clipboard_copy_getformatcode, x
 end
 
 
-function wmb_clipboard_copy, indata
+function wmb_clipboard_copy, indata, force_dll = force_dll
 
-    if ~wmb_clipboard_copy_findlib(shlib) then return, 0
+    if N_elements(force_dll) eq 0 then force_dll = 0
+
+
+    ; what version of IDL is running?
+    
+    ver = float(!version.release)
+    
+    if ver lt 8.3 or force_dll eq 1 then begin
+
+        ; we will use the external DLL to perform the copy
+    
+        use_dlm = 1
+        if ~wmb_clipboard_copy_findlib(shlib) then return, 0
+        
+    endif else begin
+        
+        ; we will use IDL's internal clipboard routine
+        
+        use_dlm = 0
+        
+    endelse
+
 
     crlf_char = string([13b,10b])
     sep_char = string(9B)
@@ -207,7 +233,7 @@ function wmb_clipboard_copy, indata
                 
             endif else begin
             
-                fmtcode = fmtcode + tmpfc + ',:,"'+crlf_char+'"))'
+                fmtcode = fmtcode + tmpfc + ',"'+crlf_char+'"))'                
             
             endelse
             
@@ -256,30 +282,58 @@ function wmb_clipboard_copy, indata
             
         endif
 
-        fmtcode = fmtcode + '1(' + tmpfc + '),:,"'+crlf_char+'"))' 
-    
+        fmtcode = fmtcode + '1(' + tmpfc + '),"'+crlf_char+'"))' 
+
     endelse
     
     ; convert the data to a string
     
     tmptxt = string(indata, format=fmtcode, /PRINT)
     
-    ; convert the string to a byte array 
     
-    byttxt = bytarr(strlen(tmptxt)+1,/nozero)
+    if use_dlm then begin
     
-    byttxt[0] = byte(tmptxt)
-    
-    ; the string must be null terminated
-    
-    byttxt[strlen(tmptxt)] = 0b
-    
-    nbytes = size(byttxt,/dimensions)
-    
-    if call_external(shlib,'wmb_copy_to_clipboard',temporary(byttxt),nbytes) $
-        then return, 0
+        ; convert the string to a byte array 
         
+        byttxt = bytarr(strlen(tmptxt)+1,/nozero)
+        
+        byttxt[0] = byte(tmptxt)
+        
+        ; the string must be null terminated
+        
+        byttxt[strlen(tmptxt)] = 0b
+        
+        nbytes = size(byttxt,/dimensions)
+        
+        if call_external(shlib, $
+                         'wmb_copy_to_clipboard', $
+                         temporary(byttxt), $
+                         nbytes) then return, 0
+        
+    endif else begin
+        
+        Clipboard.Set, tmptxt
+
+    endelse
+
     return, 1
     
 end
 
+
+
+pro wmb_clipboard_test
+
+    testdata = lindgen(10,10000)
+    
+    test_time = tic('Clipboard test, internal IDL routines')
+    result = wmb_clipboard_copy(testdata)
+    toc, test_time
+    
+    test_time2 = tic('Clipboard test, external routine')
+    result = wmb_clipboard_copy(testdata, /force_dll)
+    toc, test_time2
+    
+    print, result
+
+end
