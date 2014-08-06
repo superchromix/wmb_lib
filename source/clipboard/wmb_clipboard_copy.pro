@@ -233,7 +233,7 @@ function wmb_clipboard_copy, indata, force_dll = force_dll
                 
             endif else begin
             
-                fmtcode = fmtcode + tmpfc + ',:,"'+crlf_char+'"))'
+                fmtcode = fmtcode + tmpfc + ',"'+crlf_char+'"))'                
             
             endelse
             
@@ -282,8 +282,8 @@ function wmb_clipboard_copy, indata, force_dll = force_dll
             
         endif
 
-        fmtcode = fmtcode + '1(' + tmpfc + '),:,"'+crlf_char+'"))' 
-    
+        fmtcode = fmtcode + '1(' + tmpfc + '),"'+crlf_char+'"))' 
+
     endelse
     
     ; convert the data to a string
