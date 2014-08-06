@@ -321,19 +321,3 @@ function wmb_clipboard_copy, indata, force_dll = force_dll
 end
 
 
-
-pro wmb_clipboard_test
-
-    testdata = lindgen(10,10000)
-    
-    test_time = tic('Clipboard test, internal IDL routines')
-    result = wmb_clipboard_copy(testdata)
-    toc, test_time
-    
-    test_time2 = tic('Clipboard test, external routine')
-    result = wmb_clipboard_copy(testdata, /force_dll)
-    toc, test_time2
-    
-    print, result
-
-end
