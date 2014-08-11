@@ -342,13 +342,12 @@ pro wmb_hash_display_form, grpleader, $
     
     if nrows eq 0 then message, 'Empty data hash'
     
-    rlabels = (data_hash.Keys()).ToArray()
+    datalabels = (data_hash.Keys()).ToArray()
     
-    ; convert the data hash to a struct (all data will first be converted 
-    ; to string type)
+    ; convert the data hash to an array of structures
+    ; (all data will first be converted to string type)
     
-    fieldnames = strarr(nrows)
-    strdat = strarr(nrows)
+    tmp_dat = {labels:'',data:''}
     
     newstruct = {}
     
