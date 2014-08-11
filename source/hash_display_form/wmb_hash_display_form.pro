@@ -22,222 +22,53 @@ pro wmb_hash_display_form_event, event
 
     compile_opt idl2, strictarrsubs
 
-    formcancel = 0
     formclose = 0
 
     ; get state information
     widget_control, event.top, get_uvalue=locinfoptr
     locinfo = *locinfoptr
 
-    ; retrieve information from the info pointer
-    wid_def_hash = locinfo.wid_def_hash
-    layout_list = locinfo.layout_list
-    input_hash = locinfo.input_hash
-    output_hash = locinfo.output_hash
-    labelfont = locinfo.label_font
-    fieldfont = locinfo.field_font
-    rowframe = locinfo.row_frame
-    rowyspace = locinfo.row_yspace
-
     ; identify widget which caused the event
     widget_uname = widget_info(event.id, /UNAME)
 
-    event_struct_name = tag_names(event, /STRUCTURE_NAME)
+    ; identify the event type
+    event_type = tag_names(event, /STRUCTURE_NAME)
 
-    if event_struct_name eq 'FSC_INPUTFIELD_EVENT' then begin
-    
-        ; if the event came from an fsc_inputfield, then we need to use
-        ; the object reference to talk to it
-        
-        objref = event.ObjRef
-        objref -> GetProperty, Name = widget_uname
-        
-    endif
+    ; get the table widget id
+    table_id = locinfo.table_wid
 
-    ; if this event originated from one of the I/O widgets, handle it here
-    
-    if wid_def_hash.Haskey(widget_uname) then begin
-    
-        ; make sure the input and output hash also contain this key
-        
-        if ~input_hash.Haskey(widget_uname) then $
-                                    message, 'Unmatched widget name'
-                                    
-        if ~output_hash.Haskey(widget_uname) then $
-                                    message, 'Unmatched widget name'
-                
-        wid = event.id
-        widdef = wid_def_hash[widget_uname]
-        inputdat = input_hash[widget_uname]
-        outputdat = output_hash[widget_uname]
-                                    
-        ; what kind of widget is this?
-        
-        wtype = widdef['type']
-        
-        case strlowcase(wtype) of
-        
-            'numeric': begin
-            
-                if N_elements(objref -> Get_Value()) ne 0 then begin
-                
-                    output_hash[widget_uname] = objref -> Get_Value()
-                
-                endif
-            
-            end
-            
-            'multinumeric': begin
-            
-                if N_elements(objref -> Get_Value()) ne 0 then begin
-                
-                    objref -> GetProperty, UValue = index
-                    newval = objref -> Get_Value()
-                    outputdat[index] = newval
-                    output_hash[widget_uname] = outputdat
-                
-                endif
-            
-            end
-            
-            'string': begin
-            
-                if N_elements(objref -> Get_Value()) ne 0 then begin
-                
-                    output_hash[widget_uname] = objref -> Get_Value()
-                
-                endif
-            
-            end
-            
-            'droplist': begin
-            
-                output_hash[widget_uname] = event.str
-            
-            end
-            
-            'radiobuttons': begin
-            
-                widget_control, wid, GET_VALUE = button_name
-                if event.select then output_hash[widget_uname] = button_name
-                
-            end
-            
-            'checkboxes': begin
-            
-                widget_control, wid, GET_UVALUE = button_index
-                outputdat[button_index] = event.select
-                output_hash[widget_uname] = outputdat
-                
-            end
-            
-        endcase
-
-        ; print the modified data (for debug purposes)
-        
-        ; print, output_hash[widget_uname]
-    
-    endif
-
-
-    ; handle events that originated from other widgets
-    
     case widget_uname of
+
+        'wmb_hd_table': begin
+            
+            ; the event originated from the table widget
+            
+            case event_type of
+                
+                'WIDGET_TABLE_CELL_SEL': begin
+                    
+                    ; this is a table cell select event - reset the table so
+                    ; that no cells are selected
+                    
+                    widget_control, table_id, set_table_select = [-1,-1,-1,-1]
+                    
+                end
+                
+                else:
+                
+            endcase
+
+        end
 
         'ok': begin
 
-            ; the output data hash has already been updated
-            
-            formcancel = 0
             formclose = 1
 
         end
 
-        'cancel': begin
-
-            ; the output data hash has already been updated
-            
-            formcancel = 1
-            formclose = 1
-
-        end
-
-        'page_select': begin
-        
-            if event_struct_name eq 'WIDGET_COMBOBOX' then begin
-        
-                ; the user has selected a new page - create a new set of 
-                ; I/O widgets
-                
-                cb_wid = widget_info(event.top, $
-                                     FIND_BY_UNAME='wmb_if_centerbase')
-                
-                bb_wid = widget_info(event.top, $
-                                     FIND_BY_UNAME='wmb_if_buttonbase')
-                
-                widget_control, cb_wid, MAP=0
-                widget_control, bb_wid, MAP=0
-                
-                ;widget_control, cb_wid, UPDATE=0
-                
-                pc_wid = widget_info(event.top, $
-                                     FIND_BY_UNAME='wmb_if_pageiocontainer')
-                
-                pcgeo = widget_info(pc_wid, /GEOMETRY)
-                
-                ; create a widget in the centerbase to act as a place holder
-                
-                placeholder = widget_base(cb_wid, $
-                                          xsize=pcgeo.xsize, $
-                                          ysize=0, $
-                                          map = 0, frame=0, space=0, xpad=0, $
-                                          ypad=0)
-                
-                wid_children = widget_info(cb_wid, /ALL_CHILDREN)
-                
-                foreach val, wid_children do widget_control, val, map=0
-                    
-
-                foreach val, wid_children do begin
-                
-                    if val ne placeholder then widget_control, val, /destroy
-                    
-                endforeach
-        
-                pagelayout = layout_list[event.index]
-
-                wmb_hash_display_form_build_io_widgets, pagelayout, $
-                                                        cb_wid, $
-                                                        wid_def_hash, $
-                                                        output_hash, $
-                                                        labelfont, $
-                                                        fieldfont, $
-                                                        rowframe
-        
-                wmb_hash_display_form_align_widgets, cb_wid, $
-                                                     xpad=5, $
-                                                     ypad=5, $
-                                                     xspace = 5, $
-                                                     yspace = rowyspace
-        
-                widget_control, placeholder, /destroy
-        
-                ;widget_control, cb_wid, UPDATE=1
-        
-                wait, 0.05D
-        
-                widget_control, cb_wid, MAP=1
-                widget_control, bb_wid, MAP=1
-        
-            endif
-        
-        end
-
-        else:
+        else: 
 
     endcase
-
-    locinfo.cancel = formcancel
 
     ; save state information
     *locinfoptr = locinfo
@@ -289,22 +120,26 @@ end
 pro wmb_hash_display_form, grpleader, $
                            data_hash, $
                            wintitle = wtitle, $
-                           datalabel = datalabel, $
+                           desc_label = desc_label, $
+                           col_label = col_label, $
                            labelfont = labelfont, $
                            fieldfont = fieldfont, $
-                           yscroll = cb_yscroll
+                           max_xsize = max_xsize, $
+                           max_ysize = max_ysize, $
+                           bg_stripes = bg_stripes
                            
 
 
     compile_opt idl2, strictarrsubs
 
-    flag_autosize_cb = 0
-
     if N_elements(wtitle) eq 0 then wtitle = 'Data'
+    if N_elements(desc_label) eq 0 then desc_label = ''
+    if N_elements(col_label) eq 0 then col_label = 'Value'
     if N_elements(labelfont) eq 0 then labelfont = ''
     if N_elements(fieldfont) eq 0 then fieldfont = ''
-    if N_elements(cb_yscroll) eq 0 then flag_autosize_cb = 1
-
+    if N_elements(bg_stripes) eq 0 then bg_stripes = 0
+    if N_elements(max_xsize) eq 0 then max_xsize = 0
+    if N_elements(max_ysize) eq 0 then max_ysize = 0
 
     if N_elements(grpleader) eq 0 then $
             message, 'Group leader must be specified'
@@ -313,122 +148,225 @@ pro wmb_hash_display_form, grpleader, $
             message, 'Data hash must be specified'
 
 
-
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   Create widgets
-;
-
-    tlb = widget_base(column=1, title=wtitle, space=5, $
-                      uname='tlb', xpad=5, ypad=5, $
-                      /modal, /floating, GROUP_LEADER=grpleader, $
-                      /base_align_center,  $
-                      tlb_frame_attr = 1)
-
-
-
-    ; create the center base to hold the table widget
-
-    centerbase = widget_base(tlb, $
-                             column=1, $
-                             /base_align_center, $
-                             xpad=0, $
-                             ypad=5, $
-                             uname='wmb_if_centerbase')
-    
-    ; extract the row labels from the input data hash
+    ; CONVERT DATA HASH TO STRINGS AND EXTRACT KEY NAMES
     
     nrows = data_hash.Count()
     
     if nrows eq 0 then message, 'Empty data hash'
     
-    datalabels = (data_hash.Keys()).ToArray()
+    datakeys = (data_hash.Keys()).ToArray()
     
-    ; convert the data hash to an array of structures
+    ; convert the data hash to a structure
     ; (all data will first be converted to string type)
     
-    tmp_dat = {labels:'',data:''}
-    
-    newstruct = {}
+    data_struct = {}
     
     for i = 0, nrows-1 do begin
     
-        fieldnames[i] = 'field' + strtrim(string(i),2)    
-        strdat[i] = wmb_converttostring(data_hash[rlabels[i]])
-        
-        newstruct = create_struct(newstruct,fieldnames[i],strdat[i])
-        
+        tmp_field = 'field' + strtrim(string(i),2)
+        str_data = wmb_converttostring(data_hash[datakeys[i]])
+        data_struct = create_struct(data_struct, tmp_field, str_data)
+    
     endfor
     
-    datastruct = newstruct
-    
-    ; make the table
+
+    ; CREATE TLB
+
+    tlb = widget_base(column=1, title=wtitle, space=5, $
+                      uname='wmb_hd_tlb', xpad=5, ypad=5, $
+                      /modal, /floating, GROUP_LEADER=grpleader, $
+                      /base_align_center,  $
+                      tlb_frame_attr = 1)
+
+
+    ; CREATE DESCRIPTION LABEL
+
+    if desc_label ne '' then begin
+
+        desc_label_base = widget_base(tlb, row=1, /base_align_center)
+                               
+        labelwid = widget_label(desc_label_base, $
+                                value=desc_label, $
+                                font=labelfont)
+        
+    endif
+
+
+    ; CREATE CENTER BASE AND TABLE WIDGET
+
+    centerbase = widget_base(tlb, $
+                             column=1, $
+                             /base_align_center, $
+                             xpad=5, $
+                             ypad=5, $
+                             uname='wmb_hd_centerbase')
+
     
     table_id = widget_table(centerbase, $  
-                            value=datastruct, $
+                            value=data_struct, $
                             font=fieldfont, $
-                            column_labels = ['Value'], $
-                            row_labels = rlabels, $
-                            /COLUMN_MAJOR, $
+                            column_labels = [col_label], $
+                            row_labels = datakeys, $
                             scroll = 0, $
-                            /ALL_EVENTS)
+                            ALIGNMENT = 1, $
+                            /COLUMN_MAJOR, $
+                            /ALL_EVENTS, $
+                            uname='wmb_hd_table')
 
-    ; Create the ok button
+
+    ; CREATE THE BUTTON BASE AND THE OK BUTTON
 
     bxsize = 60
     bysize = bxsize / 2.3
     bbase     = widget_base(tlb, row=1, space=5, /align_center, $
-                            uname='wmb_if_buttonbase')
+                            uname='wmb_hd_buttonbase')
                             
     b_ok      = widget_button(bbase, value='OK', uname='ok', $
                               xsize=bxsize, ysize=bysize, $
-                              ACCELERATOR='Return', font=labelfont)                          
+                              ACCELERATOR='Return', font=fieldfont)                          
 
 
-    ; Center the top level base widget on display
+    ; SET THE TABLE TO HAVE NO CELLS SELECTED
+
+    widget_control, table_id, set_table_select = [-1,-1,-1,-1]
+
+
+    ; CENTER THE TLB ON IT'S PARENT
 
     wmb_center_tlb_on_parent, tlb, grpleader
+
+
+    ; REALIZE THE WIDGET HIERARCHY
 
     Widget_Control, tlb, /Realize
 
 
+    ; ADJUST THE COLUMN WIDTH AND TABLE XSIZE TO FIT THE DATA STRINGS
 
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   Create and store state information
-;
-;   This will be stored in the uvalue of the top level base
-;
+    cur_col_width = (widget_info(table_id, /COLUMN_WIDTHS))[0]
 
-    local_info_struct = {cancel: 1                                }
-               
-               
+    pad_xpix = 10
+
+    col_header_width = (widget_info(table_id, string_size=col_label))[0] $
+                       + pad_xpix
+        
+    new_width = col_header_width
+    
+    for i = 0, nrows-1 do begin
+
+        tmp_data = data_struct.(i)
+        
+        tmp_strsize = (widget_info(table_id, string_size=tmp_data))[0] $
+                      + pad_xpix
+        
+        new_width = new_width > tmp_strsize
+            
+    endfor
+        
+    deltax = new_width - cur_col_width
+        
+    ; increase the size of the widget to accomodate the larger columns
+    
+    table_geo = widget_info(table_id, /geometry)
+    cur_table_xpix = table_geo.scr_xsize
+    cur_table_ypix = table_geo.scr_ysize
+
+    new_xpix = cur_table_xpix + deltax
+    
+    ; on Windows systems, the table Y size is one pixel too large - 
+    ; adjust this when resizing the table
+    
+    if !version.os eq 'Win32' then begin
+    
+        widget_control, table_id, scr_xsize = new_xpix, $
+                                  column_widths = [new_width], $
+                                  scr_ysize = cur_table_ypix-1
+                                  
+    endif else begin
+        
+        widget_control, table_id, scr_xsize = new_xpix, $
+                                  column_widths = [new_width]
+                                  
+    endelse
+
+
+    ; CREATE THE TABLE BACKGROUND STRIPES
+
+    if bg_stripes eq 1 then begin
+        
+        white_bg = [255B,255B,255B]
+        grey_bg = [230B,230B,230B]
+        n_cols = 1
+        
+        tmp_bg_arr1 = bytarr(3,n_cols)
+        for i = 0, n_cols-1 do tmp_bg_arr1[0,i] = white_bg
+        
+        tmp_bg_arr2 = bytarr(3,n_cols)
+        for i = 0, n_cols-1 do tmp_bg_arr2[0,i] = grey_bg
+        
+        tmp_pattern = [[tmp_bg_arr1], [tmp_bg_arr2]]
+        
+        widget_control, table_id, BACKGROUND_COLOR=tmp_pattern
+        
+    endif
+
+
+    ; RESIZE THE TABLE SO THAT THE TLB DOES NOT EXCEED THE MAXIMUM 
+    ; SIZE SPECIFIED BY THE USER
+    
+    device, get_screen_size=screen_size
+
+    xscreen = screen_size[0]
+    yscreen = screen_size[1]
+    
+    if max_xsize eq 0 then max_xsize = xscreen
+    if max_ysize eq 0 then max_ysize = yscreen
+    
+    widget_control, tlb, tlb_get_size = base_size
+    table_geo = widget_info(table_id, /geometry)
+
+    cur_tlb_xpix = base_size[0]
+    cur_tlb_ypix = base_size[1]    
+    cur_table_xpix = table_geo.scr_xsize
+    cur_table_ypix = table_geo.scr_ysize
+    
+    extra_x = cur_tlb_xpix - cur_table_xpix
+    extra_y = cur_tlb_ypix - cur_table_ypix
+
+    max_table_xpix = max_xsize - extra_x
+    max_table_ypix = max_ysize - extra_y
+
+    if cur_table_xpix gt max_table_xpix or $
+       cur_table_ypix gt max_table_ypix then begin
+        
+        ; resize the table so that the tlb will have the correct size
+
+        widget_control, table_id, scr_xsize = cur_table_xpix < max_table_xpix, $
+                                  scr_ysize = cur_table_ypix < max_table_ypix
+        
+    endif
+   
+    
+    ; CREATE AND STORE THE STATE INFORMATION
+
+    local_info_struct = {table_wid: table_id}    
     locinfoptr = ptr_new(local_info_struct)
 
     widget_control, tlb, set_uvalue=locinfoptr
 
 
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   manage events (note the absence of a no_block keyword to xmanager)
-;
+    ; MANAGE EVENTS
 
     xmanager, 'wmb_hash_display_form', tlb, $
               cleanup='wmb_hash_display_form_cleanup', $
               event_handler='wmb_hash_display_form_event'
 
 
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   The form has now been closed.  Return results to the calling program.
-;
+
+    ; The form has now been closed.  Return results to the calling program.
 
     result = *locinfoptr
     ptr_free, locinfoptr
-
 
 end
 
@@ -443,11 +381,15 @@ pro hashformtest_event, event
 
     compile_opt idl2, strictarrsubs
 
-    wintitle = 'Multi input dialog'
+    wintitle = 'Hash contents'
+
+    desclabel = 'These are the contents of the HASH'
+
+    labelfont = 'Verdana*14*Bold'
 
     inputdat = orderedhash()
 
-    inputdat['First property aaaaaaaaaaaaaaaaaaaaaa'] = 1
+    inputdat['First property'] = 1
     inputdat['Second property'] = [1,2]
     inputdat['Third property'] = 'This is a string'
     inputdat['Fourth property'] = 14.335
@@ -455,10 +397,30 @@ pro hashformtest_event, event
     inputdat['Sixth property'] = [2.3,53.2,45.2]
     inputdat['Seventh property'] = list(3,4,5)
     inputdat['Eighth property'] = {First:1,Second:2}
-
+    inputdat['First propertya'] = 1
+    inputdat['Second propertya'] = [1,2]
+    inputdat['Third propertya'] = 'This is a string'
+    inputdat['Fourth propertya'] = 14.335
+    inputdat['Fifth propertya'] = 092834L
+    inputdat['Sixth propertya'] = [2.3,53.2,45.2]
+    inputdat['Seventh propertya'] = list(3,4,5)
+    inputdat['Eighth propertya'] = {First:1,Second:2}
+    inputdat['First propertyab'] = 1
+    inputdat['Second propertyab'] = [1,2]
+    inputdat['Third propertyab'] = 'This is a string'
+    inputdat['Fourth propertyab'] = 14.335
+    inputdat['Fifth propertyab'] = 092834L
+    inputdat['Sixth propertyab'] = [2.3,53.2,45.2]
+    inputdat['Seventh propertyab'] = list(3,4,5)
+    inputdat['Eighth propertyab'] = {First:1,Second:2}
+    
     wmb_hash_display_form, event.top, $
                            inputdat, $
-                           wintitle = wtitle
+                           wintitle = wtitle, $
+                           desc_label = desclabel, $
+                           labelfont = labelfont, $
+                           max_ysize = 400, $
+                           bg_stripes = 1
                            
     
 end
