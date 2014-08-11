@@ -169,18 +169,27 @@ pro wmb_input_form_event, event
                 ; the user has selected a new page - create a new set of 
                 ; I/O widgets
                 
-                cb_wid = widget_info(event.top, FIND_BY_UNAME='dmi_centerbase')
+                cb_wid = widget_info(event.top, $
+                                     FIND_BY_UNAME='wmb_if_centerbase')
                 
-                widget_control, cb_wid, UPDATE=0
+                bb_wid = widget_info(event.top, $
+                                     FIND_BY_UNAME='wmb_if_buttonbase')
+                
+                widget_control, cb_wid, MAP=0
+                widget_control, bb_wid, MAP=0
+                
+                ;widget_control, cb_wid, UPDATE=0
                 
                 pc_wid = widget_info(event.top, $
-                                     FIND_BY_UNAME='dmi_pageiocontainer')
+                                     FIND_BY_UNAME='wmb_if_pageiocontainer')
                 
                 pcgeo = widget_info(pc_wid, /GEOMETRY)
                 
                 ; create a widget in the centerbase to act as a place holder
                 
-                placeholder = widget_base(cb_wid, xsize=pcgeo.xsize, ysize=0, $
+                placeholder = widget_base(cb_wid, $
+                                          xsize=pcgeo.xsize, $
+                                          ysize=0, $
                                           map = 0, frame=0, space=0, xpad=0, $
                                           ypad=0)
                 
@@ -206,14 +215,19 @@ pro wmb_input_form_event, event
                                                         rowframe
         
                 wmb_input_form_align_widgets, cb_wid, $
-                                                     xpad=10, $
-                                                     ypad=10, $
-                                                     xspace = 10, $
+                                                     xpad=5, $
+                                                     ypad=5, $
+                                                     xspace = 5, $
                                                      yspace = rowyspace
         
                 widget_control, placeholder, /destroy
         
-                widget_control, cb_wid, UPDATE=1
+                ;widget_control, cb_wid, UPDATE=1
+        
+                wait, 0.05D
+        
+                widget_control, cb_wid, MAP=1
+                widget_control, bb_wid, MAP=1
         
             endif
         
@@ -272,7 +286,7 @@ pro wmb_input_form_align_widgets, centerbase, xpad=xpad, xspace=xspace, $
     if N_elements(yspace) eq 0 then yspace=0
     
     pageiocontainer = widget_info(centerbase, $
-                                  FIND_BY_UNAME='dmi_pageiocontainer')
+                                  FIND_BY_UNAME='wmb_if_pageiocontainer')
     
     wid_children = widget_info(pageiocontainer, /ALL_CHILDREN)
     
@@ -775,7 +789,9 @@ pro wmb_input_form_build_io_widgets, pagelayout, containerbase, $
         
     endif
 
-    pageiocontainer = widget_base(containerbase, uname='dmi_pageiocontainer')
+    pageiocontainer = widget_base(containerbase, $
+                                  uname='wmb_if_pageiocontainer')
+        
 
     wkeys = pagelayout.widget_key_list
 
@@ -957,16 +973,16 @@ end
 
 
 pro wmb_input_form, grpleader, $
-                           widget_definition_hash, $
-                           layout_list, $
-                           data_hash, $
-                           formcancel, $
-                           wintitle = wtitle, $
-                           labelfont = labelfont, $
-                           fieldfont = fieldfont, $
-                           yscroll = cb_yscroll, $
-                           frame = rowframe, $
-                           yspace = rowyspace
+                    widget_definition_hash, $
+                    layout_list, $
+                    data_hash, $
+                    formcancel, $
+                    wintitle = wtitle, $
+                    labelfont = labelfont, $
+                    fieldfont = fieldfont, $
+                    yscroll = cb_yscroll, $
+                    frame = rowframe, $
+                    yspace = rowyspace
                            
 
 
@@ -975,11 +991,12 @@ pro wmb_input_form, grpleader, $
     flag_autosize_cb = 0
 
     if N_elements(wtitle) eq 0 then wtitle = 'Input form'
-    if N_elements(labelfont) eq 0 then labelfont = 'Verdana*14'
-    if N_elements(fieldfont) eq 0 then fieldfont = 'Verdana*14'
+    if N_elements(labelfont) eq 0 then labelfont = ''
+    if N_elements(fieldfont) eq 0 then fieldfont = ''
     if N_elements(cb_yscroll) eq 0 then flag_autosize_cb = 1
     if N_elements(rowframe) eq 0 then rowframe = 0
     if N_elements(rowyspace) eq 0 then rowyspace = 0
+
 
     if N_elements(grpleader) eq 0 then $
             message, 'Group leader must be specified'
@@ -1009,7 +1026,7 @@ pro wmb_input_form, grpleader, $
 ;
 
     tlb = widget_base(column=1, title=wtitle, space=5, $
-                      uname='tlb', xpad=10, ypad=10, $
+                      uname='tlb', xpad=5, ypad=5, $
                       /modal, /floating, GROUP_LEADER=grpleader, $
                       /base_align_center,  $
                       tlb_frame_attr = 1)
@@ -1022,7 +1039,7 @@ pro wmb_input_form, grpleader, $
 
     if npages gt 1 then begin
 
-        basewid = widget_base(tlb, row=1, space=5, ypad=5, $
+        basewid = widget_base(tlb, row=1, space=0, ypad=0, $
                               frame=0, /base_align_center)
     
         ; tmptxt = 'Page select: '
@@ -1046,9 +1063,9 @@ pro wmb_input_form, grpleader, $
                                  column=1, $
                                  /base_align_center, $
                                  xpad=0, $
-                                 ypad=10, $
+                                 ypad=5, $
                                  frame = (npages gt 1), $
-                                 uname='dmi_centerbase')
+                                 uname='wmb_if_centerbase')
     
     endif else begin
     
@@ -1056,9 +1073,9 @@ pro wmb_input_form, grpleader, $
                                  column=1, $
                                  /base_align_center, $
                                  xpad=0, $
-                                 ypad=10, $
+                                 ypad=5, $
                                  frame = (npages gt 1), $
-                                 uname='dmi_centerbase', $
+                                 uname='wmb_if_centerbase', $
                                  y_scroll_size=cb_yscroll )
 
     endelse
@@ -1080,7 +1097,9 @@ pro wmb_input_form, grpleader, $
 
     bxsize = 60
     bysize = bxsize / 2.3
-    bbase     = widget_base(tlb, row=1, space=5, /align_center)
+    bbase     = widget_base(tlb, row=1, space=5, /align_center, $
+                            uname='wmb_if_buttonbase')
+                            
     b_ok      = widget_button(bbase, value='OK', uname='ok', $
                               xsize=bxsize, ysize=bysize, $
                               ACCELERATOR='Return', font=labelfont)                          
@@ -1097,8 +1116,8 @@ pro wmb_input_form, grpleader, $
 
     ; Align the widgets into ordered columns
 
-    wmb_input_form_align_widgets, centerbase, xpad=10, ypad=10, $
-                                         xspace = 10, yspace = rowyspace
+    wmb_input_form_align_widgets, centerbase, xpad=5, ypad=5, $
+                                  xspace = 5, yspace = rowyspace
 
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
