@@ -684,6 +684,8 @@ pro wmb_TableWindow::GUI_Init
     n_cols = self.stat_table_ncols
     n_rows = self.stat_table_nrows
  
+    font = self.con_tablefont
+ 
     has_col_headers = self.has_col_headers
     has_row_headers = self.has_row_headers
     has_col_labels = self.has_col_labels
@@ -782,6 +784,7 @@ pro wmb_TableWindow::GUI_Init
     
     table_id = widget_table(tlb, $  
                             value=indata, $
+                            font=font, $
                             column_labels = col_labels, $
                             row_labels = row_labels, $
                             no_column_headers = ~has_col_headers, $
