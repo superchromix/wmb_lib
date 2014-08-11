@@ -1184,7 +1184,7 @@ end
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro formtest_event, event
+pro inputformtest_event, event
 
     compile_opt idl2, strictarrsubs
 
@@ -1317,20 +1317,19 @@ pro formtest_event, event
                            wintitle = wtitle, $
                            labelfont = labelfont, $
                            fieldfont = fieldfont, $
-                           yscroll=350, $
-                           yspace=1, $
+                           yscroll = 200, $
                            frame=0
                            
     print, inputdat
     
 end
 
-pro formtest_cleanup, wid
+pro inputformtest_cleanup, wid
 
 
 end
 
-pro formtest
+pro inputformtest
    
     compile_opt idl2, strictarrsubs
     
@@ -1346,7 +1345,7 @@ pro formtest
           
     cgcentertlb, tlb   
     Widget_Control, tlb, /Realize
-    XManager, 'formtest', tlb, /No_Block, CLEANUP = 'formtest_cleanup'
+    XManager, 'inputformtest', tlb, /No_Block, CLEANUP = 'inputformtest_cleanup'
     
 end
 
