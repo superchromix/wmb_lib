@@ -124,7 +124,6 @@ pro wmb_hash_display_form, grpleader, $
                            col_label = col_label, $
                            labelfont = labelfont, $
                            fieldfont = fieldfont, $
-                           max_xsize = max_xsize, $
                            max_ysize = max_ysize, $
                            bg_stripes = bg_stripes
                            
@@ -138,7 +137,6 @@ pro wmb_hash_display_form, grpleader, $
     if N_elements(labelfont) eq 0 then labelfont = ''
     if N_elements(fieldfont) eq 0 then fieldfont = ''
     if N_elements(bg_stripes) eq 0 then bg_stripes = 0
-    if N_elements(max_xsize) eq 0 then max_xsize = 0
     if N_elements(max_ysize) eq 0 then max_ysize = 0
 
     if N_elements(grpleader) eq 0 then $
@@ -198,7 +196,6 @@ pro wmb_hash_display_form, grpleader, $
                              column=1, $
                              /base_align_center, $
                              xpad=5, $
-                             ypad=5, $
                              uname='wmb_hd_centerbase')
 
     
@@ -316,33 +313,25 @@ pro wmb_hash_display_form, grpleader, $
     
     device, get_screen_size=screen_size
 
-    xscreen = screen_size[0]
     yscreen = screen_size[1]
     
-    if max_xsize eq 0 then max_xsize = xscreen
     if max_ysize eq 0 then max_ysize = yscreen
     
     widget_control, tlb, tlb_get_size = base_size
     table_geo = widget_info(table_id, /geometry)
 
-    cur_tlb_xpix = base_size[0]
     cur_tlb_ypix = base_size[1]    
-    cur_table_xpix = table_geo.scr_xsize
     cur_table_ypix = table_geo.scr_ysize
     
-    extra_x = cur_tlb_xpix - cur_table_xpix
     extra_y = cur_tlb_ypix - cur_table_ypix
 
-    max_table_xpix = max_xsize - extra_x
     max_table_ypix = max_ysize - extra_y
 
-    if cur_table_xpix gt max_table_xpix or $
-       cur_table_ypix gt max_table_ypix then begin
+    if cur_table_ypix gt max_table_ypix then begin
         
         ; resize the table so that the tlb will have the correct size
 
-        widget_control, table_id, scr_xsize = cur_table_xpix < max_table_xpix, $
-                                  scr_ysize = cur_table_ypix < max_table_ypix
+        widget_control, table_id, scr_ysize = cur_table_ypix < max_table_ypix
         
     endif
    
@@ -397,22 +386,7 @@ pro hashformtest_event, event
     inputdat['Sixth property'] = [2.3,53.2,45.2]
     inputdat['Seventh property'] = list(3,4,5)
     inputdat['Eighth property'] = {First:1,Second:2}
-    inputdat['First propertya'] = 1
-    inputdat['Second propertya'] = [1,2]
-    inputdat['Third propertya'] = 'This is a string'
-    inputdat['Fourth propertya'] = 14.335
-    inputdat['Fifth propertya'] = 092834L
-    inputdat['Sixth propertya'] = [2.3,53.2,45.2]
-    inputdat['Seventh propertya'] = list(3,4,5)
-    inputdat['Eighth propertya'] = {First:1,Second:2}
-    inputdat['First propertyab'] = 1
-    inputdat['Second propertyab'] = [1,2]
-    inputdat['Third propertyab'] = 'This is a string'
-    inputdat['Fourth propertyab'] = 14.335
-    inputdat['Fifth propertyab'] = 092834L
-    inputdat['Sixth propertyab'] = [2.3,53.2,45.2]
-    inputdat['Seventh propertyab'] = list(3,4,5)
-    inputdat['Eighth propertyab'] = {First:1,Second:2}
+
     
     wmb_hash_display_form, event.top, $
                            inputdat, $
