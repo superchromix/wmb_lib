@@ -21,44 +21,44 @@ function wmb_sizeoftype, type, error=error
     
         0: begin
             error = 1
-            return, 0
+            return, 0ULL
         end
         
-        1: return, 1
-        2: return, 2
-        3: return, 4
-        4: return, 4
-        5: return, 8
-        6: return, 8
+        1: return, 1ULL
+        2: return, 2ULL
+        3: return, 4ULL
+        4: return, 4ULL
+        5: return, 8ULL
+        6: return, 8ULL
 
         7: begin
             error = 1
-            return, 0
+            return, 0ULL
         end
         
         8: begin
             error = 1
-            return, 0
+            return, 0ULL
         end
         
-        9: return, 16
+        9: return, 16ULL
 
         
-        10: return, 4
+        10: return, 4ULL
       
         11: begin
             error = 1
-            return, 0
+            return, 0ULL
         end      
         
-        12: return, 2
-        13: return, 4
-        14: return, 8
-        15: return, 8
+        12: return, 2ULL
+        13: return, 4ULL
+        14: return, 8ULL
+        15: return, 8ULL
         
         else: begin
             error = 1
-            return, 0
+            return, 0ULL
         end
         
     endcase
