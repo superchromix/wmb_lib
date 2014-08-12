@@ -1006,18 +1006,17 @@ end
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 function wmb_TableWindow::Init, name, $
-                               indata, $
-                               font=font, $
-                               xsize=xsize, $
-                               ysize=ysize, $
-                               col_labels = col_labels, $
-                               row_labels = row_labels, $
-                               no_col_headers = no_col_headers, $
-                               no_row_headers = no_row_headers, $
-                               window_title = window_title, $
-                               current_path = currentpath, $
-                               rand_seed = rand_seed, $
-                               bg_stripes = bg_stripes
+                                indata, $
+                                font=font, $
+                                xsize=xsize, $
+                                ysize=ysize, $
+                                col_labels = col_labels, $
+                                row_labels = row_labels, $
+                                no_col_headers = no_col_headers, $
+                                no_row_headers = no_row_headers, $
+                                window_title = window_title, $
+                                current_path = currentpath, $
+                                bg_stripes = bg_stripes
 
                                
     compile_opt idl2, strictarrsubs
@@ -1104,45 +1103,8 @@ function wmb_TableWindow::Init, name, $
 
 
     if N_elements(window_title) eq 0 then window_title = 'Data table'
-    if N_elements(rand_seed) eq 0 then rand_seed = 1
     if N_elements(bg_stripes) eq 0 then bg_stripes = 0
 
-
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   Determine the directory in which the program is located
-;    
-
-    currentdir = cgSourceDir()
-    twoup_dir = cgSourceDir(/TWOUP)
-    
-    chk_run_compiled = strupcase(file_basename(currentdir)) ne 'OBJECTS_MAIN'
-    
-    if chk_run_compiled then homedir = currentdir $
-                        else homedir = twoup_dir
-                        
-    
-;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   Set the Configuration path, the Icon path, and the Cursor path
-;
-;   Note that the configuration path is the full path to daxview.ini
-    
-    configpath = homedir + 'configuration' + Path_Sep() + 'daxview.ini'
-
-    cursor_path = homedir + 'resource' + Path_Sep() + $
-                 'images' + Path_Sep() + 'cursors' + Path_Sep() + $
-                 '16x16' + Path_Sep()
-                 
-    icon_path = homedir + 'resource' + Path_Sep() + $
-                 'images' + Path_Sep() + 'icons' + Path_Sep() + $
-                 '16x16' + Path_Sep()
-                 
-    self.con_configpath = configpath
-    self.con_icondir = icon_path
-    self.con_cursordir = cursor_path
-    
-    
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -1192,7 +1154,6 @@ function wmb_TableWindow::Init, name, $
     self.con_tlb_minysize  = tlb_minysize
     self.con_tlb_maxxsize = maxtlbxsz
     self.con_tlb_maxysize = maxtlbysz
-    self.con_rand_seed_ptr  = ptr_new(rand_seed)
     self.con_tablefont = font
     self.con_table_default_xpix = xsize
     self.con_table_default_ypix = ysize
@@ -1252,7 +1213,6 @@ pro wmb_TableWindow::Cleanup
 
     compile_opt idl2, strictarrsubs
 
-    ptr_free, self.con_rand_seed_ptr
     ptr_free, self.dataptr
     ptr_free, self.col_labels
     ptr_free, self.row_labels
@@ -1277,10 +1237,10 @@ pro wmb_TableWindow__define
 
     compile_opt idl2, strictarrsubs
 
-    struct = {       wmb_TableWindow,                           $
+    struct = {       wmb_TableWindow,                          $
                      INHERITS IDL_Object,                      $
                                                                $
-                     name    : '',                             $
+                     name                        : '',         $
                                                                $
                      wid_tlb                     : long(0),    $
                      wid_table                   : long(0),    $
@@ -1294,9 +1254,6 @@ pro wmb_TableWindow__define
                      col_labels                  : ptr_new(),  $
                      row_labels                  : ptr_new(),  $
                                                                $
-                     con_configpath              : '',         $
-                     con_icondir                 : '',         $
-                     con_cursordir               : '',         $
                      con_tlb_minxsize            : 0,          $
                      con_tlb_minysize            : 0,          $
                      con_tlb_maxxsize            : 0,          $
@@ -1306,7 +1263,6 @@ pro wmb_TableWindow__define
                      con_table_default_ypix      : 0,          $
                      con_table_row_major         : 0,          $
                      con_table_col_major         : 0,          $
-                     con_rand_seed_ptr           : ptr_new(),  $
                                                                $
                      stat_wtitle                 : '',         $
                      stat_tlb_xsize              : 0,          $
