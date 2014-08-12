@@ -24,10 +24,10 @@ function wmb_get_formatcode, x
         4: outstr = 'G0'
 
         5: outstr = 'G0'
-        6: 
+        6: outstr = 'G0,"+i",G0'
         7: outstr = 'A'
         8: 
-        9: 
+        9: outstr = 'G0,"+i",G0'
         10: 
         11: 
         12: outstr = 'I0'
@@ -36,6 +36,8 @@ function wmb_get_formatcode, x
         15: outstr = 'I0'
 
     end
+
+    outstr = '(' + outstr + ')'
 
     return, outstr
     

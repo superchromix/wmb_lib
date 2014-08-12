@@ -30,290 +30,154 @@ function wmb_ConvertToString, invalue, error=errchk
     tname = valinfo.type_name
     dtype = valinfo.type
     ndim = valinfo.n_dimensions
-    dim = valinfo.n_elements
+    dimsz = valinfo.n_elements
     
     if ndim gt 1 then begin
-        message, 'Only scalar value or 1D arrays are allowed'
+        message, 'Only scalar values or 1D arrays are supported'
         errchk = 1
     endif
     
-    case dtype of
-    
-        0: str_invalue = 'UNDEFINED'
+    if ndim eq 0 then begin
         
-        1: begin
+        ; scalar case - note that structures, hashes, etc will never 
+        ; reach this section, since they report a value of 1 for n_dimensions
         
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
+        formatstr = wmb_get_formatcode(invalue)
         
-        end
-        
-
-        2: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-        
-        3: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-        
-        4: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-        
-        5: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-        
-        6: begin
-        
-            if ndim eq 0 then begin
-                str_invalue = strtrim(string(REAL_PART(invalue)),2) + $
-                              '+i' + $
-                              strtrim(string(IMAGINARY(invalue)),2)
-            endif else begin
+        case dtype of
             
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(REAL_PART(val)),2) + $
-                                  '+i' + $
-                                  strtrim(string(IMAGINARY(val)),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
+            0: str_invalue = 'UNDEFINED'
+            8: str_invalue = 'STRUCT'
+            10: str_invalue = 'POINTER'
+            11: str_invalue = 'OBJREF'
+            else: str_invalue = string(invalue, FORMAT=formatstr)
             
-            endelse
-
-        end
+        endcase
         
-        7: begin
+    endif else begin
         
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
+        ; this is the array case - also structures, hashes, etc will be
+        ; processed in this section
         
-        end
-        
-        8: begin
-        
-            str_invalue = ''
-        
-            keynames = TAG_NAMES(invalue)
-            nkeys = N_TAGS(invalue)
+        switch dtype of
             
-            if dim gt 1 then begin
-                message, 'Arrays of structures are not supported'
-                errchk = 1
-            endif
-            
-            if nkeys gt 0 then begin
-            
-                str_invalue = '{'
+            1:
+            2:
+            3:
+            4:
+            5:
+            6:
+            7:
+            9:
+            10:
+            12:
+            13:
+            14:
+            15: begin
                 
-                for i = 0, nkeys-1 do begin
+                str_invalue = '['
                 
-                    sub_invalue = invalue.(i)
+                for i = 0, dimsz-1 do begin
                     
-                    str_invalue = str_invalue + strtrim(keynames[i],2)
-                    str_invalue = str_invalue + ':'
-                    str_invalue = str_invalue + $
-                                  wmb_ConvertToString(sub_invalue)
-                    if i ne (nkeys-1) then str_invalue = str_invalue + ','
-                
-                endfor
-            
-                str_invalue = str_invalue + '}'
-            
-            endif
-        end
-        
-        9: begin
-        
-            if ndim eq 0 then begin
-                str_invalue = strtrim(string(REAL_PART(invalue)),2) + $
-                              '+i' + $
-                              strtrim(string(IMAGINARY(invalue)),2)
-            endif else begin
-            
-                str_invalue = '['
-                for i = 0, dim-1 do begin
                     val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(REAL_PART(val)),2) + $
-                                  '+i' + $
-                                  strtrim(string(IMAGINARY(val)),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            
-            endelse
 
-        end
-    
-        10: str_invalue = 'POINTER'
-        
-        11: begin
-        
-            ; what kind of object is it?
-            ; (note that this will fail if invalue is an array)
-            
-            sname = TYPENAME(invalue)
-            
-            case sname of
-            
-                'HASH': begin
+                    str_invalue = str_invalue + wmb_converttostring(val)
+                                  
+                    if i ne dimsz-1 then str_invalue = str_invalue + ', '
                     
-                    ; convert the hash to a structure
-                    hstruct = invalue.ToStruct()
-                    str_invalue = wmb_ConvertToString(sub_invalue)
-                
-                end
-                
-                'LIST': begin
-                
-                    ; convert the list to an array
-                    larray = invalue.ToArray()
-                    str_invalue = wmb_ConvertToString(larray)
-                
-                end
-        
-                else:
-                
-            endcase
-        end
-    
-        12: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
                 endfor
+                
                 str_invalue = str_invalue + ']'
-            endelse
+
+                break    
+            end
+            
+            8: begin
+                
+                str_invalue = ''
+            
+                keynames = TAG_NAMES(invalue)
+                nkeys = N_TAGS(invalue)
+                
+                if dimsz gt 1 then begin
+                    message, 'Arrays of structures are not supported'
+                    errchk = 1
+                endif
+                
+                if nkeys gt 0 then begin
+                
+                    str_invalue = '{'
+                    
+                    for i = 0, nkeys-1 do begin
+                    
+                        sub_invalue = invalue.(i)
+                        
+                        str_invalue = str_invalue + strtrim(keynames[i],2)
+                        str_invalue = str_invalue + ':'
+                        str_invalue = str_invalue + $
+                                      wmb_ConvertToString(sub_invalue)
+                        if i ne (nkeys-1) then str_invalue = str_invalue + ', '
+                    
+                    endfor
+                
+                    str_invalue = str_invalue + '}'
+                
+                endif
+                
+                break 
+            end
+            
+            11: begin
+                
+                ; what kind of object is it?
+                ; (note that this will fail if invalue is an array)
+                
+                sname = TYPENAME(invalue)
+                
+                case sname of
+                
+                    'HASH': begin
+                        
+                        ; convert the hash to a structure
+                        hstruct = invalue.ToStruct()
+                        str_invalue = wmb_ConvertToString(hstruct)
+                    
+                    end
+                    
+                    'ORDEREDHASH': begin
+                        
+                        ; convert the orderedhash to a structure
+                        hstruct = invalue.ToStruct()
+                        str_invalue = wmb_ConvertToString(hstruct)
+                    
+                    end
+                    
+                    'DICTIONARY': begin
+                        
+                        ; convert the dictionary to a structure
+                        hstruct = invalue.ToStruct()
+                        str_invalue = wmb_ConvertToString(hstruct)
+                    
+                    end
+                    
+                    'LIST': begin
+                    
+                        ; convert the list to an array
+                        larray = invalue.ToArray()
+                        str_invalue = wmb_ConvertToString(larray)
+                    
+                    end
+            
+                    else: str_invalue = 'OBJREF'
+                    
+                endcase
+
+                break 
+            end
+
+        endswitch
         
-        end
-    
-        13: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-        
-        14: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-        
-        15: begin
-        
-            if ndim eq 0 then str_invalue = string(invalue) $
-            else begin
-                str_invalue = '['
-                for i = 0, dim-1 do begin
-                    val = invalue[i]
-                    str_invalue = str_invalue + $
-                                  strtrim(string(val),2)
-                    if i ne dim-1 then str_invalue = str_invalue + ','
-                endfor
-                str_invalue = str_invalue + ']'
-            endelse
-        
-        end
-    
-    endcase
+    endelse
 
     str_invalue = strtrim(str_invalue,2)
 

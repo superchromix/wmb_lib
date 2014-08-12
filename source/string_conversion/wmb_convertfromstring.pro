@@ -18,6 +18,8 @@
 ;               array
 ;               structure
 ;               hash
+;               orderedhash
+;               dictionary
 ;               list
 ;            
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -185,6 +187,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
         end
         
+        
         'hash': begin
         
             ; check that the first and last characters of the string are { and }
@@ -220,6 +223,81 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             endif else message, 'Misformed structure string'
             
         end
+    
+    
+        'orderedhash': begin
+        
+            ; check that the first and last characters of the string are { and }
+        
+            spos = strpos(instr,'{')
+            epos = strpos(instr,'}')
+        
+            if spos eq 0 and epos eq strlen(instr)-1 then begin
+            
+                substr = strmid(instr, 1, strlen(instr)-2)
+                
+                extstr = strsplit(substr, ',', /EXTRACT)
+            
+                dim = N_elements(extstr)
+                
+                tmp_labels = list()
+                tmp_values = list()
+                
+                for i = 0, dim-1 do begin
+                
+                    tmpstr = strtrim(extstr[i],2)
+                    
+                    tmpparts = strsplit(tmpstr, ':', /EXTRACT)
+                    
+                    tmp_labels.Add, strtrim(tmpparts[0],2)
+                    tmp_values.Add, wmb_ConvertFromString(tmpparts[1], $
+                                                            'undefined')
+                
+                endfor
+            
+                outval = orderedhash(tmp_labels, tmp_values)
+
+            endif else message, 'Misformed structure string'
+            
+        end
+    
+    
+        'dictionary': begin
+        
+            ; check that the first and last characters of the string are { and }
+        
+            spos = strpos(instr,'{')
+            epos = strpos(instr,'}')
+        
+            if spos eq 0 and epos eq strlen(instr)-1 then begin
+            
+                substr = strmid(instr, 1, strlen(instr)-2)
+                
+                extstr = strsplit(substr, ',', /EXTRACT)
+            
+                dim = N_elements(extstr)
+                
+                tmp_labels = list()
+                tmp_values = list()
+                
+                for i = 0, dim-1 do begin
+                
+                    tmpstr = strtrim(extstr[i],2)
+                    
+                    tmpparts = strsplit(tmpstr, ':', /EXTRACT)
+                    
+                    tmp_labels.Add, strtrim(tmpparts[0],2)
+                    tmp_values.Add, wmb_ConvertFromString(tmpparts[1], $
+                                                            'undefined')
+                
+                endfor
+            
+                outval = dictionary(tmp_labels, tmp_values)
+
+            endif else message, 'Misformed structure string'
+            
+        end
+    
     
         'list': begin
         

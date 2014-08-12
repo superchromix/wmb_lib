@@ -125,39 +125,6 @@ function wmb_clipboard_copy_findlib, libpath
 end
 
 
-function wmb_clipboard_copy_getformatcode, x
-
-    chktype = size(x,/TYPE)
-    
-    outstr = 'A'
-    
-    case chktype of
-    
-        0: 
-        1: outstr = 'I0'
-        2: outstr = 'I0'
-        3: outstr = 'I0'
-        
-        4: outstr = 'G0'
-
-        5: outstr = 'G0'
-        6: 
-        7: outstr = 'A'
-        8: 
-        9: 
-        10: 
-        11: 
-        12: outstr = 'I0'
-        13: outstr = 'I0'
-        14: outstr = 'I0'
-        15: outstr = 'I0'
-
-    end
-
-    return, outstr
-    
-end
-
 
 function wmb_clipboard_copy, indata, force_dll = force_dll
 
@@ -225,7 +192,7 @@ function wmb_clipboard_copy, indata, force_dll = force_dll
             tmpdat_ndim = size(tmpdat,/N_dimensions)
             if tmpdat_ndim ne 0 then return, 0
             
-            tmpfc = wmb_clipboard_copy_getformatcode(tmpdat)
+            tmpfc = wmb_get_formatcode(tmpdat)
             
             if i ne n_struct_tags-1 then begin
             
@@ -269,7 +236,7 @@ function wmb_clipboard_copy, indata, force_dll = force_dll
         endelse
 
         tmpdat = indata[0]
-        tmpfc = wmb_clipboard_copy_getformatcode(tmpdat)
+        tmpfc = wmb_get_formatcode(tmpdat)
     
         ; build a format code for conversion to string type
     
