@@ -1073,7 +1073,7 @@ function wmb_TableWindow::Init, name, $
     
     ; set the default font, and the default size of the table
     
-    if N_elements(font) eq 0 then font = 'Verdana*14'
+    if N_elements(font) eq 0 then font = ''
     if N_elements(xsize) eq 0 then xsize = 750
     if N_elements(ysize) eq 0 then ysize = 400
     
