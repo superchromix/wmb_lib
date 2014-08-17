@@ -30,6 +30,14 @@ function wmb_file_search_up, start_dir, filename
         tmp_filename = strmid(filename,1)
         
     endif else tmp_filename = filename
+
+    if strmid(start_dir,0,2) eq (path_sep() + path_sep()) then begin
+        
+        ; check for a network path at the start of the directory name
+        
+        path_prefix = (path_sep() + path_sep())
+        
+    endif else path_prefix = ''
     
 
     tmp_path = tmp_start_dir + path_sep() + tmp_filename
@@ -56,7 +64,7 @@ function wmb_file_search_up, start_dir, filename
             
         endfor
         
-        search_loc_arr[(n_search_loc-1)-i] = tmploc
+        search_loc_arr[(n_search_loc-1)-i] = path_prefix + tmploc
         
     endfor
 
