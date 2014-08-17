@@ -220,7 +220,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 outval = hash(tmp_labels, tmp_values)
 
-            endif else message, 'Misformed structure string'
+            endif else message, 'Misformed hash string'
             
         end
     
@@ -257,7 +257,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 outval = orderedhash(tmp_labels, tmp_values)
 
-            endif else message, 'Misformed structure string'
+            endif else message, 'Misformed orderedhash string'
             
         end
     
@@ -294,7 +294,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 outval = dictionary(tmp_labels, tmp_values)
 
-            endif else message, 'Misformed structure string'
+            endif else message, 'Misformed dictionary string'
             
         end
     
