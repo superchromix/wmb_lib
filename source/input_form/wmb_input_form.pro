@@ -288,6 +288,10 @@ pro wmb_input_form_align_widgets, centerbase, xpad=xpad, xspace=xspace, $
     pageiocontainer = widget_info(centerbase, $
                                   FIND_BY_UNAME='wmb_if_pageiocontainer')
     
+    widget_control, pageiocontainer, get_uvalue = page_infoptr
+    
+    n_columns = (*page_infoptr).n_columns
+    
     wid_children = widget_info(pageiocontainer, /ALL_CHILDREN)
     
     nchildren = N_elements(wid_children)
@@ -439,6 +443,9 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
     if ~ widgetdef.Haskey('label') then wlabel = '' else $
                                         wlabel = widgetdef['label']
                                         
+    if ~ widgetdef.Haskey('prefixlabel') then prelabel = '' else $
+                                prelabel = widgetdef['prefixlabel']
+                                        
     if ~ widgetdef.Haskey('postfixlabel') then postlabel = '' else $
                                 postlabel = widgetdef['postfixlabel']
     
@@ -446,11 +453,11 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
     
         ; this is a multiline label
         foreach str, wlabel do $
-            prelabel = widget_label(labelcolbase, value=str, font=labelfont)
+            wid_wlabel = widget_label(labelcolbase, value=str, font=labelfont)
             
     endif else begin
     
-        prelabel = widget_label(labelcolbase, value=wlabel, font=labelfont)
+        wid_wlabel = widget_label(labelcolbase, value=wlabel, font=labelfont)
         
     endelse
 
@@ -499,10 +506,11 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                                 xsize = widgetdef['xsize']
        
        
-            oinput   = fsc_inputfield(iorowbase, Title='', $
+            oinput   = fsc_inputfield(iorowbase, Title=prelabel, $
                                       Value=inputdata, $
                                       Longvalue=integertype, $
                                       Doublevalue=doubletype,$
+                                      Decimal = dec_digits, $
                                       Xsize=xsize, $
                                       Fieldfont=fieldfont, $
                                       Name=uname_base, $
@@ -579,6 +587,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                       Value=indat, $
                                       Longvalue=integertype, $
                                       Doublevalue=doubletype,$
+                                      Decimal = dec_digits, $
                                       Xsize=xsize, $
                                       Fieldfont=fieldfont, $
                                       Labelalign=1, $
@@ -603,7 +612,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
               
             tmpxsize = tmpxsize > strlen(inputdata)
             
-            oinput   = fsc_inputfield(iorowbase, Title='', $
+            oinput   = fsc_inputfield(iorowbase, Title=prelabel, $
                                       Value=inputdata, $
                                       Xsize=tmpxsize, $
                                       Fieldfont=fieldfont, $
@@ -778,6 +787,8 @@ pro wmb_input_form_build_io_widgets, pagelayout, containerbase, $
 
     desclabel = pagelayout.description
 
+    n_columns = 1 > pagelayout.n_columns
+
     ; create base to hold the description label
 
     if desclabel ne '' then begin
@@ -789,8 +800,14 @@ pro wmb_input_form_build_io_widgets, pagelayout, containerbase, $
         
     endif
 
+    ; store the number of columns in the pageiocontainer base widget's uvalue
+
+    pageiocontainer_info = {n_columns:n_columns}
+    pageiocontainer_infoptr = ptr_new(pageiocontainer_info)
+
     pageiocontainer = widget_base(containerbase, $
-                                  uname='wmb_if_pageiocontainer')
+                                  uname='wmb_if_pageiocontainer', $
+                                  uvalue=pageiocontainer_infoptr)
         
 
     wkeys = pagelayout.widget_key_list
@@ -855,9 +872,12 @@ end
 ;   of a string, defining the page title, and a list of strings corresponding
 ;   to the widget key names.
 ;   
-;   The widgets are arranged in a form interface, in a single column.  
+;   The widgets are arranged in a form interface, in one ore more columns.  
 ;   At the bottom of the form there are OK and Cancel buttons.  When the 
 ;   widget is closed it returns with output data entries updated.
+;   
+;   When there are more than one column, the widgets are filled into the
+;   form row by row.
 ;   
 ;   The widgets are organized into separate "pages" which are accessed 
 ;   via a dropdown list at the top of the window.
@@ -880,6 +900,7 @@ end
 ;       integertype:    a flag indicating an integer value
 ;       label:          a label string describing the value OR
 ;                       an array of strings (for a multiline label)
+;       prefixlabel:    a label which immediately precedes the input field
 ;       postfixlabel:   a label which follows the input field
 ;       
 ;       format for input and output hash for 'Numeric' type:
@@ -908,6 +929,7 @@ end
 ;       xsize:          the size of the input field in characters
 ;       label:          a label string describing the value OR
 ;                       an array of strings (for a multiline label)
+;       prefixlabel:    a label which immediately precedes the input field
 ;       postfixlabel:   a label which follows the input field
 ;       
 ;       format for input and output hash for 'String' type:
@@ -967,6 +989,7 @@ end
 ;   
 ;   {wmb_input_form_layout, page_title:'', $
 ;                           description:'', $
+;                           n_columns:0, $
 ;                           widget_key_list:list()}
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1011,6 +1034,7 @@ pro wmb_input_form, grpleader, $
             message, 'Data hash must be specified'
 
 
+    
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
