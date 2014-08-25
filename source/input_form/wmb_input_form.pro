@@ -294,112 +294,200 @@ pro wmb_input_form_align_widgets, centerbase, xpad=xpad, xspace=xspace, $
     
     wid_children = widget_info(pageiocontainer, /ALL_CHILDREN)
     
+    ; nchildren is the number of rowcontainerbases contained in the
+    ; pageiocontainer.  each rowcontainerbase contains one label and 
+    ; one io widget.  when n_columns > 1, there are multiple rowcontainer
+    ; bases per row.
+    
     nchildren = N_elements(wid_children)
     
-    ; go through the child widgets to find the largest label widget 
-    ; and the largest I/O widget (in terms of x size).  also make a list 
-    ; of labelbase widget unames.
+    ; how many rows are there?
     
-    max_xsize_label = 0
-    max_xsize_io = 0
-    label_wid_unames = []
+    n_rows = ceil(long(nchildren) / long(n_columns))
     
-    for i = 0, nchildren-1 do begin
+    ; go through the child widgets to make a list of base widget unames
+    ; and sizes
     
-        ; the pageiocontainer contains the rowcontainerbases, which each 
-        ; contain two bases: one for the label and one for the I/O widget
+    wid_base_unames = strarr(n_columns,n_rows)
     
-        wid_uname = widget_info(wid_children[i], /UNAME)
+    label_wid_xsize = lonarr(n_columns,n_rows)
+    label_wid_ysize = lonarr(n_columns,n_rows)
+    
+    io_wid_xsize = lonarr(n_columns,n_rows)
+    io_wid_ysize = lonarr(n_columns,n_rows)
+    
+    for j = 0, n_columns-1 do begin
+    
+        rowindex = 0
+    
+        for i = j, nchildren-1, n_columns do begin
         
-        isrowbase = strpos(wid_uname, '_rowcontainer') ne -1
+            ; the pageiocontainer contains the rowcontainerbases, which each 
+            ; contain two bases: one for the label and one for the I/O widget
         
-        if ~ isrowbase then message, 'Unexpected widget encountered'
-        
-        ; get the size of the label base
-        
-        basename = strmid(wid_uname, 0,  strpos(wid_uname, '_rowcontainer'))
-        label_uname = basename + '_labelbase'
-        
-        labelbase = widget_info(wid_children[i], FIND_BY_UNAME=label_uname)
-        
-        if labelbase ne 0 then begin
-        
-            wgeo = widget_info(labelbase, /GEOMETRY)
-            max_xsize_label = max_xsize_label > wgeo.xsize
-            label_wid_unames = [label_wid_unames, label_uname]
+            wid_uname = widget_info(wid_children[i], /UNAME)
             
-        endif else message, 'Label base not found'
-        
-        ; get the size of the I/O base
-        
-        io_uname = basename + '_iobase'
-        
-        iobase = widget_info(wid_children[i], FIND_BY_UNAME=io_uname)
-        
-        if iobase ne 0 then begin
-        
-            wgeo = widget_info(iobase, /GEOMETRY)
-            max_xsize_io = max_xsize_io > wgeo.xsize
+            isrowbase = strpos(wid_uname, '_rowcontainer') ne -1
             
-        endif else message, 'I/O base not found'
+            if ~ isrowbase then message, 'Unexpected widget encountered'
+            
+            
+            ; get information about the label base
+            
+            basename = strmid(wid_uname, 0,  strpos(wid_uname, '_rowcontainer'))
+            
+            wid_base_unames[j,rowindex] = basename
+            
+            label_uname = basename + '_labelbase'
+            
+            labelbase = widget_info(wid_children[i], FIND_BY_UNAME=label_uname)
+            
+            if labelbase ne 0 then begin
+            
+                wgeo = widget_info(labelbase, /GEOMETRY)
+                xsize_label = wgeo.xsize
+                ysize_label = wgeo.ysize
+                
+                label_wid_xsize[j,rowindex] = xsize_label
+                label_wid_ysize[j,rowindex] = ysize_label
+                
+            endif else message, 'Label base not found'
+            
+            
+            ; get information about the I/O base
+            
+            io_uname = basename + '_iobase'
+            
+            iobase = widget_info(wid_children[i], FIND_BY_UNAME=io_uname)
+            
+            if iobase ne 0 then begin
+            
+                wgeo = widget_info(iobase, /GEOMETRY)
+                xsize_io = wgeo.xsize
+                ysize_io = wgeo.ysize
+                
+                io_wid_xsize[j,rowindex] = xsize_io
+                io_wid_ysize[j,rowindex] = ysize_io
+                
+            endif else message, 'I/O base not found'
+            
+            rowindex = rowindex + 1
+            
+        endfor
     endfor
-
-
-    ; calculate the left edge positions for the two columns
     
-    label_col_xoffset = xpad
-    io_col_xoffset = label_col_xoffset + max_xsize_label + xspace
-
+    ; get the maximum x size of the labels and io bases for each column
     
-    ; now go back though the list and set the xoffset and yoffset positions
-
-    currentypos = ypad
+    max_xsize_label_by_col = max(label_wid_xsize, dimension=2)
+    max_ysize_label_by_row = max(label_wid_ysize, dimension=1)
     
-    foreach val, label_wid_unames do begin
-
-        basename = strmid(val,0,strpos(val,'_labelbase'))
-        ioname = basename + '_iobase'
-        rowbasename = basename + '_rowcontainer'
-     
-        rowbasewid = widget_info(pageiocontainer, FIND_BY_UNAME=rowbasename)
-        labelbasewid = widget_info(pageiocontainer, FIND_BY_UNAME=val)
-        iobasewid = widget_info(pageiocontainer, FIND_BY_UNAME=ioname)
-
-        if iobasewid eq 0 then message, 'Unmatched label widget'
-        if rowbasewid eq 0 then message, 'Unmatched label widget'
+    max_xsize_io_by_col = max(io_wid_xsize, dimension=2)
+    max_ysize_io_by_row = max(io_wid_ysize, dimension=1)
     
-        labelwgeo = widget_info(labelbasewid, /GEOMETRY)
-        iowgeo = widget_info(iobasewid, /GEOMETRY)
-        
-        labelysize = labelwgeo.ysize
-        ioysize = iowgeo.ysize
-        
-        if labelysize gt ioysize then begin
-        
-            label_yoffset = 0
-            io_yoffset = abs((labelysize - ioysize) / 2.0)
-        
-        endif else begin
-        
-            label_yoffset = abs((labelysize - ioysize) / 2.0)
-            io_yoffset = 0
-        
-        endelse
     
-        widget_control, labelbasewid, xoffset = label_col_xoffset, $
-                                      yoffset = label_yoffset
+    ; calculate the left edge positions for the row bases of each
+    ; column, and for the io widgets within each column
+        
+    rowbase_col_xoffset = lonarr(n_columns)
+    io_col_xoffset = lonarr(n_columns)
+        
+    rowbase_col_xoffset[0] = xpad
     
-        widget_control, iobasewid, xoffset = io_col_xoffset, $
-                                   yoffset = io_yoffset
+    io_col_xoffset[0] = max_xsize_label_by_col[0] + xspace
+       
+    if n_columns gt 1 then begin
+       
+        for i = 1, n_columns-1 do begin
+            
+            rowbase_col_xoffset[i] = rowbase_col_xoffset[i-1] + $
+                                     io_col_xoffset[i-1] + $
+                                     max_xsize_io_by_col[i-1] + $
+                                     xspace
+                                   
+            io_col_xoffset[i] = max_xsize_label_by_col[i] + $
+                                xspace
 
-        widget_control, rowbasewid, xoffset = 0, $
-                                yoffset = currentypos, $
-                                xsize = io_col_xoffset + max_xsize_io + xpad, $
-                                map = 1
+        endfor    
+        
+    endif
+    
+    
+    ; calculate the yoffset for each element
+    
+    rowbase_yoffset = lonarr(n_columns, n_rows)
+    label_yoffset = lonarr(n_columns, n_rows)
+    io_yoffset = lonarr(n_columns, n_rows)
+    
+    current_ypos = ypad
+    
+    for i = 0, n_rows-1 do begin
+       
+        rowbase_yoffset[*,i] = current_ypos
+       
+        label_max_ysize = max_ysize_label_by_row[i]
+        io_max_ysize = max_ysize_io_by_row[i]
+        
+        element_max_ysize = label_max_ysize > io_max_ysize
+       
+        for j = 0, n_columns-1 do begin
+            
+            label_ysize = label_wid_ysize[j,i]
+            io_ysize = io_wid_ysize[j,i]
 
-        currentypos = currentypos + yspace + (labelysize > ioysize)
+            label_yoffset[j,i] = abs((label_ysize-element_max_ysize) / 2.0)
+            
+            io_yoffset[j,i] = abs((io_ysize - element_max_ysize) / 2.0)
+                              
+        endfor    
+        
+        current_ypos = current_ypos + element_max_ysize
+        
+    endfor
+    
+    
+    ; place the objects
+    
+    for i = 0, n_rows-1 do begin
+       
+        for j = 0, n_columns-1 do begin
+    
+            basename = wid_base_unames[j,i]
+    
+            rowbasename = basename + '_rowcontainer'
+            ioname = basename + '_iobase'
+            labelname = basename + '_labelbase'
+         
+            rowbasewid = widget_info(pageiocontainer, FIND_BY_UNAME=rowbasename)
+            labelbasewid = widget_info(pageiocontainer, FIND_BY_UNAME=labelname)
+            iobasewid = widget_info(pageiocontainer, FIND_BY_UNAME=ioname)
+    
+            if labelbasewid eq 0 then message, 'Unmatched label widget'
+            if iobasewid eq 0 then message, 'Unmatched label widget'
+            if rowbasewid eq 0 then message, 'Unmatched label widget'
+        
 
-    endforeach
+            tmp_label_xoffset = 0
+            tmp_label_yoffset = label_yoffset[j,i]
+
+            widget_control, labelbasewid, xoffset = tmp_label_xoffset, $
+                                          yoffset = tmp_label_yoffset
+        
+            tmp_io_xoffset = io_col_xoffset[j]
+            tmp_io_yoffset = io_yoffset[j,i]
+        
+            widget_control, iobasewid, xoffset = tmp_io_xoffset, $
+                                       yoffset = tmp_io_yoffset
+    
+            tmp_rowbase_xoffset = rowbase_col_xoffset[j]
+            tmp_rowbase_yoffset = rowbase_yoffset[j,i]
+    
+            widget_control, rowbasewid, xoffset = tmp_rowbase_xoffset, $
+                                        yoffset = tmp_rowbase_yoffset, $
+                                        map = 1
+    
+        endfor
+        
+    endfor
 
 end
 
@@ -1288,6 +1376,41 @@ pro inputformtest_event, event
     def_multinumeric1['label'] = 'Test multinumeric'
     def_multinumeric1['postfixlabel'] = 'nm'
 
+    def_int1a = hash()
+    def_int1a['type'] = 'numeric'
+    def_int1a['integertype'] = 1
+    def_int1a['label'] = 'Test integer'
+    def_int1a['postfixlabel'] = 'nm'
+    
+    def_str1a = hash()
+    def_str1a['type'] = 'string'
+    def_str1a['xsize'] = 20
+    def_str1a['label'] = 'Test string'
+    def_str1a['postfixlabel'] = 'nm'
+    
+    def_flt1a = hash()
+    def_flt1a['type'] = 'numeric'
+    def_flt1a['integertype'] = 0
+    def_flt1a['label'] = ['Test float','(multiline label)']
+    def_flt1a['postfixlabel'] = 'nm'
+    
+    def_int1b = hash()
+    def_int1b['type'] = 'numeric'
+    def_int1b['integertype'] = 1
+    def_int1b['label'] = 'Test integer'
+    def_int1b['postfixlabel'] = 'nm'
+    
+    def_str1b = hash()
+    def_str1b['type'] = 'string'
+    def_str1b['xsize'] = 20
+    def_str1b['label'] = 'Test string'
+    def_str1b['postfixlabel'] = 'nm'
+    
+    def_flt1b = hash()
+    def_flt1b['type'] = 'numeric'
+    def_flt1b['integertype'] = 0
+    def_flt1b['label'] = ['Test float','(multiline label)']
+    def_flt1b['postfixlabel'] = 'nm'
     
     wkeynames = ['testint1', $
                  'testflt1', $
@@ -1297,12 +1420,19 @@ pro inputformtest_event, event
                  'testcb1', $
                  'teststr1', $
                  'testmn1', $
-                 'testvrb1' ]
+                 'testvrb1', $
+                 'testint1a', $
+                 'testflt1a', $
+                 'teststr1a', $
+                 'testint1b', $
+                 'testflt1b', $
+                 'teststr1b']
                  
-    wdef = hash()
+    wdef = orderedhash()
     wdef[wkeynames] = [def_int1, def_flt1, def_dl1, def_dl1, $
                        def_rb1, def_cb1, def_str1, def_multinumeric1, $
-                       def_vrb1]
+                       def_vrb1, def_int1a, def_flt1a, def_str1a, $
+                       def_int1b, def_flt1b, def_str1b]
                        
     inputdat = hash()
     inputdat[wkeynames[0]] = 1
@@ -1314,6 +1444,13 @@ pro inputformtest_event, event
     inputdat[wkeynames[6]] = 'widget test first'
     inputdat[wkeynames[7]] = [1, 1]
     inputdat[wkeynames[8]] = 'first'
+    inputdat[wkeynames[9]] = 1
+    inputdat[wkeynames[10]] = 1.0
+    inputdat[wkeynames[11]] = 'first'
+    inputdat[wkeynames[12]] = 1
+    inputdat[wkeynames[13]] = 1.0
+    inputdat[wkeynames[14]] = 'first'
+    
     
     layout_pg1 = {wmb_input_form_layout}
     layout_pg1.page_title = 'Test this widget page 1'
@@ -1328,8 +1465,17 @@ pro inputformtest_event, event
     wklist2 = list('testdl1', 'testdl2')
     layout_pg2.widget_key_list = wklist2
     
+    layout_pg3 = {wmb_input_form_layout}
+    layout_pg3.page_title = 'This is page 3'
+    layout_pg3.description = 'Here are two columns of widgets'
+    layout_pg3.n_columns = 2
+    wklist3 = list('testint1a','testint1b','testflt1a','testflt1b','teststr1a','teststr1b')
+    layout_pg3.widget_key_list = wklist3
+    
+    
+    
     ; layoutlist = list(layout_pg1)
-    layoutlist = list(layout_pg1,layout_pg2)
+    layoutlist = list(layout_pg1,layout_pg2,layout_pg3)
 
     print, inputdat
 
@@ -1342,7 +1488,7 @@ pro inputformtest_event, event
                            labelfont = labelfont, $
                            fieldfont = fieldfont, $
                            yscroll = 200, $
-                           frame=0
+                           frame=1
                            
     print, inputdat
     
