@@ -13,6 +13,7 @@ pro wmb_input_form_layout__define
                page_title       : '',                 $
                description      : '',                 $
                n_columns        : 0,                  $
+               column_spacing   : 0,                  $
                widget_key_list  : list()              }
                
 end

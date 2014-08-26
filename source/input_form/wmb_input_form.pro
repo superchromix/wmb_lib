@@ -291,6 +291,7 @@ pro wmb_input_form_align_widgets, centerbase, xpad=xpad, xspace=xspace, $
     widget_control, pageiocontainer, get_uvalue = page_infoptr
     
     n_columns = (*page_infoptr).n_columns
+    col_spacing = (*page_infoptr).col_spacing
     
     wid_children = widget_info(pageiocontainer, /ALL_CHILDREN)
     
@@ -402,7 +403,7 @@ pro wmb_input_form_align_widgets, centerbase, xpad=xpad, xspace=xspace, $
             rowbase_col_xoffset[i] = rowbase_col_xoffset[i-1] + $
                                      io_col_xoffset[i-1] + $
                                      max_xsize_io_by_col[i-1] + $
-                                     xspace
+                                     col_spacing
                                    
             io_col_xoffset[i] = max_xsize_label_by_col[i] + $
                                 xspace
@@ -522,7 +523,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
 
     tmpuname = uname_base + '_iobase'
 
-    iorowbase = widget_base(rowcontainerbase, row=1, space=5, $
+    iorowbase = widget_base(rowcontainerbase, row=1, space=0, $
                             /base_align_center, frame=0, $
                             uname=tmpuname)
 
@@ -876,6 +877,7 @@ pro wmb_input_form_build_io_widgets, pagelayout, containerbase, $
     desclabel = pagelayout.description
 
     n_columns = 1 > pagelayout.n_columns
+    col_spacing = 0 > pagelayout.column_spacing
 
     ; create base to hold the description label
 
@@ -888,9 +890,10 @@ pro wmb_input_form_build_io_widgets, pagelayout, containerbase, $
         
     endif
 
-    ; store the number of columns in the pageiocontainer base widget's uvalue
+    ; store the number of columns and the column spacing in the 
+    ; pageiocontainer base widget's uvalue
 
-    pageiocontainer_info = {n_columns:n_columns}
+    pageiocontainer_info = {n_columns:n_columns, col_spacing:col_spacing}
     pageiocontainer_infoptr = ptr_new(pageiocontainer_info)
 
     pageiocontainer = widget_base(containerbase, $
@@ -1469,6 +1472,7 @@ pro inputformtest_event, event
     layout_pg3.page_title = 'This is page 3'
     layout_pg3.description = 'Here are two columns of widgets'
     layout_pg3.n_columns = 2
+    layout_pg3.column_spacing = 10
     wklist3 = list('testint1a','testint1b','testflt1a','testflt1b','teststr1a','teststr1b')
     layout_pg3.widget_key_list = wklist3
     
@@ -1488,7 +1492,7 @@ pro inputformtest_event, event
                            labelfont = labelfont, $
                            fieldfont = fieldfont, $
                            yscroll = 200, $
-                           frame=1
+                           frame=0
                            
     print, inputdat
     
