@@ -377,6 +377,13 @@ pro wmb_input_form_align_widgets, centerbase, xpad=xpad, xspace=xspace, $
         endfor
     endfor
     
+    ; reform the arrays in case we have lost a dimension of length 1
+    
+    label_wid_xsize = reform(label_wid_xsize,n_columns,n_rows)
+    label_wid_ysize = reform(label_wid_ysize,n_columns,n_rows)
+    io_wid_xsize = reform(io_wid_xsize,n_columns,n_rows)
+    io_wid_ysize = reform(io_wid_ysize,n_columns,n_rows)
+    
     ; get the maximum x size of the labels and io bases for each column
     
     max_xsize_label_by_col = max(label_wid_xsize, dimension=2)
