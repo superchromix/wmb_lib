@@ -295,6 +295,77 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
 end
 
 
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Max_Value method
+;
+;   Returns the maximum value in the array.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_VirtualArray::Max_Value
+
+    compile_opt idl2, strictarrsubs
+
+    tmpassoc = self.va_assoc_ptr
+    
+    n_chunks = self.va_nchunks
+    
+    tmpdata = tmpassoc[0]
+    
+    maxvalue = max(tmpdata)
+    
+    if n_chunks gt 1 then begin
+        
+        for i = ulong64(1), n_chunks-1 do begin
+            
+            tmpdata = tmpassoc[i]
+            maxvalue = maxvalue > max(tmpdata)
+            
+        endfor
+
+    endif
+
+    return, maxvalue
+
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Min_Value method
+;
+;   Returns the maximum value in the array.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_VirtualArray::Min_Value
+
+    compile_opt idl2, strictarrsubs
+
+    tmpassoc = self.va_assoc_ptr
+    
+    n_chunks = self.va_nchunks
+    
+    tmpdata = tmpassoc[0]
+    
+    minvalue = min(tmpdata)
+    
+    if n_chunks gt 1 then begin
+        
+        for i = ulong64(1), n_chunks-1 do begin
+            
+            tmpdata = tmpassoc[i]
+            minvalue = minvalue < min(tmpdata)
+            
+        endfor
+
+    endif
+
+    return, minvalue
+
+end
+
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -428,9 +499,9 @@ function wmb_VirtualArray::Init, filename, $
 
     ; check the file size
 
-    tmp_dimproduct = product(tmp_datadims, /integer)
+    datadims_product = product(tmp_datadims, /integer)
     tmp_dtype_size = wmb_sizeoftype(datatype)
-    expected_filesize = (tmp_dimproduct * tmp_dtype_size) + fileoffset_bytes
+    expected_filesize = (datadims_product * tmp_dtype_size) + fileoffset_bytes
     
     if tmp_size lt expected_filesize then begin
         message, 'File size smaller than expected'
@@ -442,7 +513,7 @@ function wmb_VirtualArray::Init, filename, $
     data_rank = N_elements(tmp_datadims)
     
     if (data_rank lt 1) or (data_rank gt 8) or $
-       (tmp_dimproduct eq 0) then begin
+       (datadims_product eq 0) then begin
     
         message, 'Invalid file datatype or dimensions.'
         return, 0
@@ -479,7 +550,7 @@ function wmb_VirtualArray::Init, filename, $
     
     ; is the requested chunksize already a factor?
     
-    if product(tmp_datadims) mod data_chunk_size eq 0 then begin
+    if datadims_product mod data_chunk_size eq 0 then begin
         
         ; the requested chunk size works
         adjusted_data_chunk_size = data_chunk_size
@@ -520,6 +591,9 @@ function wmb_VirtualArray::Init, filename, $
     endif
     
     
+    ; calculate the number of data chunks in the assoc array
+    n_chunks = datadims_product / adjusted_data_chunk_size
+    
     ; create an assoc variable linked to the file, with the appropriate
     ; offset and chunk size
     
@@ -546,6 +620,7 @@ function wmb_VirtualArray::Init, filename, $
     self.va_offset = fileoffset_bytes
     self.va_writeable = chk_write
     self.va_data_chunk_size = adjusted_data_chunk_size
+    self.va_nchunks = n_chunks
     self.va_assoc_ptr = filedata_assoc_ptr
 
 
@@ -648,6 +723,7 @@ pro wmb_VirtualArray__define
                 va_offset             : ulong64(0),   $            
                 va_writeable          : fix(0),       $
                 va_data_chunk_size    : ulong64(0),   $
+                va_nchunks            : ulong64(0),   $
                 va_assoc_ptr          : ptr_new()     }
 
 end
