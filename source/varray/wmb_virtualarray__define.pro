@@ -562,6 +562,8 @@ function wmb_VirtualArray::Init, filename, $
         diff = abs(long64(factors_product)-long64(data_chunk_size))
         index = where(diff eq min(diff))
         
+        if n_elements(index) gt 1 then index = index[0]
+        
         adjusted_data_chunk_size = factors_product[index]
         
     endelse
