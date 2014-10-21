@@ -29,11 +29,11 @@ pro wmb_varray_generate_read_sequence, isrange, $
     ; determine the dimensions of the output array and convert all 
     ; inputs to positive ranges
     
-    read_data_dims = ulon64arr(n_subscripts)
+    read_data_dims = lon64arr(n_subscripts)
     
-    range_start = ulon64arr(n_subscripts)
-    range_end = ulon64arr(n_subscripts)
-    range_stride = ulon64arr(n_subscripts)    
+    range_start = lon64arr(n_subscripts)
+    range_end = lon64arr(n_subscripts)
+    range_stride = lon64arr(n_subscripts)    
     
     range_span_flag = bytarr(n_subscripts)
     
@@ -228,7 +228,7 @@ pro wmb_varray_generate_read_sequence, isrange, $
         endfor
         
 
-        tmp_steplist = ulon64arr(total(output_num_steps,/integer)+1)
+        tmp_steplist = lon64arr(total(output_num_steps,/integer)+1)
         tmp_steplist[0] = first_read_pos
         cnta = 1ULL
         

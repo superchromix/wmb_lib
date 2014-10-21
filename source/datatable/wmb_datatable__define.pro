@@ -905,8 +905,8 @@ pro wmb_DataTable__define
         dt_record_def_ptr           : ptr_new(),           $
         dt_flag_record_def_init     : fix(0),              $
                                                            $
-        dt_nfields                  : ulong64(0),          $
-        dt_nrecords                 : ulong64(0),          $
+        dt_nfields                  : long64(0),           $
+        dt_nrecords                 : long64(0),           $
                                                            $                                                  
         dt_dataptr                  : ptr_new(),           $
                                                            $

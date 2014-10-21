@@ -29,14 +29,14 @@ function wmb_VirtualArray::Rangevalid, range, $
     
     chkdim = arr_dims[dimension_index]
     
-    rangestart = range[0]
+    rangestart = long64(range[0])
     if rangestart lt 0 then rangestart = rangestart + chkdim
-    rangeend = range[1]
+    rangeend = long64(range[1])
     if rangeend lt 0 then rangeend = rangeend + chkdim
-    rangestride = range[2]
+    rangestride = long64(range[2])
 
-    minrange = 0L
-    maxrange = chkdim - 1L
+    minrange = 0LL
+    maxrange = chkdim - 1LL
     
     maxstride = abs(rangeend-rangestart) > 1
     minstride = -maxstride
@@ -82,11 +82,11 @@ function wmb_VirtualArray::Indexvalid, index, $
     
     chkdim = arr_dims[dimension_index]
     
-    test_index = index
+    test_index = long64(index)
     if test_index lt 0 then test_index = test_index + chkdim
     
-    minrange = 0L
-    maxrange = chkdim - 1L
+    minrange = 0LL
+    maxrange = chkdim - 1LL
     
     chkpass = 1
     
@@ -317,7 +317,7 @@ function wmb_VirtualArray::Max_Value
     
     if n_chunks gt 1 then begin
         
-        for i = ulong64(1), n_chunks-1 do begin
+        for i = long64(1), n_chunks-1 do begin
             
             tmpdata = tmpassoc[i]
             maxvalue = maxvalue > max(tmpdata)
@@ -353,7 +353,7 @@ function wmb_VirtualArray::Min_Value
     
     if n_chunks gt 1 then begin
         
-        for i = ulong64(1), n_chunks-1 do begin
+        for i = long64(1), n_chunks-1 do begin
             
             tmpdata = tmpassoc[i]
             minvalue = minvalue < min(tmpdata)
@@ -459,19 +459,19 @@ function wmb_VirtualArray::Init, filename, $
         
         ; this sets the default file read chunk size (bytes)
         
-        chunksize_bytes = 524288L     ; 512KB
+        chunksize_bytes = 524288LL     ; 512KB
         
     endif
     
-    tmp_chunksize_bytes = ulong64(chunksize_bytes)
+    tmp_chunksize_bytes = long64(chunksize_bytes)
 
     if N_elements(fileoffset_bytes) eq 0 then fileoffset_bytes = 0
     if N_elements(fileswapendian) eq 0 then fileswapendian = 0
 
 
-    ; convert the data dims to ulong64
+    ; convert the data dims to long64
     
-    tmp_datadims = ulong64(datadims)
+    tmp_datadims = long64(datadims)
 
     ; check that the datatype is compatible
 
@@ -530,7 +530,7 @@ function wmb_VirtualArray::Init, filename, $
         ; make a list of the prime factors of the data size
         
         tmpdim = tmp_datadims[i]
-        tmpfactors = ulong64(wmb_factors(tmpdim))
+        tmpfactors = long64(wmb_factors(tmpdim))
         
         data_size_prime_factors = [data_size_prime_factors, tmpfactors]
         
@@ -546,7 +546,7 @@ function wmb_VirtualArray::Init, filename, $
 
     ; calculate the chunk size in units of the data type
     
-    data_chunk_size = (tmp_chunksize_bytes / tmp_dtype_size) > 1ULL
+    data_chunk_size = (tmp_chunksize_bytes / tmp_dtype_size) > 1LL
     
     ; is the requested chunksize already a factor?
     
@@ -722,10 +722,10 @@ pro wmb_VirtualArray__define
                                                       $
                 va_filename           : '',           $
                 va_lun                : fix(0),       $               
-                va_offset             : ulong64(0),   $            
+                va_offset             : long64(0),    $            
                 va_writeable          : fix(0),       $
-                va_data_chunk_size    : ulong64(0),   $
-                va_nchunks            : ulong64(0),   $
+                va_data_chunk_size    : long64(0),    $
+                va_nchunks            : long64(0),    $
                 va_assoc_ptr          : ptr_new()     }
 
 end
