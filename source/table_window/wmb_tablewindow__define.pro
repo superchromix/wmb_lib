@@ -117,14 +117,14 @@ pro wmb_TableWindow::Event_Handler, event
     if (tag_names(event, /structure_name) eq 'WIDGET_TIMER') then begin
     
         self -> Housekeeping
-        widget_control, event.id, timer=1
+        ;widget_control, event.id, timer=1
     
     endif
 
 
-;    print, 'Event type:' + tag_names(event, /structure_name)
-;    print, 'Tag names:', tag_names(event)
-;    print, event
+    print, 'Event type:' + tag_names(event, /structure_name)
+    print, 'Tag names:', tag_names(event)
+    print, event
 
     ; quit the program
     if self.flag_quit then widget_control, event.top, /destroy
@@ -793,6 +793,7 @@ pro wmb_TableWindow::GUI_Init
                  ROW_MAJOR = row_major, $
                  COLUMN_MAJOR = col_major, $
                  /RESIZEABLE_COLUMNS, $
+                 /CONTEXT_EVENTS, $
                  /ALL_EVENTS)
 
 
@@ -806,7 +807,7 @@ pro wmb_TableWindow::GUI_Init
     
     col_widths = widget_info(table_id, /COLUMN_WIDTHS)
 
-    if has_col_headers eq 1 then begin
+    if has_col_headers eq 1 and has_col_labels eq 1 then begin
         
         new_col_widths = col_widths
         
@@ -1316,7 +1317,7 @@ pro testtable
 
     otable = obj_new('wmb_TableWindow','mark2', $
                      new_inputdat, $
-                     col_labels = col_labels, $
+                    $; col_labels = col_labels, $
                      window_title='Employees', $
                      bg_stripes = 1)
 
