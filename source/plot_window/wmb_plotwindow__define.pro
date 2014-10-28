@@ -625,7 +625,7 @@ pro wmb_PlotWindow::SetProperty
 
     compile_opt idl2, strictarrsubs
 
-
+    
 
 end
 
@@ -1080,40 +1080,17 @@ end
 
 pro test_wmb_plotwin
 
-    inputdat = {name:'',age:1L,sex:''}
-    
-    inputdat = replicate(inputdat, 10)
-    
-    col_labels = ['Name','Age long long long header','Testing very long column headers']
-    
-    tmp_names = ['peter','paul','mark','luke','john', $
-                 'mary','kevin','james','harold','tim']
-                          
-    tmp_ages = indgen(10) + 30
-    
-    for i = 0, 9 do begin
-    
-        inputdat[i].name = tmp_names[i]
-        inputdat[i].age = tmp_ages[i]
-        inputdat[i].sex = 'M'
-        if i eq 5 then inputdat[i].sex = 'F'
-    
-    endfor
+    xdata = indgen(100)
+    ydata = sin(xdata*!pi/20.0)
 
-    new_inputdat = []
-    
-    for i = 0, 9 do new_inputdat = [new_inputdat, inputdat]
-
-    clabels = ['X Pixels','Y Pixels', 'Photons per pixel']
-    dat = [{xpix:0,ypix:0,opeperadu:0.0}]
-    dat[0].xpix = 512
-    dat[0].ypix = 512
-    dat[0].opeperadu = 12.3
-
-    otable = obj_new('wmb_PlotWindow','mark2', $
-                     new_inputdat, $
-                    $; col_labels = col_labels, $
-                     window_title='Employees', $
-                     bg_stripes = 1)
+    bb=obj_new('wmb_plotwindow', $
+               'testwin', $
+                xdata, $
+                ydata, $
+                xsize=600, $
+                ysize=300, $
+                font_size=12, $
+                font_style=0, $
+                font_name='Courier')
 
 end
