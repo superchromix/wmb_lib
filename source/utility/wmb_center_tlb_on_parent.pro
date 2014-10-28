@@ -8,12 +8,14 @@
 pro wmb_center_tlb_on_parent, tlb, $
                               grpleader, $
                               xoffset = in_xoff, $
-                              yoffset = in_yoff
+                              yoffset = in_yoff, $
+                              align_top_right = align_top_right
 
     compile_opt idl2, strictarrsubs
 
     if N_elements(in_xoff) eq 0 then in_xoff = 0
     if N_elements(in_yoff) eq 0 then in_yoff = 0
+    if N_elements(align_top_right) eq 0 then align_top_right = 0
 
     if widget_info(tlb, /valid_id) eq 0 then begin
 
@@ -49,6 +51,17 @@ pro wmb_center_tlb_on_parent, tlb, $
 
     calc_xoff = 0 > newtlbxoff 
     calc_yoff = 0 > newtlbyoff 
+
+
+    if align_top_right eq 1 then begin
+        
+        gl_x_tr = gl_xoff + gl_xsize
+        gl_y_tr = gl_yoff
+        
+        newtlbxoff = gl_x_tr
+        newtlbyoff = gl_y_tr
+        
+    endif
     
     ; set the offsets
     widget_control, tlb, xoffset = calc_xoff + in_xoff, $
