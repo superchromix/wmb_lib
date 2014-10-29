@@ -482,7 +482,7 @@ pro wmb_PlotWindow::Evt_File, event
             
             ; get a save file name
             
-            cur_path = self.stat_currentpath
+            cur_path = self.stat_current_path
             wtitle = self.stat_wtitle
             
             default_fn = wtitle+'.png'
@@ -577,15 +577,44 @@ end
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_PlotWindow::PlotSetProperty, _Extra=extra
+pro wmb_PlotWindow::PlotSetProperty, title = title, $
+                                     _Extra=extra
 
     compile_opt idl2, strictarrsubs
+
+    plot_obj = self.orf_plot
+
+
+    ; override the setting of the title property in order to 
+    ; correct for a bug that result in the plot title having the 
+    ; wrong font and font color.
+
+    if N_elements(title) ne 0 then begin
+        
+        ; this is only valid if it is the first time we are setting
+        ; the title property
+        
+        if ~obj_valid(plot_obj.title) then begin
+            
+            fname = plot_obj.font_name
+            fcolor = plot_obj.font_color
+            
+            plot_obj.title = title
+            titleobj = plot_obj.title
+
+            plot_obj.font_name = fname
+            plot_obj.font_color = fcolor
+
+            titleobj.font_name = fname
+            titleobj.font_color = fcolor
+            
+        endif
+        
+    endif
 
 
     ; Set properties of the plot object
 
-    plot_obj = self.orf_plot
-    
     plot_obj -> SetProperty, _Extra=extra
 
 end
@@ -614,19 +643,41 @@ end
 
 
 
-
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
 ;   This is the SetProperty method
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_PlotWindow::SetProperty
+pro wmb_PlotWindow::SetProperty, tlb_xoffset = tlb_xoffset, $
+                                 tlb_yoffset = tlb_yoffset
 
     compile_opt idl2, strictarrsubs
 
-    
+    if N_elements(tlb_xoffset) ne 0 and N_elements(tlb_yoffset) ne 0 then begin
+        
+        tlb = self.wid_tlb
+        
+        widget_control, tlb, tlb_set_xoffset = tlb_xoffset, $
+                             tlb_set_yoffset = tlb_yoffset
+        
+    endif else begin
 
+        if N_elements(tlb_xoffset) ne 0 then begin
+            
+            tlb = self.wid_tlb
+            widget_control, tlb, tlb_set_xoffset = tlb_xoffset
+            
+        endif
+    
+        if N_elements(tlb_yoffset) ne 0 then begin
+            
+            tlb = self.wid_tlb
+            widget_control, tlb, tlb_set_yoffset = tlb_yoffset
+            
+        endif
+        
+    endelse
 end
 
 
@@ -638,16 +689,17 @@ end
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 pro wmb_PlotWindow::GetProperty, wid_tlb = wid_tlb, $
+                                 plot_obj = plot_obj, $
                                  pw_request_list = pw_request_list
                                 
     compile_opt idl2, strictarrsubs
 
     if Arg_present(wid_tlb) ne 0 then wid_tlb = self.wid_tlb
     
+    if Arg_present(plot_obj) ne 0 then plot_obj = self.orf_plot
+    
     if Arg_present(pw_request_list) ne 0 then $
                                     pw_request_list = self.request_list
-    
-    
     
 end
 
@@ -661,21 +713,20 @@ end
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_PlotWindow::GUI_Init, _Extra=extra
+pro wmb_PlotWindow::GUI_Init, xdata, $
+                              ydata, $
+                              tlb_xoffset, $
+                              tlb_yoffset, $
+                              _Extra=extra
  
     compile_opt idl2, strictarrsubs
  
-
     xsize = self.con_win_default_xsize
     ysize = self.con_win_default_ysize
     
-    tlb_offset = self.stat_tlb_offset
+    chk_center_tlb = 0
     
-    xdata = *self.xdata_ptr
-    ydata = *self.ydata_ptr
-
-
-    if min(tlb_offset) lt 0 then begin
+    if min([tlb_xoffset,tlb_yoffset]) lt 0 then begin
         
         ; if tlb_offset is initialized to a value of [-1,-1] then 
         ; we will simply center the base on the screen        
@@ -692,8 +743,8 @@ pro wmb_PlotWindow::GUI_Init, _Extra=extra
 
     tlb = widget_base(mbar=mbar, $
                       title=self.stat_wtitle, $
-                      xoffset=tlb_offset[0], $
-                      yoffset=tlb_offset[1], $
+                      xoffset=tlb_xoffset, $
+                      yoffset=tlb_yoffset, $
                       uname=self.name, $
                       uvalue={Object:self, Method:'evt_tlb', Source:'tlb'}, $
                       MAP=0, $
@@ -756,17 +807,42 @@ pro wmb_PlotWindow::GUI_Init, _Extra=extra
     
     win_obj.SetCurrent
     
+    ; note that all of the default keyword value specified below may be 
+    ; overridden by the _Extra keyword.
+    
+    def_font = 'Courier'
+    def_color = [255,255,255]
+    
     plot_obj = plot(xdata, $
                     ydata, $
                     /CURRENT, $
                     antialias=1, $
-                    color = [255,255,255], $
-                    xcolor = [255,255,255], $
-                    ycolor = [255,255,255], $
-                    font_color = [255,255,255], $
-                    sym_color = [255,255,255], $
-                    sym_fill_color = [255,255,255], $
+                    window_title = self.stat_wtitle, $
+                    color = def_color, $
+                    xcolor = def_color, $
+                    ycolor = def_color, $
+                    font_color = def_color, $
+                    sym_color = def_color, $
+                    sym_fill_color = def_color, $
+                    font_name = def_font, $
                     _Extra=extra)
+
+
+    ; handle the plot font title bug
+    
+    titleobj = plot_obj.title
+    if obj_valid(titleobj) then begin
+
+        ; the plot title was specified during plot creation
+        
+        fname = plot_obj.font_name
+        fcolor = plot_obj.font_color
+        titleobj.font_name = fname
+        titleobj.font_color = fcolor
+        
+    endif
+    
+
 
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -831,6 +907,9 @@ end
 ;
 ;   This is the INIT method
 ;
+;   NOTE THAT EXTRA KEYWORDS ARE PASSED TO THE PLOT OBJECT WHEN 
+;   IT IS CREATED
+;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 function wmb_PlotWindow::Init, name, $
@@ -840,7 +919,8 @@ function wmb_PlotWindow::Init, name, $
                                ysize=ysize, $
                                window_title = window_title, $
                                current_path = current_path, $
-                               tlb_offset = tlb_offset, $
+                               tlb_xoffset = tlb_xoffset, $
+                               tlb_yoffset = tlb_yoffset, $
                                _Extra=extra
 
                                
@@ -910,16 +990,14 @@ function wmb_PlotWindow::Init, name, $
     endelse
 
 
-
     ; set the default font, and the default size of the table
     
-    if N_elements(x_axis_label) eq 0 then x_axis_label = ''
-    if N_elements(y_axis_label) eq 0 then y_axis_label = ''
-    if N_elements(xsize) eq 0 then xsize = 400
-    if N_elements(ysize) eq 0 then ysize = 300
+    if N_elements(xsize) eq 0 then xsize = 525
+    if N_elements(ysize) eq 0 then ysize = 280
     if N_elements(window_title) eq 0 then window_title = 'Plot window'
     if N_elements(current_path) eq 0 then current_path = ''
-    if N_elements(tlb_offset) ne 2 then tlb_offset = long([-1,-1])
+    if N_elements(tlb_xoffset) eq 0 then tlb_xoffset = -1
+    if N_elements(tlb_yoffset) eq 0 then tlb_yoffset = -1
 
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -948,12 +1026,8 @@ function wmb_PlotWindow::Init, name, $
     
 
     self.name = name
-    self.xdata_ptr = ptr_new(xdata)
-    self.ydata_ptr = ptr_new(ydata)
-    self.xdata_type = size(xdata,/TYPE)
-    self.stat_wtitle  = window_title
+    self.stat_wtitle = window_title
     self.stat_current_path = current_path
-    self.stat_tlb_offset = tlb_offset
     self.con_win_default_xsize = xsize
     self.con_win_default_ysize = ysize
     self.con_tlb_minxsize  = tlb_minxsize
@@ -973,7 +1047,7 @@ function wmb_PlotWindow::Init, name, $
     ; by passing extra keywords to the GUI_init method, we can initialize
     ; additional plot parameters
     
-    self -> GUI_Init, _Extra=extra
+    self -> GUI_Init, xdata, ydata, tlb_xoffset, tlb_yoffset, _Extra=extra
 
     self -> Context_menu_init
 
@@ -1042,11 +1116,7 @@ pro wmb_PlotWindow__define
                      wid_tlb                     : long(0),    $
                      wid_window                  : long(0),    $
                      orf_window                  : obj_new(),  $
-                     orf_plot                    : obj_new(),  $
-                                                               $
-                     xdata_ptr                   : ptr_new(),  $
-                     ydata_ptr                   : ptr_new(),  $
-                     xdata_type                  : 0,          $                                          
+                     orf_plot                    : obj_new(),  $                                        
                                                                $
                      con_win_default_xsize       : 0,          $
                      con_win_default_ysize       : 0,          $
@@ -1060,7 +1130,6 @@ pro wmb_PlotWindow__define
                      stat_current_path           : '',         $
                      stat_tlb_xsize              : 0,          $
                      stat_tlb_ysize              : 0,          $
-                     stat_tlb_offset             : lonarr(2),  $
                      stat_win_xsize              : 0,          $
                      stat_win_ysize              : 0,          $
                                                                $
