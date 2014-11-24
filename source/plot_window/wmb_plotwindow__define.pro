@@ -159,8 +159,6 @@ pro wmb_PlotWindow::Handle_Requests
                 self.flag_redraw_request = 1
             
             end
-            
-        
 
         endcase
 
@@ -1148,7 +1146,7 @@ end
 
 
 
-pro test_wmb_plotwin
+pro test_wmb_plotwin, plot_obj = bb
 
     xdata = indgen(100)
     ydata = sin(xdata*!pi/20.0)
