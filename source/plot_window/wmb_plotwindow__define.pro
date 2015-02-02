@@ -1140,7 +1140,7 @@ pro wmb_PlotWindow__define
                      flag_context_menu_enabled   : 0,          $
                      flag_quit                   : 0,          $
                                                                $
-                     request_list                : list()      }
+                     request_list                : obj_new()  }
 
 end
 

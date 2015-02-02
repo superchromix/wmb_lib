@@ -14,6 +14,6 @@ pro wmb_input_form_layout__define
                description      : '',                 $
                n_columns        : 0,                  $
                column_spacing   : 0,                  $
-               widget_key_list  : list()              }
+               widget_key_list  : obj_new()           }
                
 end

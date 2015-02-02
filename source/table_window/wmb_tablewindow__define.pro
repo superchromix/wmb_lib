@@ -1476,7 +1476,7 @@ pro wmb_TableWindow__define
                      flag_bg_stripes             : 0,          $
                      flag_quit                   : 0,          $
                                                                $
-                     request_list                : list()      }
+                     request_list                : obj_new()   }
 
 end
 
