@@ -380,7 +380,6 @@ pro wmb_VirtualArray::SetProperty, _Extra=extra
 
     ; pass extra keywords
 
-    self->IDL_Object::SetProperty, _Extra=extra
 
 end
 
@@ -408,8 +407,7 @@ pro wmb_VirtualArray::GetProperty,  filename=filename, $
     
     
     ; pass extra keywords
-
-    self->IDL_Object::GetProperty, _Extra=extra
+    
     
 end
 
