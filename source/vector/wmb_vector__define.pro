@@ -154,31 +154,41 @@ end
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_Vector::Append, input
+pro wmb_Vector::Append, indata, no_copy=no_copy
 
     compile_opt idl2, strictarrsubs
 
+
+    ; handle the NOCOPY keyword
+
+    if nocopy eq 0 then nocopy_input = indata $
+                   else nocopy_input = temporary(indata)
+
+
     datatype = self.vec_type
-    current_size = self.vec_size
+    current_data_length = self.vec_size
     current_capacity = self.vec_capacity
     
-    if size(input,/type) ne datatype then message, 'Invalid input data type'
+    
+    if size(nocopy_input,/type) ne datatype then $
+        message, 'Invalid input data type'
+    
     
     ; are we appending an array or a single element?
     
-    input_length = n_elements(input)
+    input_length = n_elements(nocopy_input)
     
     
     ; check if the data will fit within the existing capacity, and expand
     ; the vector if necessary
     
-    space_avail = current_capacity - current_size
+    space_avail = current_capacity - current_data_length
     
     if input_length gt space_avail then begin
         
         ; determine the new array size
 
-        required_increase = input_length-space_avail
+        required_increase = input_length - space_avail
 
         if self.vec_exp_growth_flag eq 0 then begin
             
@@ -211,7 +221,71 @@ pro wmb_Vector::Append, input
 
         endelse
 
-        new_array_size = current_size + current_delta
+        new_array_size = current_capacity + current_delta
+
+
+        ; create the new array
+
+        if datatype eq 8 then begin
+            
+            new_array = replicate(*self.vec_struct_def, new_array_size)
+            
+        endif else begin
+            
+            new_array = make_array(new_array_size, TYPE=datatype, /NOZERO)
+            
+        endelse
+
+        
+        ; transfer the existing data
+        
+        tmp_data = temporary(*self.vec_data)
+        ptr_free, self.vec_data
+        new_array[0] = temporary(tmp_data)
+        
+        
+        ; update the vector parameters
+        
+        self.vec_capacity = new_array_size
+        self.vec_data = ptr_new(new_array, /NO_COPY)
+        
+    endif
+
+
+    ; append the input data to the vector
+    
+    tmp_data = temporary(*self.vec_data)
+    ptr_free, self.vec_data
+    tmp_data[self.vec_size] = temporary(nocopy_input)
+    
+    self.vec_data = ptr_new(tmp_data, /NO_COPY)
+    self.vec_size = self.vec_size + input_length
+
+end
+
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Consolidate method
+;
+;   Adjusts the size of the array to fit the data exactly.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_Vector::Consolidate, input
+
+    compile_opt idl2, strictarrsubs
+
+    datatype = self.vec_type
+    current_data_length = self.vec_size
+    current_capacity = self.vec_capacity
+    
+    
+    if current_data_length ne current_capacity then begin
+        
+        
+        new_array_size = current_data_length
 
 
         ; create the new array
@@ -239,20 +313,10 @@ pro wmb_Vector::Append, input
         self.vec_capacity = new_array_size
         self.vec_data = ptr_new(new_array, /NO_COPY)
         
+        
     endif
 
-
-    ; append the input data to the vector
-    
-    tmp_data = temporary(*self.vec_data)
-    ptr_free, self.vec_data
-    tmp_data[self.vec_size] = input
-    self.vec_data = ptr_new(tmp_data, /NO_COPY)
-    
-    self.vec_size = self.vec_size + input_length
-
 end
-
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -267,7 +331,6 @@ pro wmb_Vector::SetProperty, _Extra=extra
 
     ; pass extra keywords
 
-    self->IDL_Object::SetProperty, _Extra=extra
 
 end
 
@@ -295,8 +358,7 @@ pro wmb_Vector::GetProperty,  size=size, $
     
     ; pass extra keywords
 
-    self->IDL_Object::GetProperty, _Extra=extra
-    
+
 end
 
 
@@ -334,7 +396,7 @@ function wmb_Vector::Init, datatype = datatype, $
         
         ; this sets the default initial capacity
         
-        initial_capacity = 1000
+        initial_capacity = 10000
         
     endif
 
@@ -344,6 +406,8 @@ function wmb_Vector::Init, datatype = datatype, $
     if N_elements(double_capacity_if_full) eq 0 then double_capacity_if_full=0
 
     if N_elements(structure_type_def) eq 0 then begin
+        
+        if datatype eq 8 then message, 'Missing structure type definition'
         
         structure_type_def = {}
 
@@ -371,6 +435,7 @@ function wmb_Vector::Init, datatype = datatype, $
         tmp_data = make_array(initial_capacity, TYPE=datatype, /NOZERO)
         
     endelse
+
 
 
     self.vec_size = 0
@@ -458,73 +523,44 @@ pro wmb_Vector__define
                 vec_init_capacity     : ulong64(0),   $
                 vec_exp_growth_flag   : 0             }
 
-
 end
+
 
 
 pro wmb_vector_test
 
-
     ; test data
     
-    nelts = 1000
+    nelts = 10
     
     mystruct = {first:0L, second:0L, third:0.0D}
 
     mydata = replicate(mystruct, nelts)
 
+    mydata.first = indgen(nelts)
+    mydata.second = indgen(nelts)
+    mydata.third = indgen(nelts)
+    
     ; create a new vector
     
     myvector = obj_new('wmb_vector', datatype=8, $
                                      structure_type_def = mystruct, $
-                                     initial_capacity = 10000, $
+                                     initial_capacity = 3, $
                                      double_capacity_if_full = 1)
 
-    mylist = list()
 
     ; write
-
-    ;tic, /PROFILER
     
-    for i = 0, 1000 do begin
+    for i = 0, 10 do begin
         
         myvector.Append, mydata
         
     endfor
 
-    ;toc
+    print, myvector.capacity
     
-    ;tic, /PROFILER
-    
-    for i = 0, 1000 do begin
-        
-        mylist.Add, mydata, /EXTRACT
-        
-    endfor
-    
-    ;toc
+    print, myvector[*]
 
-    ; read
+    print, N_elements(myvector[*])
     
-    ;tic, /PROFILER
-    
-    for i = 0, 100 do begin
-        
-        mydata = myvector[10000:50000]
-        
-    endfor
-
-    ;toc
-    
-    ;tic, /PROFILER
-    
-    for i = 0, 100 do begin
-        
-        tmplist = mylist[10000:50000]
-        mydata = tmplist.ToArray()
-        
-    endfor
-    
-    ;toc
-
 end
