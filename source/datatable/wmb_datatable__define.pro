@@ -165,13 +165,15 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
         
         ; get the data from memory
         
+        datavector = self.dt_datavector
+        
         if chk_range eq 1 then begin
         
-            databuffer = (*self.dt_dataptr)[startrecord:endrecord:stride]
+            databuffer = datavector[startrecord:endrecord:stride]
         
         endif else begin
             
-            databuffer = (*self.dt_dataptr)[startrecord]
+            databuffer = datavector[startrecord]
             
         endelse
         
@@ -295,7 +297,19 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
         
         if self.dt_flag_table_empty then begin
 
-            self.dt_dataptr = ptr_new(tmp_indata, /NO_COPY)
+            ; create the datavector object
+            
+            recdef = self.dt_record_def_ptr
+            
+            datavector = obj_new('wmb_vector', $
+                                 datatype=8, $
+                                 structure_type_def=recdef, $
+                                 initial_capacity = 10000, $           
+                                 double_capacity_if_full = 1)
+                                   
+            datavector.Append, tmp_indata, /NO_COPY
+            
+            self.dt_datavector = datavector
             self.dt_nrecords = tmp_nrecords
             self.dt_flag_table_empty = 0
             
@@ -303,14 +317,10 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
         
             ; add the new records to memory
             
-            tmpdat = temporary(*(self.dt_dataptr))
-            ptr_free, self.dt_dataptr
-            newdat = [temporary(tmpdat),temporary(tmp_indata)]
+            datavector = self.dt_datavector
+            datavector.Append, tmp_indata, /NO_COPY
             
-            self.dt_nrecords = N_elements(newdat)
-
-            ; note that newdat is undefined after this call
-            self.dt_dataptr = ptr_new(newdat, /NO_COPY)
+            self.dt_nrecords = datavector.size
 
         endelse
         
@@ -700,7 +710,6 @@ pro wmb_DataTable::GetProperty,  recorddef = recorddef, $
     
     ; pass extra keywords
 
-    self->IDL_Object::GetProperty, _Extra=extra
     
 end
 
@@ -790,7 +799,7 @@ function wmb_DataTable::Init, Indata=indata, $
     self.dt_nfields                = 0
     self.dt_nrecords               = 0
     
-    self.dt_dataptr                = ptr_new()
+    self.dt_datavector             = obj_new()
   
     self.dt_flag_vtable            = 0L
     self.dt_vtable_open            = 0
@@ -856,7 +865,8 @@ pro wmb_DataTable::Cleanup
     compile_opt idl2, strictarrsubs
 
     ptr_free, self.dt_record_def_ptr
-    ptr_free, self.dt_dataptr
+    
+    if obj_valid(self.dt_datavector) then obj_destroy, self.dt_datavector
     
     if self.dt_flag_vtable && self.dt_vtable_open then begin
         
@@ -904,7 +914,7 @@ pro wmb_DataTable__define
         dt_nfields                  : long64(0),           $
         dt_nrecords                 : long64(0),           $
                                                            $                                                  
-        dt_dataptr                  : ptr_new(),           $
+        dt_datavector               : obj_new(),           $
                                                            $
         dt_flag_vtable              : fix(0),              $
         dt_vtable_filename          : '',                  $
