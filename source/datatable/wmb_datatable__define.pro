@@ -22,20 +22,18 @@ function wmb_DataTable::Rangevalid, range, positive_range=positive_range
     maxstride = abs(rangeend-rangestart) > 1
     minstride = -maxstride
 
-    chkpass = 1
+    if (rangestart lt minrange) or (rangestart gt maxrange) then return, 0
+    if (rangeend lt minrange) or (rangeend gt maxrange) then return, 0
     
-    if (rangestart lt minrange) or (rangestart gt maxrange) then chkpass = 0
-    if (rangeend lt minrange) or (rangeend gt maxrange) then chkpass = 0
+    if (rangestride eq 0) then return, 0
+    if (rangestride lt minstride) or (rangestride gt maxstride) then return, 0
     
-    if (rangestride eq 0) then chkpass=0
-    if (rangestride lt minstride) or (rangestride gt maxstride) then chkpass = 0
-    
-    if (rangestart lt rangeend) and (rangestride lt 0) then chkpass = 0
-    if (rangestart gt rangeend) and (rangestride gt 0) then chkpass = 0 
+    if (rangestart lt rangeend) and (rangestride lt 0) then return, 0
+    if (rangestart gt rangeend) and (rangestride gt 0) then return, 0
 
     positive_range = [rangestart,rangeend,rangestride]
 
-    return, chkpass
+    return, 1
 
 end
 
@@ -52,13 +50,11 @@ function wmb_DataTable::Indexvalid, index, positive_index = positive_index
     minrange = 0L
     maxrange = chkdim - 1L
     
-    chkpass = 1
-    
-    if (test_index lt minrange) or (test_index gt maxrange) then chkpass = 0
+    if (test_index lt minrange) or (test_index gt maxrange) then return, 0
     
     positive_index = test_index
     
-    return, chkpass
+    return, 1
     
 end
 
