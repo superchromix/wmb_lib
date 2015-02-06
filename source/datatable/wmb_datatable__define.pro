@@ -1,62 +1,10 @@
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-;   Helper methods for testing valid indices and ranges
+;   wmb_DataTable object class
+;
+;   This file defines the wmb_DataTable object class.
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-function wmb_DataTable::Rangevalid, range, positive_range=positive_range
-
-    compile_opt idl2, strictarrsubs
-        
-    chkdim = self.dt_nrecords
-    
-    rangestart = range[0]
-    if rangestart lt 0 then rangestart = rangestart + chkdim
-    rangeend = range[1]
-    if rangeend lt 0 then rangeend = rangeend + chkdim
-    rangestride = range[2]
-
-    minrange = 0L
-    maxrange = chkdim - 1L
-    
-    maxstride = abs(rangeend-rangestart) > 1
-    minstride = -maxstride
-
-    if (rangestart lt minrange) or (rangestart gt maxrange) then return, 0
-    if (rangeend lt minrange) or (rangeend gt maxrange) then return, 0
-    
-    if (rangestride eq 0) then return, 0
-    if (rangestride lt minstride) or (rangestride gt maxstride) then return, 0
-    
-    if (rangestart lt rangeend) and (rangestride lt 0) then return, 0
-    if (rangestart gt rangeend) and (rangestride gt 0) then return, 0
-
-    positive_range = [rangestart,rangeend,rangestride]
-
-    return, 1
-
-end
-
-
-function wmb_DataTable::Indexvalid, index, positive_index = positive_index
-
-    compile_opt idl2, strictarrsubs
-
-    chkdim = self.dt_nrecords
-    
-    test_index = index
-    if test_index lt 0 then test_index = test_index + chkdim
-    
-    minrange = 0L
-    maxrange = chkdim - 1L
-    
-    if (test_index lt minrange) or (test_index gt maxrange) then return, 0
-    
-    positive_index = test_index
-    
-    return, 1
-    
-end
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -91,19 +39,25 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
 
     chk_range = isRange[0]
 
+    if chk_range eq 0 and N_elements(sub1) gt 1 then index_is_array = 1 $
+                                                else index_is_array = 0
+
     ; test validity of indices and ranges
     chkpass = 1
+    chkdim = self.dt_nrecords
 
     if chk_range eq 1 then begin
-        if ~ self->Rangevalid(sub1, positive_range=psub1) then chkpass = 0
+        if ~ wmb_Rangevalid(sub1, chkdim, positive_range=psub1) then chkpass=0
     endif else begin
-        if ~ self->Indexvalid(sub1, positive_index=psub1) then chkpass = 0
+        if ~ wmb_Indexvalid(sub1, chkdim, positive_index=psub1) then chkpass=0
     endelse
+
 
     if chkpass eq 0 then begin
         message, 'Error: array subscript out of range'
         return, 0
     endif
+
 
     if chk_range eq 1 then begin
         
@@ -111,11 +65,14 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
         endrecord = psub1[1]
         stride = psub1[2]
         
+        chk_return_scalar = 0
+        
     endif else begin
         
-        startrecord = psub1[0]
-        endrecord = psub1[0]
-        stride = 1
+        if index_is_array eq 0 then index = psub1[0] $
+                               else index = psub1
+        
+        chk_return_scalar = ~index_is_array
         
     endelse
 
@@ -130,36 +87,27 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
         
         ; get the data from disk
         
-        tmp_disk_start = startrecord < endrecord
-        tmp_disk_end = startrecord > endrecord
-        tmp_disk_nrecords = tmp_disk_end - tmp_disk_start + 1
-        
-        wmb_h5tb_read_records, loc_id, $
-                               dset_name, $
-                               tmp_disk_start, $
-                               tmp_disk_nrecords, $
-                               databuffer
+        if chk_range eq 1 then begin
+            
+            wmb_h5tb_read_records_range, loc_id, $
+                                         dset_name, $
+                                         startrecord, $
+                                         endrecord, $
+                                         stride, $
+                                         databuffer
+            
+        endif else begin
+            
+            wmb_h5tb_read_records_index, loc_id, $
+                                         dset_name, $
+                                         index, $
+                                         databuffer
+            
+        endelse
+
 
         ; close the file
         self -> Vtable_Close
-
-        if stride ne 1 then begin
-            
-            if stride gt 0 then begin
-                
-                ; stride is positive so endrecord > startrecord
-                tmp_data = databuffer[0:tmp_disk_nrecords-1:stride]
-                
-            endif else begin
-                
-                ; stride is negative so endrecord < startrecord
-                tmp_data = databuffer[tmp_disk_nrecords-1:0:stride]
-                
-            endelse
-
-            databuffer = temporary(tmp_data)
-            
-        endif
 
     endif else begin
         
@@ -173,7 +121,7 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
         
         endif else begin
             
-            databuffer = datavector[startrecord]
+            databuffer = datavector[index]
             
         endelse
         
@@ -299,7 +247,7 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
 
             ; create the datavector object
             
-            recdef = self.dt_record_def_ptr
+            recdef = *self.dt_record_def_ptr
             
             datavector = obj_new('wmb_vector', $
                                  datatype=8, $
@@ -330,6 +278,27 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
 
 end
 
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Consolidate_Memory method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::Consolidate_Memory
+
+    compile_opt idl2, strictarrsubs
+    
+    if self.dt_flag_vtable then begin
+        
+        datavector = self.dt_datavector
+        
+        datavector.Consolidate
+        
+    endif
+    
+end
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -551,7 +520,7 @@ function wmb_DataTable::Save, filename, $
     ; we now have a valid filename, title, group name, and dataset name
 
     tmp_recdef = *(self.dt_record_def_ptr)
-    tmp_data = temporary(*(self.dt_dataptr))
+    tmp_data = (self.dt_datavector)[*]
     tmp_nrecords = self.dt_nrecords
 
 
@@ -597,7 +566,10 @@ function wmb_DataTable::Save, filename, $
     self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
 
+    ; destroy the datavector object
+    obj_destroy, self.dt_datavector
 
+    ; close the hdf file
     self -> Vtable_Close
         
 
