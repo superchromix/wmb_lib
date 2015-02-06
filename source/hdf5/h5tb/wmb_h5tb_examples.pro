@@ -322,6 +322,105 @@ end
 
 ;-----------------------------------------------------------------------------
 ;
+;   Read a range of records from a HDF5 table
+;
+;-----------------------------------------------------------------------------
+
+pro wmb_h5tb_read_records_range_example
+
+    compile_opt idl2, strictarrsubs
+
+    ; choose an input file name
+
+    fn = dialog_pickfile(FILTER='*.h5', /READ)
+    chk_file = file_test(fn, /READ, /WRITE)
+    if chk_file eq 0 then message, 'Error opening file'
+    
+
+    ; open the hdf5 file
+    
+    fid = h5f_open(fn, /WRITE)
+    loc_id = fid
+    dset_name = 'test_hdf5_table'
+    
+    start_read_position = 0
+    end_read_position = 10
+    stride = 2
+    
+    ; overwrite the fields in the table
+    
+    wmb_h5tb_read_records_range, loc_id, $
+                                 dset_name, $
+                                 start_read_position, $
+                                 end_read_position, $
+                                 stride, $
+                                 databuffer
+
+    ; print the output data
+    
+    print, databuffer
+
+    ; close the file
+             
+    h5f_close, fid
+    
+end
+
+
+
+;-----------------------------------------------------------------------------
+;
+;   Read records from an HDF5 table according to an index array
+;
+;-----------------------------------------------------------------------------
+
+pro wmb_h5tb_read_records_index_example
+
+    compile_opt idl2, strictarrsubs
+
+    ; choose an input file name
+
+    fn = dialog_pickfile(FILTER='*.h5', /READ)
+    chk_file = file_test(fn, /READ, /WRITE)
+    if chk_file eq 0 then message, 'Error opening file'
+    
+
+    ; open the hdf5 file
+    
+    fid = h5f_open(fn, /WRITE)
+    loc_id = fid
+    dset_name = 'test_hdf5_table'
+    
+    index_array = [5,4,6]
+    
+    ; overwrite the fields in the table
+    
+    wmb_h5tb_read_records_index, loc_id, $
+                                 dset_name, $
+                                 index_array, $
+                                 databuffer
+
+    print, size(databuffer)
+
+    ; print the output data
+    
+    print, databuffer
+
+    ; close the file
+             
+    h5f_close, fid
+    
+    bb = databuffer[0]
+    
+    print, size(bb)
+    
+end
+
+
+
+
+;-----------------------------------------------------------------------------
+;
 ;   Read a subset of the fields (by name) from a HDF5 table
 ;
 ;-----------------------------------------------------------------------------
@@ -1040,11 +1139,15 @@ end
 
 pro wmb_h5tb_examples
 
-    wmb_h5tb_make_table_example
+;    wmb_h5tb_make_table_example
     
 ;    wmb_h5tb_read_table_example
 ;
 ;    wmb_h5tb_read_records_example
+;
+;    wmb_h5tb_read_records_range_example    
+;
+     wmb_h5tb_read_records_index_example
 ;
 ;    wmb_h5tb_read_fields_by_name_example
 ;
