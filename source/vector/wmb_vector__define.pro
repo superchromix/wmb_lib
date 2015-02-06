@@ -9,67 +9,6 @@
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-;   Helper methods for testing valid indices and ranges
-;
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-function wmb_Vector::Rangevalid, range, positive_range=positive_range
-
-    compile_opt idl2, strictarrsubs
-        
-    chkdim = self.vec_size
-    
-    rangestart = range[0]
-    if rangestart lt 0 then rangestart = rangestart + chkdim
-    rangeend = range[1]
-    if rangeend lt 0 then rangeend = rangeend + chkdim
-    rangestride = range[2]
-
-    minrange = 0L
-    maxrange = chkdim - 1L
-    
-    maxstride = abs(rangeend-rangestart) > 1
-    minstride = -maxstride
-
-    if (rangestart lt minrange) or (rangestart gt maxrange) then return, 0
-    if (rangeend lt minrange) or (rangeend gt maxrange) then return, 0
-    
-    if (rangestride eq 0) then return, 0
-    if (rangestride lt minstride) or (rangestride gt maxstride) then return, 0
-    
-    if (rangestart lt rangeend) and (rangestride lt 0) then return, 0
-    if (rangestart gt rangeend) and (rangestride gt 0) then return, 0
-
-    positive_range = [rangestart,rangeend,rangestride]
-
-    return, 1
-
-end
-
-
-function wmb_Vector::Indexvalid, index, positive_index = positive_index
-
-    compile_opt idl2, strictarrsubs
-
-    chkdim = self.vec_size
-    
-    test_index = index
-    if test_index lt 0 then test_index = test_index + chkdim
-    
-    minrange = 0L
-    maxrange = chkdim - 1L
-    
-    if (test_index lt minrange) or (test_index gt maxrange) then return, 0
-    
-    positive_index = test_index
-    
-    return, 1
-    
-end
-
-
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
 ;   Overload array indexing for the wmb_Vector object
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -96,14 +35,17 @@ function wmb_Vector::_overloadBracketsRightSide, isRange, sub1, $
 
     chk_range = isRange[0]
     
+    if chk_range eq 0 and N_elements(sub1) gt 1 then index_is_array = 1 $
+                                                else index_is_array = 0
     
     ; test validity of indices and ranges
     chkpass = 1
+    chkdim = self.vec_size
 
     if chk_range eq 1 then begin
-        if ~ self->Rangevalid(sub1, positive_range=psub1) then chkpass = 0
+        if ~ wmb_Rangevalid(sub1, chkdim, positive_range=psub1) then chkpass=0
     endif else begin
-        if ~ self->Indexvalid(sub1, positive_index=psub1) then chkpass = 0
+        if ~ wmb_Indexvalid(sub1, chkdim, positive_range=psub1) then chkpass=0
     endelse
 
     if chkpass eq 0 then begin
@@ -112,37 +54,35 @@ function wmb_Vector::_overloadBracketsRightSide, isRange, sub1, $
     endif
     
     
+    ; get the data from memory
+
     if chk_range eq 1 then begin
         
         startrecord = psub1[0]
         endrecord = psub1[1]
         stride = psub1[2]
         
-    endif else begin
-        
-        startrecord = psub1[0]
-        endrecord = psub1[0]
-        stride = 1
-        
-    endelse
-    
-    
-    ; get the data from memory
-    
-    if chk_range eq 1 then begin
-    
         databuffer = (*self.vec_data)[startrecord:endrecord:stride]
-    
+        
     endif else begin
         
-        databuffer = (*self.vec_data)[startrecord]
+        if index_is_array eq 0 then begin
+            
+            index = psub1[0]
+            
+        endif else begin
+            
+            index = psub1
+
+        endelse
+        
+        databuffer = (*self.vec_data)[index]
         
     endelse
-        
     
+
     return, databuffer
-        
-        
+ 
 end
 
 
@@ -158,11 +98,12 @@ pro wmb_Vector::Append, indata, no_copy=no_copy
 
     compile_opt idl2, strictarrsubs
 
+    if N_elements(no_copy) eq 0 then no_copy = 0
 
     ; handle the NOCOPY keyword
 
-    if nocopy eq 0 then nocopy_input = indata $
-                   else nocopy_input = temporary(indata)
+    if no_copy eq 0 then nocopy_input = indata $
+                    else nocopy_input = temporary(indata)
 
 
     datatype = self.vec_type
@@ -273,7 +214,7 @@ end
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_Vector::Consolidate, input
+pro wmb_Vector::Consolidate
 
     compile_opt idl2, strictarrsubs
 
