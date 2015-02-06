@@ -17,7 +17,9 @@ function wmb_Indexvalid, index, $
 
     chkdim = dimension_size
     
-    ; create a positive version of the index - note that index may be an array
+    ; create a positive version of the index
+    ; 
+    ; note that index may be an array
     
     positive_index = index
     

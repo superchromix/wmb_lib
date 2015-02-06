@@ -23,6 +23,11 @@ function wmb_Rangevalid, range, $
 
     positive_range = [rangestart,rangeend,rangestride]
 
+    ; the full range is always valid
+    if (rangestart eq 0) and $
+       (rangeend eq chkdim-1) and $
+       (rangestride eq 1) then return, 1
+
     minrange = 0LL
     maxrange = chkdim - 1LL
     
