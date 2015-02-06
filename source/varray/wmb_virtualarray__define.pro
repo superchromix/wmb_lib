@@ -9,98 +9,6 @@
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-;   Helper method for testing valid indices and ranges
-;   
-;   positive_range is an output keyword which returns the 
-;   range with positive indices
-;
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-function wmb_VirtualArray::Rangevalid, range, $
-                                       dimension_index, $
-                                       positive_range=positive_range
-
-    compile_opt idl2, strictarrsubs
-
-    arr_rank = self.va_rank
-    arr_dims = *self.va_dimsptr
-    
-    if (dimension_index lt 0) or (dimension_index ge arr_rank) then return, 0
-    
-    chkdim = arr_dims[dimension_index]
-    
-    rangestart = long64(range[0])
-    if rangestart lt 0 then rangestart = rangestart + chkdim
-    rangeend = long64(range[1])
-    if rangeend lt 0 then rangeend = rangeend + chkdim
-    rangestride = long64(range[2])
-
-    minrange = 0LL
-    maxrange = chkdim - 1LL
-    
-    maxstride = abs(rangeend-rangestart) > 1
-    minstride = -maxstride
-
-    chkpass = 1
-    
-    if (rangestart lt minrange) or (rangestart gt maxrange) then chkpass = 0
-    if (rangeend lt minrange) or (rangeend gt maxrange) then chkpass = 0
-    
-    if (rangestride eq 0) then chkpass=0
-    if (rangestride lt minstride) or (rangestride gt maxstride) then chkpass = 0
-
-    if (rangestart lt rangeend) and (rangestride lt 0) then chkpass = 0
-    if (rangestart gt rangeend) and (rangestride gt 0) then chkpass = 0 
-
-    positive_range = [rangestart,rangeend,rangestride]
-
-    return, chkpass
-
-end
-
-
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
-;   Helper method for testing valid indices and ranges
-;   
-;   positive_index is an output keyword which returns the 
-;   corresponding index with a positive value
-;
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-
-function wmb_VirtualArray::Indexvalid, index, $
-                                       dimension_index, $
-                                       positive_index = positive_index
-
-    compile_opt idl2, strictarrsubs
-
-    arr_rank = self.va_rank
-    arr_dims = *self.va_dimsptr
-    
-    if (dimension_index lt 0) or (dimension_index ge arr_rank) then return, 0
-    
-    chkdim = arr_dims[dimension_index]
-    
-    test_index = long64(index)
-    if test_index lt 0 then test_index = test_index + chkdim
-    
-    minrange = 0LL
-    maxrange = chkdim - 1LL
-    
-    chkpass = 1
-    
-    if (test_index lt minrange) or (test_index gt maxrange) then chkpass = 0
-    
-    positive_index = test_index
-    
-    return, chkpass
-    
-end
-
-
-;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-;
 ;   Overload array indexing for the wmb_VirtualArray object
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -154,9 +62,9 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
         tmp_input = subscript_list[i]
         
         if isrange[i] eq 1 then begin
-            if ~ self->Rangevalid( tmp_input, i ) then chkpass = 0
+            if ~ wmb_Rangevalid(tmp_input, arr_dims[i]) then chkpass = 0
         endif else begin
-            if ~ self->Indexvalid( tmp_input, i ) then chkpass = 0
+            if ~ wmb_Indexvalid(tmp_input, arr_dims[i]) then chkpass = 0
         endelse
     endfor
     
@@ -164,6 +72,24 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
         message, 'Array subscript out of range'
         return, 0
     endif
+    
+    
+    ; test which subscripts correspond to index arrays
+    
+    index_is_array = intarr(n_inputs)
+    
+    for i = 0, n_inputs-1 do begin
+        
+        tmp_input = subscript_list[i]
+        
+        index_is_array[i] = (isrange[i] eq 0) && (N_elements(tmp_input) gt 1)
+        
+    endfor
+    
+    
+    ; the virtual array object does not support index arrays at present
+    
+    if total(index_is_array) gt 0 then message, 'Invalid array index'
     
     
     ; calculate the number of file reads required, and the list of 
