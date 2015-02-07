@@ -100,7 +100,7 @@ pro wmb_Vector::Append, indata, no_copy=no_copy
 
     if N_elements(no_copy) eq 0 then no_copy = 0
 
-    ; handle the NOCOPY keyword
+    ; handle the NO_COPY keyword
 
     if no_copy eq 0 then nocopy_input = indata $
                     else nocopy_input = temporary(indata)

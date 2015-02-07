@@ -140,13 +140,13 @@ end
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_DataTable::Append, indata, nocopy=nocopy
+function wmb_DataTable::Append, indata, no_copy=no_copy
 
     compile_opt idl2, strictarrsubs
 
     if N_elements(indata) eq 0 then message, 'Error: no input data'
 
-    if N_elements(nocopy) eq 0 then nocopy = 0
+    if N_elements(no_copy) eq 0 then no_copy = 0
 
     indata_is_struct = size(indata,/type) eq 8
     
@@ -193,9 +193,9 @@ function wmb_DataTable::Append, indata, nocopy=nocopy
     endelse
 
 
-    ; handle the NOCOPY keyword
+    ; handle the NO_COPY keyword
 
-    if nocopy eq 0 then begin
+    if no_copy eq 0 then begin
 
         tmp_indata = indata
 
@@ -696,7 +696,7 @@ end
 ;   fields such as nfields and nrecords are filled in based on
 ;   the data.
 ;
-;   If the NOCOPY keyword is set to 1, the input data variable 
+;   If the NO_COPY keyword is set to 1, the input data variable 
 ;   will be undefined after the object is created.
 ;
 ;   A RecordDef structure may be provided to define the record 
@@ -714,7 +714,7 @@ end
 
 
 function wmb_DataTable::Init, Indata=indata, $
-                              Nocopy=nocopy, $
+                              No_copy=no_copy, $
                               RecordDef=recorddef, $
                               Title = title
                               
@@ -722,7 +722,7 @@ function wmb_DataTable::Init, Indata=indata, $
     compile_opt idl2, strictarrsubs
 
 
-    if N_elements(nocopy) eq 0 then nocopy = 0
+    if N_elements(no_copy) eq 0 then no_copy = 0
 
     if N_elements(title) eq 0 then title = 'Table'
 
@@ -799,7 +799,7 @@ function wmb_DataTable::Init, Indata=indata, $
 
         'inputvar': begin
 
-            if ~self->Append(indata, nocopy=nocopy) then return, 0
+            if ~self->Append(indata, no_copy=no_copy) then return, 0
 
         end
 
