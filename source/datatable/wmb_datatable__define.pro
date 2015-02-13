@@ -578,6 +578,84 @@ function wmb_DataTable::Save, filename, $
 end
 
 
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Erase method
+;
+;   Removes all of the records from memory.  If the table is 
+;   saved to disk, the dataset within the HDF5 file is deleted.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
+
+    compile_opt idl2, strictarrsubs
+
+    if N_elements(delete_file_if_empty) eq 0 then delete_file_if_empty = 0
+
+    if self.dt_flag_vtable then begin
+
+        ; the data is stored on disk
+        
+        ; open the data table
+        
+        loc_id = self.Vtable_Open()
+
+        dset_name = self.dt_dataset_name
+        
+        ; unlink the dataset
+        
+        h5g_unlink, loc_id, dset_name
+        
+        ; close the table
+         
+        self.Vtable_Close
+        
+        ; check if we are deleting the file
+        
+        if delete_file_if_empty eq 1 then begin
+            
+            fn = self.dt_vtable_filename
+            
+            h5_list, fn, filter='dataset', output=file_contents
+            
+            tmp = where(file_contents[0,*] eq 'dataset', n_ds)
+            
+            if n_ds eq 0 then begin
+                
+                ; there are no datasets remaining in the file, so it
+                ; will be deleted
+                
+                file_delete, fn
+                self.dt_vtable_filename = ''
+                
+            endif
+            
+        endif
+
+    endif else begin
+        
+        ; delete the data vector from memory
+        
+        obj_destroy, self.dt_datavector
+
+    endelse
+
+
+    ; reset the internal data
+    
+    self.dt_nrecords         = 0
+    self.dt_datavector       = obj_new()
+    self.dt_flag_vtable      = 0
+    self.dt_vtable_open      = 0
+    self.dt_flag_table_empty = 1
+
+
+end
+
+
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
 ;   This is the Vtable_Open method
