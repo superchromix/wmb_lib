@@ -60,40 +60,73 @@ pro wmb_Vector::_overloadBracketsLeftSide, objref,  $
         message, 'Error: array subscript out of range'
     endif
     
-    ; check that value is a scalar or 1D array
-    value_n_dims = size(value, /N_DIMENSIONS)
-    if value_n_dims gt 1 then message, 'Invalid variable dimension'
-    
-    
-    
-    ; write the data to memory
-
     if chk_range eq 1 then begin
         
         startrecord = psub1[0]
         endrecord = psub1[1]
         stride = psub1[2]
         
-        (*self.vec_data)[startrecord:endrecord:stride] = value
-        
     endif else begin
         
-        if index_is_array eq 0 then begin
-            
-            index = psub1[0]
-            
+        if index_is_array eq 0 then index = psub1[0] $
+                               else index = psub1
+        
+    endelse
+    
+    ; check that value is a scalar or 1D array
+    value_n_dims = size(value, /N_DIMENSIONS)
+    if value_n_dims gt 1 then message, 'Invalid variable dimension'
+    
+    ; get the size of the input data
+    value_n_elts = N_elements(value)
+    
+    ; test if the number of elements in value matches the subscript
+    
+    input_scalar = value_n_elts eq 1
+    
+    if chk_range eq 1 then begin
+        
+        ; the subscript is a range - check that the number of elements 
+        ; in value matches the size of the range
+        
+        range_size = ceil( (abs(startrecord-endrecord)+1) $
+                           / float(abs(stride)), /L64)
+    
+        input_matches_range = range_size eq value_n_elts
+
+    endif
+    
+    
+    ; write the data to memory
+
+    if chk_range eq 1 then begin
+        
+        if stride eq 1 then begin
+        
+            if input_matches_range then begin
+        
+                (*self.vec_data)[startrecord] = value
+                
+            endif else if input_scalar then begin
+                
+                (*self.vec_data)[startrecord:endrecord] = value
+                
+            endif else message, 'Array subscript does not match ' + $
+                                'size of input data'
+        
         endif else begin
             
-            index = psub1
-
+            (*self.vec_data)[startrecord:endrecord:stride] = value
+            
         endelse
+        
+    endif else begin
         
         (*self.vec_data)[index] = value
         
     endelse
  
 end
-
 
 
 

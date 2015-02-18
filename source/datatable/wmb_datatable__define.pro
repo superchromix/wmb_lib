@@ -65,14 +65,10 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
         endrecord = psub1[1]
         stride = psub1[2]
         
-        chk_input_scalar = 0
-        
     endif else begin
         
         if index_is_array eq 0 then index = psub1[0] $
                                else index = psub1
-        
-        chk_input_scalar = ~index_is_array
         
     endelse
 
@@ -106,9 +102,9 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
     ; get the size of the input data
     value_n_elts = N_elements(value)
     
-    ; test that the number of elements in value matches the subscript
+    ; test if the number of elements in value matches the subscript
     
-    chk_pass = 1
+    input_scalar = value_n_elts eq 1
     
     if chk_range eq 1 then begin
         
@@ -118,20 +114,9 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
         range_size = ceil( (abs(startrecord-endrecord)+1) $
                            / float(abs(stride)), /L64)
     
-        if range_size ne value_n_elts then chk_pass = 0
+        input_matches_range = range_size eq value_n_elts
 
-    endif else begin
-        
-        if index_is_array then begin
-            if N_elements(index) ne value_n_elts then chk_pass = 0
-        endif else begin
-            if value_n_elts ne 1 then chk_pass = 0
-        endelse
-        
-    endelse
-
-    if chk_pass eq 0 then message, 'Invalid number of input elements'
-
+    endif
 
 
     ; is the data stored in memory or on disk?
@@ -174,8 +159,25 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
         
         if chk_range eq 1 then begin
         
-            datavector[startrecord:endrecord:stride] = value
-        
+            if stride eq 1 then begin
+                
+                if input_matches_range then begin
+                    
+                    datavector[startrecord] = value
+                    
+                endif else if input_scalar then begin
+                    
+                    datavector[startrecord:endrecord] = value
+                    
+                endif else message, 'Array subscript does not match ' + $
+                                    'size of input data'
+                
+            endif else begin
+                
+                datavector[startrecord:endrecord:stride] = value
+                
+            endelse
+            
         endif else begin
             
             datavector[index] = value
