@@ -741,6 +741,155 @@ pro wmb_h5tb_overwrite_records_example
 end
 
 
+;-----------------------------------------------------------------------------
+;
+;   Overwrite some records in an existing HDF5 table
+;
+;-----------------------------------------------------------------------------
+
+pro wmb_h5tb_overwrite_records_range_example
+
+    compile_opt idl2, strictarrsubs
+
+    ; choose an input file name
+    
+    fn = dialog_pickfile(FILTER='*.h5', /READ)
+    chk_file = file_test(fn, /READ, /WRITE)
+    if chk_file eq 0 then message, 'Error opening file'
+    
+    
+    ; create some new records to write
+    
+    field_names = ['testfield_int', $
+                   'testfield_float', $
+                   'testfield_string', $
+                   'testfield_long', $
+                   'testfield_double']
+    
+    field1_value = 0S
+    field2_value = 0.0
+    field3_value = ''
+    field4_value = 0L
+    field5_value = 0.0D
+    
+    record_definition = create_struct(field_names, $
+                                      field1_value, $
+                                      field2_value, $
+                                      field3_value, $
+                                      field4_value, $
+                                      field5_value)
+    
+    n_new_records = 5
+    
+    newdata = replicate(record_definition, n_new_records)
+    
+    newdata.testfield_int[0] = indgen(n_new_records)
+    newdata.testfield_float[*] = 1.0
+    newdata.testfield_string[*] = 'Overwrite'
+    newdata.testfield_long[*] = 1L
+    newdata.testfield_double[*] = 1.0D
+    
+    ; open the hdf5 file
+    
+    fid = h5f_open(fn, /WRITE)
+    loc_id = fid
+    
+    ; we will add the new records to the dataset created previously
+    
+    dset_name = 'test_hdf5_table'
+
+
+
+    firstrecord = 13
+    lastrecord = 5
+    stride = -2
+
+    wmb_h5tb_write_records_range, loc_id, $
+                                  dset_name, $
+                                  firstrecord, $
+                                  lastrecord, $
+                                  stride, $
+                                  newdata
+    
+    ; close the file          
+     
+    h5f_close, fid
+    
+end
+
+
+;-----------------------------------------------------------------------------
+;
+;   Overwrite some records in an existing HDF5 table
+;
+;-----------------------------------------------------------------------------
+
+pro wmb_h5tb_overwrite_records_index_example
+
+    compile_opt idl2, strictarrsubs
+
+    ; choose an input file name
+    
+    fn = dialog_pickfile(FILTER='*.h5', /READ)
+    chk_file = file_test(fn, /READ, /WRITE)
+    if chk_file eq 0 then message, 'Error opening file'
+    
+    
+    ; create some new records to write
+    
+    field_names = ['testfield_int', $
+                   'testfield_float', $
+                   'testfield_string', $
+                   'testfield_long', $
+                   'testfield_double']
+    
+    field1_value = 0S
+    field2_value = 0.0
+    field3_value = ''
+    field4_value = 0L
+    field5_value = 0.0D
+    
+    record_definition = create_struct(field_names, $
+                                      field1_value, $
+                                      field2_value, $
+                                      field3_value, $
+                                      field4_value, $
+                                      field5_value)
+    
+    n_new_records = 5
+    
+    newdata = replicate(record_definition, n_new_records)
+    
+    newdata.testfield_int[0] = indgen(n_new_records)
+    newdata.testfield_float[*] = 1.0
+    newdata.testfield_string[*] = 'Overwrite'
+    newdata.testfield_long[*] = 1L
+    newdata.testfield_double[*] = 1.0D
+    
+    ; open the hdf5 file
+    
+    fid = h5f_open(fn, /WRITE)
+    loc_id = fid
+    
+    ; we will add the new records to the dataset created previously
+    
+    dset_name = 'test_hdf5_table'
+
+
+
+    index = [15,17,26,25,22]
+
+    wmb_h5tb_write_records_index, loc_id, $
+                                  dset_name, $
+                                  index, $
+                                  newdata
+    
+    ; close the file          
+     
+    h5f_close, fid
+    
+end
+
 
 
 ;-----------------------------------------------------------------------------
@@ -1140,14 +1289,14 @@ end
 pro wmb_h5tb_examples
 
 ;    wmb_h5tb_make_table_example
-    
+;    
 ;    wmb_h5tb_read_table_example
 ;
 ;    wmb_h5tb_read_records_example
 ;
 ;    wmb_h5tb_read_records_range_example    
 ;
-     wmb_h5tb_read_records_index_example
+;    wmb_h5tb_read_records_index_example
 ;
 ;    wmb_h5tb_read_fields_by_name_example
 ;
@@ -1158,6 +1307,10 @@ pro wmb_h5tb_examples
 ;    wmb_h5tb_insert_records_example
 ;
 ;    wmb_h5tb_overwrite_records_example
+;
+    wmb_h5tb_overwrite_records_range_example
+;    
+;    wmb_h5tb_overwrite_records_index_example        
 ;
 ;    wmb_h5tb_overwrite_fields_by_name_example
 ;

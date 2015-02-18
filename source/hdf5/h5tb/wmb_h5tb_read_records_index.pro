@@ -26,14 +26,10 @@ pro wmb_h5tb_read_records_index, loc_id, $
     
     ; make sure the indices are in bounds
     
-    chk_min_error = index lt 0
-    chk_max_error = index gt (table_size-1)
+    chk_min_error = min(index) lt 0
+    chk_max_error = max(index) gt (table_size-1)
     
-    if max(chk_min_error) gt 0 or max(chk_max_error) gt 0 then begin
-        
-        message, 'Invalid index value'
-        
-    endif
+    if chk_min_error or chk_max_error then message, 'Invalid index value'
     
     
     ; open the dataset
