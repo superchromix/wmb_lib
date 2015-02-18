@@ -7,6 +7,186 @@
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   Overload array indexing for the wmb_DataTable object
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
+                                              value,   $
+                                              isRange, $
+                                              sub1,    $
+                                              sub2,    $
+                                              sub3,    $
+                                              sub4,    $
+                                              sub5,    $
+                                              sub6,    $
+                                              sub7,    $
+                                              sub8
+
+    compile_opt idl2, strictarrsubs
+
+    if N_elements(sub1) eq 0 then begin
+        message, 'Error: no array subscript specified'
+    endif
+
+    ; determine the number of indices/ranges specified
+    n_inputs = N_elements(isrange)
+
+    if n_inputs ne 1 then begin
+        message, 'Error: invalid array subscript'
+    endif
+
+    chk_range = isRange[0]
+
+    if chk_range eq 0 and N_elements(sub1) gt 1 then index_is_array = 1 $
+                                                else index_is_array = 0
+
+    ; test validity of indices and ranges
+    chkpass = 1
+    chkdim = self.dt_nrecords
+
+    if chk_range eq 1 then begin
+        if ~ wmb_Rangevalid(sub1, chkdim, positive_range=psub1) then chkpass=0
+    endif else begin
+        if ~ wmb_Indexvalid(sub1, chkdim, positive_index=psub1) then chkpass=0
+    endelse
+
+    if chkpass eq 0 then begin
+        message, 'Error: array subscript out of range'
+    endif
+
+    if chk_range eq 1 then begin
+        
+        startrecord = psub1[0]
+        endrecord = psub1[1]
+        stride = psub1[2]
+        
+        chk_input_scalar = 0
+        
+    endif else begin
+        
+        if index_is_array eq 0 then index = psub1[0] $
+                               else index = psub1
+        
+        chk_input_scalar = ~index_is_array
+        
+    endelse
+
+    ; check that value is a valid record or array of records
+    value_n_dims = size(value, /N_DIMENSIONS)
+    if value_n_dims ne 1 then message, 'Invalid variable dimension'
+    
+    value_dtype = size(value, /TYPE)
+    if value_dtype ne 8 then message, 'Invalid variable datatype'
+    
+    ; if the record definition is already initialized, then compare it to
+    ; the input data. 
+
+    indata_sample = value[0]
+
+    if self.dt_flag_record_def_init then begin
+        
+        recdef = *(self.dt_record_def_ptr)
+           
+        structs_match = wmb_compare_struct(indata_sample, $
+                                           recdef, $
+                                           /COMPARE_FIELD_NAMES, $
+                                           /IGNORE_FIELD_VALUES)
+
+        if ~structs_match then begin
+            message, 'Error: indata structure does not match table structure'
+        endif
+        
+    endif 
+
+    ; get the size of the input data
+    value_n_elts = N_elements(value)
+    
+    ; test that the number of elements in value matches the subscript
+    
+    chk_pass = 1
+    
+    if chk_range eq 1 then begin
+        
+        ; the subscript is a range - check that the number of elements 
+        ; in value matches the size of the range
+        
+        range_size = ceil( (abs(startrecord-endrecord)+1) $
+                           / float(abs(stride)), /L64)
+    
+        if range_size ne value_n_elts then chk_pass = 0
+
+    endif else begin
+        
+        if index_is_array then begin
+            if N_elements(index) ne value_n_elts then chk_pass = 0
+        endif else begin
+            if value_n_elts ne 1 then chk_pass = 0
+        endelse
+        
+    endelse
+
+    if chk_pass eq 0 then message, 'Invalid number of input elements'
+
+
+
+    ; is the data stored in memory or on disk?
+    
+    if self.dt_flag_vtable then begin
+
+        ; open the file
+        loc_id = self -> Vtable_Open()
+        dset_name = self.dt_dataset_name
+        
+        ; write the data to disk
+        
+        if chk_range eq 1 then begin
+                                       
+            wmb_h5tb_write_records_range, loc_id, $
+                                          dset_name, $
+                                          startrecord, $
+                                          endrecord, $
+                                          stride, $
+                                          value
+            
+        endif else begin
+            
+            wmb_h5tb_write_records_index, loc_id, $
+                                          dset_name, $
+                                          index, $
+                                          value
+            
+        endelse
+
+
+        ; close the file
+        self -> Vtable_Close
+
+    endif else begin
+        
+        ; write the data to memory
+        
+        datavector = self.dt_datavector
+        
+        if chk_range eq 1 then begin
+        
+            datavector[startrecord:endrecord:stride] = value
+        
+        endif else begin
+            
+            datavector[index] = value
+            
+        endelse
+        
+    endelse
+
+end
+
+
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
 ;   Overload array indexing for the wmb_DataTable object

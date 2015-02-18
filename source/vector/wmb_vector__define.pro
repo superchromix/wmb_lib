@@ -7,6 +7,96 @@
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   Overload array indexing for the wmb_Vector object
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_Vector::_overloadBracketsLeftSide, objref,  $
+                                           value,   $
+                                           isRange, $
+                                           sub1,    $
+                                           sub2,    $
+                                           sub3,    $
+                                           sub4,    $
+                                           sub5,    $
+                                           sub6,    $
+                                           sub7,    $
+                                           sub8
+
+    compile_opt idl2, strictarrsubs
+
+
+    ; determine the number of indices/ranges specified
+    n_inputs = N_elements(isrange)
+
+    if n_inputs ne 1 then begin
+        message, 'Error: invalid array subscript'
+    endif
+
+    if N_elements(sub1) eq 0 then begin
+        message, 'Error: no array subscript specified'
+    endif
+
+    chk_range = isRange[0]
+    
+    if chk_range eq 0 and N_elements(sub1) gt 1 then index_is_array = 1 $
+                                                else index_is_array = 0
+    
+    ; test validity of indices and ranges
+    chkpass = 1
+    chkdim = self.vec_size
+
+    if chk_range eq 1 then begin
+        if ~ wmb_Rangevalid(sub1, chkdim, positive_range=psub1) then chkpass=0
+    endif else begin
+        if ~ wmb_Indexvalid(sub1, chkdim, positive_range=psub1) then chkpass=0
+    endelse
+
+    if chkpass eq 0 then begin
+        message, 'Error: array subscript out of range'
+    endif
+    
+    ; check that value is a scalar or 1D array
+    value_n_dims = size(value, /N_DIMENSIONS)
+    if value_n_dims gt 1 then message, 'Invalid variable dimension'
+    
+    
+    
+    ; write the data to memory
+
+    if chk_range eq 1 then begin
+        
+        startrecord = psub1[0]
+        endrecord = psub1[1]
+        stride = psub1[2]
+        
+        (*self.vec_data)[startrecord:endrecord:stride] = value
+        
+    endif else begin
+        
+        if index_is_array eq 0 then begin
+            
+            index = psub1[0]
+            
+        endif else begin
+            
+            index = psub1
+
+        endelse
+        
+        (*self.vec_data)[index] = value
+        
+    endelse
+ 
+end
+
+
+
+
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
 ;   Overload array indexing for the wmb_Vector object
