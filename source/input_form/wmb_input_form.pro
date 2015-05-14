@@ -633,6 +633,9 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
 
                 if ~ wdef.Haskey('integertype') then integertype = 0 else $
                                           integertype = wdef['integertype']
+                                          
+                if ~ wdef.Haskey('positive') then force_positive = 0 else $
+                                          force_positive = widgetdef['positive']                                          
 
                 indat = inputdata[index]
 
@@ -688,6 +691,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                       Longvalue=integertype, $
                                       Doublevalue=doubletype,$
                                       Decimal = dec_digits, $
+                                      Positive = force_positive, $
                                       Xsize=xsize, $
                                       Fieldfont=fieldfont, $
                                       Labelalign=1, $
