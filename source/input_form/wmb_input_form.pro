@@ -566,7 +566,10 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
         
             if ~ widgetdef.Haskey('integertype') then integertype = 0 else $
                                         integertype = widgetdef['integertype']
-                                                
+                
+            if ~ widgetdef.Haskey('positive') then force_positive = 0 else $
+                                        force_positive=widgetdef['integertype']
+                               
             doubletype = ~integertype
             
             inputtype = size(inputdata, /type)
@@ -607,6 +610,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                       Longvalue=integertype, $
                                       Doublevalue=doubletype,$
                                       Decimal = dec_digits, $
+                                      Positive = force_positive, $
                                       Xsize=xsize, $
                                       Fieldfont=fieldfont, $
                                       Name=uname_base, $
@@ -1000,6 +1004,7 @@ end
 ;                       an array of strings (for a multiline label)
 ;       prefixlabel:    a label which immediately precedes the input field
 ;       postfixlabel:   a label which follows the input field
+;       positive:       a flag indicating only positive values are allowed
 ;       
 ;       format for input and output hash for 'Numeric' type:
 ;       
