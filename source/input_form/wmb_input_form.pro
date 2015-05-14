@@ -635,7 +635,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                           integertype = wdef['integertype']
                                           
                 if ~ wdef.Haskey('positive') then force_positive = 0 else $
-                                          force_positive = widgetdef['positive']                                          
+                                          force_positive = wdef['positive']                                          
 
                 indat = inputdata[index]
 
