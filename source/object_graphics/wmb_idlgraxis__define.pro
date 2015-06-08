@@ -56,6 +56,7 @@ pro wmb_IDLgrAxis::GetProperty, xrange = xrange, $
                                       RESOLUTION = wres)
         
         obuf -> Draw, self.orf_view
+
         
         ; calculate the xrange and yrange while taking into account all of the 
         ; text objects associated with the axis
@@ -64,7 +65,7 @@ pro wmb_IDLgrAxis::GetProperty, xrange = xrange, $
                                       YRANGE = axis_yr, $
                                       TICKTEXT = oticktext, $
                                       TITLE = otitletext
-                             
+
         xmin = axis_xr[0]
         xmax = axis_xr[1]
         ymin = axis_yr[0]
@@ -80,9 +81,6 @@ pro wmb_IDLgrAxis::GetProperty, xrange = xrange, $
             xmax = xmax > title_xr[1]
             ymin = ymin < title_yr[0]
             ymax = ymax > title_yr[1]
-        
-            print, 'xsize:', title_xr[1] - title_xr[0]
-            print, 'ysize:', title_yr[1] - title_yr[0]
         
         endif
 
