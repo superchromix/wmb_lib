@@ -485,6 +485,131 @@ end
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
+;   This is the Select method
+;
+;   Select a set of elements from the table, based on filter 
+;   criteria.
+;
+;   filter_columns: a list of column names which will be used
+;                   for selection
+;                   
+;   filter_types: 0: select values greater than or equal to
+;                 1: select values less than or equal to
+;                 2: select values within [min,max] range
+;                 3: select values equal to
+;                 
+;   filter_values: A list of filter values.  For range filters,
+;                  the value is a two-element array of [min,max].
+;
+;   Returns an array of indices to the table.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+function wmb_DataTable::Select, filter_columns, $
+                                filter_types, $
+                                filter_values
+
+    compile_opt idl2, strictarrsubs
+
+    ; which columns are we working with?
+    
+    recdef = *(self.dt_record_def_ptr)
+       
+    colnames = strupcase(tag_names(recdef))
+    
+    col_index_list = list()
+    
+    foreach tmpstr, filter_columns, tmpind do begin
+        
+        tmpstr = strupcase(tmpstr)
+        
+        tmpa = where(colnames eq tmpstr, tmpcnt)
+        
+        if tmpcnt eq 0 then message, 'Column not found'
+        
+        col_index_list.Add, tmpa
+        
+    endforeach
+
+    n_filters = N_elements(col_index_list)
+
+    ; are we going to process the table in chunks or in 
+    ; one pass?
+    
+    chunksize = 500000
+    
+    n_recs = self.dt_nrecords
+    
+    nchunks = ceil(float(n_recs)/chunksize)
+    
+    select_results = []
+    
+    for i = 0, nchunks-1 do begin
+        
+        si = i*chunksize
+        ei = (((i+1)*chunksize)-1) < (n_recs-1)
+        tmp_nr = (ei-si) + 1
+        
+        tmp_pass_markers = bytarr(tmp_nr,n_filters)
+        
+        tmpdat = self[si:ei]
+        
+        foreach colindex, col_index_list, tmpi do begin
+            
+            ftype = filter_types[tmpi]
+            fval = filter_values[tmpi]
+            
+            case ftype of
+                
+                0: begin
+                    
+                    tmp_rslt = where(tmpdat.(colindex) ge fval, tmpcnt)
+                    if tmpcnt gt 0 then tmp_pass_markers[tmp_rslt,tmpi] = 1
+                    
+                end
+                
+                1: begin
+                    
+                    tmp_rslt = where(tmpdat.(colindex) le fval, tmpcnt)
+                    if tmpcnt gt 0 then tmp_pass_markers[tmp_rslt,tmpi] = 1
+                    
+                end
+                
+                2: begin
+                    
+                    tmpmin = fval[0]
+                    tmpmax = fval[1]
+                    tmp_rslt = where(tmpdat.(colindex) ge tmpmin and $
+                                     tmpdat.(colindex) le tmpmax, tmpcnt)
+                    if tmpcnt gt 0 then tmp_pass_markers[tmp_rslt,tmpi] = 1
+                    
+                end
+                
+                3: begin
+
+                    tmp_rslt = where(tmpdat.(colindex) eq fval, tmpcnt)
+                    if tmpcnt gt 0 then tmp_pass_markers[tmp_rslt,tmpi] = 1
+                    
+                end
+                
+            endcase
+            
+        endforeach
+        
+        overall_pass = where(total(tmp_pass_markers,1) eq n_filters, tmpcnt)
+        
+        if tmpcnt gt 0 then select_results = [select_results, overall_pass]
+        
+    endfor
+
+    return, select_results
+
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
 ;   This is the Load method
 ;
 ;   Load a table from an existing file.  Works only for empty
