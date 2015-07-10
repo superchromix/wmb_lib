@@ -33,7 +33,7 @@ function wmb_h5_dataset_exists, filename, full_group_name, dataset_name
 
     ; open the HDF5 file and parse the contents
 
-    h5_list, filename, filter=full_dataset_name, output=h5listoutput
+    wmb_h5_list, filename, filter=full_dataset_name, output=h5listoutput
 
     output_ndims = size(h5listoutput,/n_dimensions)
     outputdims = size(h5listoutput,/dimensions)

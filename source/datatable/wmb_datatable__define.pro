@@ -831,17 +831,24 @@ function wmb_DataTable::Save, filename, $
     tmp_nrecords = self.dt_nrecords
 
 
-    ; open or create the file
+    ; ensure that the file exists
 
-    if fn_exists then begin
+    if ~fn_exists then begin
 
-        fid = h5f_open(filename, /WRITE)
-        
-    endif else begin
-        
         fid = h5f_create(filename)
+        h5f_close, fid
         
-    endelse
+        ; create the group
+        
+        rslt = wmb_h5_create_group(filename, full_group_name)
+        if rslt ne 1 then message, 'Error opening group'        
+        
+    endif
+
+
+    ; open the file
+    
+    fid = h5f_open(filename, /WRITE)
 
 
     ; open the group
@@ -926,7 +933,7 @@ pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
             
             fn = self.dt_vtable_filename
             
-            h5_list, fn, filter='dataset', output=file_contents
+            wmb_h5_list, fn, filter='dataset', output=file_contents
             
             tmp = where(file_contents[0,*] eq 'dataset', n_ds)
             

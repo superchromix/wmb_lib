@@ -189,7 +189,7 @@ pro wmb_h5tb_make_table_example
     ; Create a buffer of data to write to the table
     ;-----------------------------------------------------------------
     
-    nrecords = 100
+    nrecords = 100543
     
     databuffer = replicate(record_definition,nrecords)
     
@@ -1288,7 +1288,7 @@ end
 
 pro wmb_h5tb_examples
 
-;    wmb_h5tb_make_table_example
+    wmb_h5tb_make_table_example
 ;    
 ;    wmb_h5tb_read_table_example
 ;
@@ -1308,7 +1308,7 @@ pro wmb_h5tb_examples
 ;
 ;    wmb_h5tb_overwrite_records_example
 ;
-    wmb_h5tb_overwrite_records_range_example
+;    wmb_h5tb_overwrite_records_range_example
 ;    
 ;    wmb_h5tb_overwrite_records_index_example        
 ;

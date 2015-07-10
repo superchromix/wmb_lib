@@ -34,7 +34,7 @@ function wmb_h5_group_exists, filename, groupname
 
     ; open the HDF5 file and parse the contents
 
-    h5_list, filename, filter=groupname, output=h5listoutput
+    wmb_h5_list, filename, filter=groupname, output=h5listoutput
    
     output_ndims = size(h5listoutput,/n_dimensions)
     outputdims = size(h5listoutput,/dimensions)

@@ -44,7 +44,7 @@ pro wmb_h5tb_make_table, table_title, $
     compile_opt idl2, strictarrsubs
 
     dims = ulon64arr(1)
-    maxdims = ulon64arr(1)
+    maxdims = lon64arr(1)
     dims_chunk = ulon64arr(1)
 
 
