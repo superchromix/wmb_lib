@@ -53,7 +53,7 @@ pro wmb_Vector::_overloadBracketsLeftSide, objref,  $
     if chk_range eq 1 then begin
         if ~ wmb_Rangevalid(sub1, chkdim, positive_range=psub1) then chkpass=0
     endif else begin
-        if ~ wmb_Indexvalid(sub1, chkdim, positive_range=psub1) then chkpass=0
+        if ~ wmb_Indexvalid(sub1, chkdim, positive_index=psub1) then chkpass=0
     endelse
 
     if chkpass eq 0 then begin

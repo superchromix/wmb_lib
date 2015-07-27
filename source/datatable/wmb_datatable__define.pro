@@ -149,7 +149,7 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
 
 
         ; close the file
-        self -> Vtable_Close
+        ; self -> Vtable_Close
 
     endif else begin
         
@@ -289,7 +289,7 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
 
 
         ; close the file
-        self -> Vtable_Close
+        ; self -> Vtable_Close
 
     endif else begin
         
@@ -417,7 +417,7 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
         tmp_indata = 0
         
         ; close the file
-        self -> Vtable_Close
+        ; self -> Vtable_Close
 
     endif else begin
         
@@ -481,6 +481,398 @@ pro wmb_DataTable::Consolidate_Memory
     endif
     
 end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Read_column method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+function wmb_DataTable::Read_column, col_name, start_index, n_records
+
+    compile_opt idl2, strictarrsubs
+    
+    table_nrecs = self.dt_nrecords
+    
+    if (start_index + n_records) gt table_nrecs then $
+        message, 'Invalid record range'
+    
+    ; which column are we working with?
+    
+    recdef = *(self.dt_record_def_ptr)
+    stored_colnames = strupcase(tag_names(recdef))
+    input_colname = strupcase(col_name)
+    col_ind = where(stored_colnames eq input_colname, tmpcnt)
+    if tmpcnt ne 1 then message, 'Invalid column name'
+
+    if self.dt_flag_vtable then begin
+        
+        loc_id = self.Vtable_Open()
+        dset_name = self.dt_dataset_name
+        
+        wmb_h5tb_read_fields_index, loc_id, $
+                                    dset_name, $
+                                    col_ind, $
+                                    start_index, $
+                                    n_records, $
+                                    databuffer
+        
+        ; convert the array of (single field) structures into a normal array
+        databuffer = temporary(databuffer.(0))
+        
+        ; close the file
+        ; self.Vtable_Close
+        
+    endif else begin
+        
+        dvector = self.dt_datavector
+        
+        ; create an array of the correct type
+        
+        firstrec = dvector[0]
+        tmp_element = firstrec.(col_ind)
+        tmp_dtype = size(tmp_element, /TYPE)
+        databuffer = make_array(n_records, type=tmp_dtype, /NOZERO)
+        
+        chunksize = 100000 < n_records
+        
+        n_chunks = ceil(float(n_records) / chunksize)
+        
+        last_rec = (start_index + n_records) - 1
+        
+        for i = 0, n_chunks-1 do begin
+            
+            srec = (i*chunksize) + start_index
+            erec = ((((i+1)*chunksize) - 1) + start_index) < last_rec
+            
+            tmpdata = dvector[srec:erec]
+            databuffer[i*chunksize] = tmpdata.(col_ind)
+            
+        endfor
+
+    endelse
+    
+    return, databuffer
+    
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Write_column method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::Write_column, col_name, start_index, databuffer
+
+    compile_opt idl2, strictarrsubs
+    
+    table_nrecs = self.dt_nrecords
+    n_records = N_elements(databuffer)    
+    
+    if (start_index + n_records) gt table_nrecs then $
+        message, 'Invalid record range'
+    
+    ; which column are we working with?
+    
+    recdef = *(self.dt_record_def_ptr)
+    stored_colnames = strupcase(tag_names(recdef))
+    input_colname = strupcase(col_name)
+    col_ind = where(stored_colnames eq input_colname, tmpcnt)
+    if tmpcnt ne 1 then message, 'Invalid column name'
+
+    if self.dt_flag_vtable then begin
+        
+        ; convert databuffer from a normal array to an array of 
+        ; single field structures
+        
+        tmpstruct = create_struct(col_name, databuffer[0])
+        tmpbuffer = replicate(tmpstruct, n_records)
+        tmpbuffer.(0) = temporary(databuffer)
+        databuffer = temporary(tmpbuffer)
+        
+        loc_id = self.Vtable_Open()
+        dset_name = self.dt_dataset_name
+        
+        chunksize = 100000 < n_records
+        n_chunks = ceil(float(n_records) / chunksize)
+        
+        last_read = (n_records-1)
+        last_write = (start_index + n_records) - 1
+        
+        for i = 0, n_chunks-1 do begin
+            
+            srec_read = (i*chunksize)
+            erec_read = (((i+1)*chunksize) - 1) < last_read
+            
+            srec_write = (i*chunksize) + start_index
+            erec_write = ((((i+1)*chunksize) - 1) + start_index) < last_write
+            
+            nrecs = (erec_write - srec_write) + 1
+            
+            input_buffer = databuffer[srec_read:erec_read]
+            
+            wmb_h5tb_write_fields_index, loc_id, $
+                                         dset_name, $
+                                         col_ind, $
+                                         srec_write, $
+                                         nrecs, $
+                                         input_buffer
+            
+            
+        endfor
+        
+        ; close the file
+        ; self.Vtable_Close
+        
+    endif else begin
+        
+        dvector = self.dt_datavector
+        
+        chunksize = 100000 < n_records
+        n_chunks = ceil(float(n_records) / chunksize)
+        
+        last_read = (n_records-1)
+        last_write = (start_index + n_records) - 1
+        
+        for i = 0, n_chunks-1 do begin
+            
+            srec_read = (i*chunksize)
+            erec_read = (((i+1)*chunksize) - 1) < last_read
+            
+            srec_write = (i*chunksize) + start_index
+            erec_write = ((((i+1)*chunksize) - 1) + start_index) < last_write
+            
+            nrecs = (erec_write - srec_write) + 1
+            
+            input_buffer = databuffer[srec_read:erec_read]
+            
+            tmpdata = dvector[srec_write:erec_write]
+            tmpdata.(col_ind) = input_buffer
+            
+            dvector[srec_write:erec_write] = tmpdata
+            
+        endfor
+
+    endelse
+    
+end
+
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Reorder_table method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::Reorder_table, reorder_index
+
+    compile_opt idl2, strictarrsubs
+    
+
+    ; open the virtual table and create a temporary file if necessary
+    
+    if self.dt_flag_vtable then begin
+
+        ; open the virtual table
+        
+        loc_id = self.Vtable_Open()
+        dset_name = self.dt_dataset_name
+        recdef = *(self.dt_record_def_ptr)
+        
+        ; create a temporary file
+        
+        fn = self.dt_vtable_filename
+        fpath = file_dirname(fn)
+        
+        tmpfile = fpath + cmunique_id() + '.tmp'
+
+        ; check if the temporary file already exists
+
+        fn_exists = (file_info(tmpfile)).exists
+        
+        if fn_exists then message, 'Error: temporary file already exists'
+        
+        ; create the file
+        
+        tmp_fid = h5f_create(tmpfile)
+        h5f_close, tmp_fid
+        
+        ; create the group
+        
+        full_group_name = 'temporary_group'
+        rslt = wmb_h5_create_group(tmpfile, full_group_name)
+        if rslt ne 1 then message, 'Error opening group'    
+        
+        ; open the file
+        tmp_fid = h5f_open(tmpfile, /WRITE)
+
+        ; open the group
+        tmp_loc_id = h5g_open(tmp_fid, full_group_name)
+
+        ; create the table
+                
+        tmp_title = 'temporary_table'
+        tmp_dset_name = 'temporary_table'
+        table_chunksize = 10000
+        compressflag = 0                
+            
+        wmb_h5tb_make_table, tmp_title, $
+                             tmp_loc_id, $
+                             tmp_dset_name, $
+                             0, $
+                             recdef, $
+                             table_chunksize, $
+                             compressflag
+
+        n_records = self.dt_nrecords
+        chunksize = 100000 < n_records
+        n_chunks = ceil(float(n_records) / chunksize)
+        last_write = (n_records-1)
+
+        ; reorder the table into temporary storage
+        
+        for i = 0, n_chunks-1 do begin
+            
+            srec = (i*chunksize)
+            erec = (((i+1)*chunksize) - 1) < last_write
+            
+            nrecs = (erec - srec) + 1
+            
+            tmp_reorder_index = reorder_index[srec:erec]
+            
+            ; read a chunk
+            
+            wmb_h5tb_read_records_index, loc_id, $
+                                         dset_name, $
+                                         tmp_reorder_index, $
+                                         databuffer
+        
+            ; write a chunk to the temporary file
+            
+            wmb_h5tb_append_records, tmp_loc_id, $
+                                     tmp_dset_name, $
+                                     nrecs, $
+                                     databuffer
+            
+        endfor
+    
+        ; copy the reordered data back to the original location
+    
+        for i = 0, n_chunks-1 do begin
+            
+            srec = (i*chunksize)
+            erec = (((i+1)*chunksize) - 1) < last_write
+            
+            nrecs = (erec - srec) + 1
+            
+            tmp_reorder_index = reorder_index[srec:erec]
+            
+            ; read a chunk
+            
+            wmb_h5tb_read_records, tmp_loc_id, $
+                                   tmp_dset_name, $
+                                   srec, $
+                                   nrecs, $
+                                   databuffer
+        
+            ; write a chunk to the original table
+            
+            wmb_h5tb_write_records, loc_id, $
+                                    dset_name, $
+                                    srec, $
+                                    nrecs, $
+                                    databuffer
+            
+        endfor
+        
+        ; close the temporary file and delete it
+            
+        h5g_close, tmp_loc_id
+        h5f_close, tmp_fid
+        file_delete, tmpfile
+        
+        ; close the virtual table
+        ; self.Vtable_Close
+
+    endif else begin
+        
+        dvector = self.dt_datavector
+        
+        ; perform the entire operation in memory
+        
+        dvector[0] = dvector[reorder_index]
+        
+    endelse
+    
+end
+
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Sort_single_index method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::Sort_single_index, col_name, descending=descending
+
+    compile_opt idl2, strictarrsubs
+    
+    if N_elements(descending) ne 1 then descending = 0
+    
+    table_nrecs = self.dt_nrecords
+    
+    ; read the column which will act as the sort index
+    
+    tmpdata = self.Read_column(col_name, 0, table_nrecs)
+    
+    sort_index = sort(tmpdata)
+    
+    if descending eq 1 then sort_index = reverse(sort_index, /OVERWRITE)
+    
+    self -> Reorder_table, sort_index
+
+end
+
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Sort_double_index method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::Sort_double_index, col_name_1, $
+                                      col_name_2, $
+                                      descending=descending
+
+    compile_opt idl2, strictarrsubs
+    
+    if N_elements(descending) ne 1 then descending = 0
+    
+    table_nrecs = self.dt_nrecords
+    
+    ; read the column which will act as the primary sort index
+    
+    tmpdata1 = self.Read_column(col_name_1, 0, table_nrecs)
+    
+    ; read the column which will act as the secondary sort index
+    
+    tmpdata2 = self.Read_column(col_name_2, 0, table_nrecs)
+    
+    sort_index = wmb_sort_two_columns(tmpdata1, tmpdata2)
+    
+    if descending eq 1 then sort_index = reverse(sort_index, /OVERWRITE)
+    
+    self -> Reorder_table, sort_index
+
+end
+
 
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -705,7 +1097,8 @@ function wmb_DataTable::Load, filename, full_group_name, dset_name
     self.dt_vtable_loc_id = loc_id
     self.dt_flag_table_empty = 0
 
-    self -> Vtable_Close
+    ; close the file
+    ; self -> Vtable_Close
 
     return, 1
 
@@ -883,8 +1276,9 @@ function wmb_DataTable::Save, filename, $
     ; destroy the datavector object
     obj_destroy, self.dt_datavector
 
+
     ; close the hdf file
-    self -> Vtable_Close
+    ; self -> Vtable_Close
         
 
     return, 1
@@ -1227,6 +1621,8 @@ end
 pro wmb_DataTable::Cleanup
 
     compile_opt idl2, strictarrsubs
+
+    self -> Vtable_Close
 
     ptr_free, self.dt_record_def_ptr
     

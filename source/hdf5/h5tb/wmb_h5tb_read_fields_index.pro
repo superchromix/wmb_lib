@@ -13,9 +13,9 @@
 ;    loc_id
 ;        IN: Identifier of the file or group where the table is located. 
 ;    dset_name
-;        IN: The name of the dataset to overwrite. 
+;        IN: The name of the dataset to read. 
 ;    read_field_index
-;        IN: The indexes of the fields to write. 
+;        IN: The indexes of the fields to read. 
 ;    start
 ;        IN: The zero based index record to start reading.  
 ;    nrecords
