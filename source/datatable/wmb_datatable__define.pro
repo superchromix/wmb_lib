@@ -123,6 +123,9 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
     
     if self.dt_flag_vtable then begin
 
+        ; flush the write buffer
+        self -> Flush_writebuffer
+
         ; open the file
         loc_id = self -> Vtable_Open()
         dset_name = self.dt_dataset_name
@@ -149,7 +152,7 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
 
 
         ; close the file
-        ; self -> Vtable_Close
+        self -> Vtable_Close
 
     endif else begin
         
@@ -263,6 +266,9 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
     
     if self.dt_flag_vtable then begin
 
+        ; flush the write buffer
+        self -> Flush_writebuffer
+
         ; open the file
         loc_id = self -> Vtable_Open()
         dset_name = self.dt_dataset_name
@@ -289,7 +295,7 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
 
 
         ; close the file
-        ; self -> Vtable_Close
+        self -> Vtable_Close
 
     endif else begin
         
@@ -400,24 +406,67 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
             return, 0
         endif
         
-        ; write the new records to disk
-        
-        loc_id = self -> Vtable_Open()
-        dset_name = self.dt_dataset_name
-        nrecords = N_elements(tmp_indata)
-        
-        wmb_h5tb_append_records, loc_id, $
-                                 dset_name, $
-                                 nrecords, $
-                                 tmp_indata
-        
-        self.dt_nrecords = self.dt_nrecords + nrecords
+        ; does the write buffer exist?
 
-        ; release the tmp_indata variable
-        tmp_indata = 0
+        if ~obj_valid(self.dt_write_buffer) then begin
+            
+            ; initialize the write buffer
+            
+            recdef = *self.dt_record_def_ptr
+            buflen = self.dt_write_buffer_length
+            
+            writebuffer = obj_new('wmb_vector', $
+                                  datatype=8, $
+                                  structure_type_def=recdef, $
+                                  initial_capacity = buflen+1, $           
+                                  double_capacity_if_full = 1)
+            
+            self.dt_write_buffer = writebuffer
+            
+        endif
         
-        ; close the file
-        ; self -> Vtable_Close
+        writebuffer = self.dt_write_buffer
+        writebuffer_len = self.dt_write_buffer_length
+        
+        buf_nrecs = writebuffer.size
+        buf_space = writebuffer_len - buf_nrecs
+        
+        ; how many records are we writing?
+        indata_length = N_elements(tmp_indata)
+        
+        
+        ; is there space in the write buffer?
+        
+        if indata_length lt buf_space then begin
+            
+            writebuffer.Append, tmp_indata, /NO_COPY
+            self.dt_nrecords = self.dt_nrecords + indata_length
+            
+        endif else begin
+        
+            ; flush the write buffer
+            
+            self -> Flush_writebuffer
+        
+            ; write the new records to disk
+        
+            loc_id = self -> Vtable_Open()
+            dset_name = self.dt_dataset_name
+        
+            wmb_h5tb_append_records, loc_id, $
+                                     dset_name, $
+                                     indata_length, $
+                                     tmp_indata
+        
+            self.dt_nrecords = self.dt_nrecords + indata_length
+
+            ; release the tmp_indata variable
+            tmp_indata = 0
+        
+            ; close the file
+            self -> Vtable_Close
+            
+        endelse
 
     endif else begin
         
@@ -463,20 +512,79 @@ end
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-;   This is the Consolidate_Memory method
+;   This is the Consolidate_table method
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-pro wmb_DataTable::Consolidate_Memory
+pro wmb_DataTable::Consolidate_table
 
     compile_opt idl2, strictarrsubs
     
-    if self.dt_flag_vtable then begin
+    self -> Consolidate_Memory
+    self -> Flush_writebuffer
+    
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Consolidate_memory method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::Consolidate_memory
+
+    compile_opt idl2, strictarrsubs
+    
+    if self.dt_flag_vtable eq 0 then begin
         
         datavector = self.dt_datavector
         
         datavector.Consolidate
+        
+    endif 
+    
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Flush_writebuffer method
+;
+;   Flush the contents of the write buffer to disk
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::Flush_writebuffer
+
+    compile_opt idl2, strictarrsubs
+    
+    if self.dt_flag_vtable and obj_valid(self.dt_write_buffer) then begin
+        
+        writebuffer = self.dt_write_buffer
+        writebuffer_len = self.dt_write_buffer_length
+        
+        loc_id = self -> Vtable_Open()
+        dset_name = self.dt_dataset_name
+        buf_nrecs = writebuffer.size        
+        
+        ; write the contents of the write buffer to disk
+
+        buf_data = writebuffer[*]
+        
+        wmb_h5tb_append_records, loc_id, $
+                                 dset_name, $
+                                 buf_nrecs, $
+                                 buf_data
+        
+        ; close the file
+        self -> Vtable_Close
+        
+        ; empty the write buffer
+        obj_destroy, writebuffer
         
     endif
     
@@ -509,6 +617,9 @@ function wmb_DataTable::Read_column, col_name, start_index, n_records
 
     if self.dt_flag_vtable then begin
         
+        ; flush the write buffer
+        self -> Flush_writebuffer
+        
         loc_id = self.Vtable_Open()
         dset_name = self.dt_dataset_name
         
@@ -523,7 +634,7 @@ function wmb_DataTable::Read_column, col_name, start_index, n_records
         databuffer = temporary(databuffer.(0))
         
         ; close the file
-        ; self.Vtable_Close
+        self.Vtable_Close
         
     endif else begin
         
@@ -586,6 +697,9 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
 
     if self.dt_flag_vtable then begin
         
+        ; flush the write buffer
+        self -> Flush_writebuffer
+        
         ; convert databuffer from a normal array to an array of 
         ; single field structures
         
@@ -626,7 +740,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
         endfor
         
         ; close the file
-        ; self.Vtable_Close
+        self.Vtable_Close
         
     endif else begin
         
@@ -677,6 +791,9 @@ pro wmb_DataTable::Reorder_table, reorder_index
     ; open the virtual table and create a temporary file if necessary
     
     if self.dt_flag_vtable then begin
+
+        ; flush the write buffer
+        self -> Flush_writebuffer
 
         ; open the virtual table
         
@@ -797,7 +914,7 @@ pro wmb_DataTable::Reorder_table, reorder_index
         file_delete, tmpfile
         
         ; close the virtual table
-        ; self.Vtable_Close
+        self.Vtable_Close
 
     endif else begin
         
@@ -1098,7 +1215,7 @@ function wmb_DataTable::Load, filename, full_group_name, dset_name
     self.dt_flag_table_empty = 0
 
     ; close the file
-    ; self -> Vtable_Close
+    self -> Vtable_Close
 
     return, 1
 
@@ -1342,6 +1459,9 @@ pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
             endif
             
         endif
+        
+        ; erase the write buffer
+        obj_destroy, self.dt_write_buffer
 
     endif else begin
         
@@ -1377,10 +1497,8 @@ end
 
 function wmb_DataTable::Vtable_Open
 
-
     compile_opt idl2, strictarrsubs
 
-        
     loc_id = self.dt_vtable_loc_id
         
     if self.dt_vtable_open eq 0 then begin
@@ -1502,7 +1620,8 @@ end
 function wmb_DataTable::Init, Indata=indata, $
                               No_copy=no_copy, $
                               RecordDef=recorddef, $
-                              Title = title
+                              Title = title, $
+                              Write_buffer_length = write_buffer_length
                               
 
     compile_opt idl2, strictarrsubs
@@ -1511,6 +1630,8 @@ function wmb_DataTable::Init, Indata=indata, $
     if N_elements(no_copy) eq 0 then no_copy = 0
 
     if N_elements(title) eq 0 then title = 'Table'
+
+    if N_elements(write_buffer_length) eq 0 then write_buffer_length = 10000
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0
@@ -1558,6 +1679,8 @@ function wmb_DataTable::Init, Indata=indata, $
     self.dt_nrecords               = 0
     
     self.dt_datavector             = obj_new()
+    self.dt_write_buffer           = obj_new()
+    self.dt_write_buffer_length    = write_buffer_length
   
     self.dt_flag_vtable            = 0L
     self.dt_vtable_open            = 0
@@ -1622,11 +1745,15 @@ pro wmb_DataTable::Cleanup
 
     compile_opt idl2, strictarrsubs
 
+    self -> Flush_writebuffer
+
     self -> Vtable_Close
 
     ptr_free, self.dt_record_def_ptr
     
     if obj_valid(self.dt_datavector) then obj_destroy, self.dt_datavector
+    
+    if obj_valid(self.dt_write_buffer) then obj_destroy, self.dt_write_buffer
     
     if self.dt_flag_vtable && self.dt_vtable_open then begin
         
@@ -1675,6 +1802,8 @@ pro wmb_DataTable__define
         dt_nrecords                 : long64(0),           $
                                                            $                                                  
         dt_datavector               : obj_new(),           $
+        dt_write_buffer             : obj_new(),           $
+        dt_write_buffer_length      : 0L,                  $
                                                            $
         dt_flag_vtable              : fix(0),              $
         dt_vtable_filename          : '',                  $
