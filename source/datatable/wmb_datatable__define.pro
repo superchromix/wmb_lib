@@ -891,10 +891,7 @@ pro wmb_DataTable::Reorder_table, reorder_index
         
         ; create a temporary file
         
-        fn = self.dt_vtable_filename
-        fpath = file_dirname(fn)
-        
-        tmpfile = fpath + cmunique_id() + '.tmp'
+        tmpfile = filepath(cmunique_id() + '.tmp', /TMP)
 
         ; check if the temporary file already exists
 
