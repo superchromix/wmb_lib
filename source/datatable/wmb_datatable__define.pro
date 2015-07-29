@@ -121,14 +121,13 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
 
     ; is the data stored in memory or on disk?
     
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
 
         ; flush the write buffer
         self -> Flush_writebuffer
 
         ; open the file
-        loc_id = self -> Vtable_Open()
-        dset_name = self.dt_dataset_name
+        loc_id = self -> Vtable_Open(dset_name=dset_name)
         
         ; write the data to disk
         
@@ -264,14 +263,13 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
 
     ; is the data stored in memory or on disk?
     
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
 
         ; flush the write buffer
         self -> Flush_writebuffer
 
         ; open the file
-        loc_id = self -> Vtable_Open()
-        dset_name = self.dt_dataset_name
+        loc_id = self -> Vtable_Open(dset_name=dset_name)
         
         ; get the data from disk
         
@@ -378,6 +376,15 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
         self.dt_record_def_ptr = ptr_new(recdef)
         self.dt_flag_record_def_init = 1
         
+        recdef_size_bytes = wmb_sizeofstruct(recdef)
+        
+        autosave_thresh_mbytes = self.dt_autosave_thresh_mbytes
+        autosave_thresh_nrecs = ( (autosave_thresh_mbytes*(1024LL^2)) $
+                                  / recdef_size_bytes ) + 1LL
+
+        self.dt_size_of_record_def = recdef_size_bytes
+        self.dt_autosave_thresh_nrecs = autosave_thresh_nrecs
+        
     endelse
 
 
@@ -396,7 +403,7 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
 
     ; is the table stored in memory or on disk?
     
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
         
         ; if the table is on disk, then the table is not empty
         ; (you cannot save an empty table)
@@ -450,8 +457,7 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
         
             ; write the new records to disk
         
-            loc_id = self -> Vtable_Open()
-            dset_name = self.dt_dataset_name
+            loc_id = self -> Vtable_Open(dset_name=dset_name)
         
             wmb_h5tb_append_records, loc_id, $
                                      dset_name, $
@@ -505,8 +511,91 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
         
     endelse
 
+    self -> Check_autosave
+
     return, 1
 
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Check_autosave method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::Check_autosave
+
+    compile_opt idl2, strictarrsubs
+    
+    chk_as_thresh = self.dt_nrecords ge self.dt_autosave_thresh_nrecs
+    chk_vtable = self.dt_flag_vtable
+    
+    ; do we need to auto-save the table to disk?
+    
+    if (self.dt_autosave_enabled eq 1) and $
+       (self.dt_autosave_activated eq 0) and $
+       (chk_as_thresh eq 1) and $
+       (chk_vtable eq 0) then begin
+        
+        title = 'autosave'
+        dset_name = 'autosave'
+        grp_name = 'autosave'
+        chunksize = 10000
+        compressflag = 0
+        
+        ; get a temporary file name
+        tmp_fn = filepath(cmunique_id() + '.tmp',/TMP)
+        
+        ; we now have a valid filename, title, group name, and dataset name
+        tmp_recdef = *(self.dt_record_def_ptr)
+        tmp_data = (self.dt_datavector)[*]
+        tmp_nrecords = self.dt_nrecords
+
+        ; destroy the datavector object
+        obj_destroy, self.dt_datavector
+
+        ; check if filename exists
+        fn_exists = (file_info(tmp_fn)).exists
+        if fn_exists eq 1 then message, 'Error: temporary file exists'
+        
+        ; create the file
+        fid = h5f_create(tmp_fn)
+        h5f_close, fid
+        
+        ; create the group
+        rslt = wmb_h5_create_group(tmp_fn, grp_name)
+        if rslt ne 1 then message, 'Error opening group'        
+        
+        ; open the file
+        fid = h5f_open(tmp_fn, /WRITE)
+
+        ; open the group
+        loc_id = h5g_open(fid, grp_name)
+
+        ; write the table
+        wmb_h5tb_make_table, title, $
+                             loc_id, $
+                             dset_name, $
+                             tmp_nrecords, $
+                             tmp_recdef, $
+                             chunksize, $
+                             compressflag, $
+                             databuffer = tmp_data
+
+
+        ; we are done!  populate the self fields
+        self.dt_autosave_activated = 1
+        self.dt_autosave_vtable_open = 1
+        self.dt_autosave_filename = tmp_fn
+        self.dt_autosave_fid = fid
+        self.dt_autosave_loc_id = loc_id
+
+        ; close the hdf file
+        self -> Vtable_Close
+        
+    endif
+    
 end
 
 
@@ -538,7 +627,7 @@ pro wmb_DataTable::Consolidate_memory
 
     compile_opt idl2, strictarrsubs
     
-    if self.dt_flag_vtable eq 0 then begin
+    if self.dt_flag_vtable eq 0 and self.dt_autosave_activated eq 0 then begin
         
         datavector = self.dt_datavector
         
@@ -562,13 +651,14 @@ pro wmb_DataTable::Flush_writebuffer
 
     compile_opt idl2, strictarrsubs
     
-    if self.dt_flag_vtable and obj_valid(self.dt_write_buffer) then begin
+    if (self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1) $
+       and obj_valid(self.dt_write_buffer) then begin
         
         writebuffer = self.dt_write_buffer
         writebuffer_len = self.dt_write_buffer_length
         
-        loc_id = self -> Vtable_Open()
-        dset_name = self.dt_dataset_name
+        loc_id = self -> Vtable_Open(dset_name=dset_name)
+
         buf_nrecs = writebuffer.size        
         
         ; write the contents of the write buffer to disk
@@ -615,13 +705,12 @@ function wmb_DataTable::Read_column, col_name, start_index, n_records
     col_ind = where(stored_colnames eq input_colname, tmpcnt)
     if tmpcnt ne 1 then message, 'Invalid column name'
 
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
         
         ; flush the write buffer
         self -> Flush_writebuffer
         
-        loc_id = self.Vtable_Open()
-        dset_name = self.dt_dataset_name
+        loc_id = self.Vtable_Open(dset_name=dset_name)
         
         wmb_h5tb_read_fields_index, loc_id, $
                                     dset_name, $
@@ -695,7 +784,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
     col_ind = where(stored_colnames eq input_colname, tmpcnt)
     if tmpcnt ne 1 then message, 'Invalid column name'
 
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
         
         ; flush the write buffer
         self -> Flush_writebuffer
@@ -708,8 +797,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
         tmpbuffer.(0) = temporary(databuffer)
         databuffer = temporary(tmpbuffer)
         
-        loc_id = self.Vtable_Open()
-        dset_name = self.dt_dataset_name
+        loc_id = self.Vtable_Open(dset_name=dset_name)
         
         chunksize = 100000 < n_records
         n_chunks = ceil(float(n_records) / chunksize)
@@ -790,15 +878,15 @@ pro wmb_DataTable::Reorder_table, reorder_index
 
     ; open the virtual table and create a temporary file if necessary
     
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
 
         ; flush the write buffer
         self -> Flush_writebuffer
 
         ; open the virtual table
         
-        loc_id = self.Vtable_Open()
-        dset_name = self.dt_dataset_name
+        loc_id = self.Vtable_Open(dset_name=dset_name)
+
         recdef = *(self.dt_record_def_ptr)
         
         ; create a temporary file
@@ -1250,13 +1338,18 @@ function wmb_DataTable::Save, filename, $
         return, 0
     endif
 
-    if N_elements(full_group_name) eq 0 then $
-        full_group_name = self.dt_full_group_name
-
-    if N_elements(dset_name) eq 0 then dset_name = self.dt_dataset_name
-
+    if N_elements(full_group_name) eq 0 then begin
+        message, 'Invalid group name'
+        return, 0
+    endif
+    
+    if N_elements(dset_name) eq 0 then begin
+        message, 'Invalid dataset name'
+        return, 0
+    endif
+    
     if N_elements(title) eq 0 then title = self.dt_title
-    if N_elements(chunksize) eq 0 then chunksize = 1000
+    if N_elements(chunksize) eq 0 then chunksize = 10000
     if N_elements(compressflag) eq 0 then compressflag = 0
 
     if self.dt_flag_table_empty then begin
@@ -1264,7 +1357,7 @@ function wmb_DataTable::Save, filename, $
         return, 0
     endif
 
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 then begin
         message, 'Error: table already written to disk'
         return, 0
     endif
@@ -1286,6 +1379,28 @@ function wmb_DataTable::Save, filename, $
         return, 0
         
     endif
+
+
+    ; has an autosave file already been created?  if so, simply write the 
+    ; data to the new location
+    
+    if self.dt_autosave_activated eq 1 then begin
+        
+        tmp_data = self[*]
+        
+        file_delete, self.dt_autosave_filename
+
+        self.dt_autosave_activated = 0
+
+    endif else begin
+
+        tmp_data = (self.dt_datavector)[*]
+
+        ; destroy the datavector object
+        obj_destroy, self.dt_datavector
+
+    endelse
+
 
     ; check if filename exists and is writable
 
@@ -1337,7 +1452,6 @@ function wmb_DataTable::Save, filename, $
     ; we now have a valid filename, title, group name, and dataset name
 
     tmp_recdef = *(self.dt_record_def_ptr)
-    tmp_data = (self.dt_datavector)[*]
     tmp_nrecords = self.dt_nrecords
 
 
@@ -1390,12 +1504,9 @@ function wmb_DataTable::Save, filename, $
     self.dt_vtable_fid = fid
     self.dt_vtable_loc_id = loc_id
 
-    ; destroy the datavector object
-    obj_destroy, self.dt_datavector
-
 
     ; close the hdf file
-    ; self -> Vtable_Close
+    self -> Vtable_Close
         
 
     return, 1
@@ -1420,15 +1531,13 @@ pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
 
     if N_elements(delete_file_if_empty) eq 0 then delete_file_if_empty = 0
 
-    if self.dt_flag_vtable then begin
+    if self.dt_flag_vtable eq 1 then begin
 
         ; the data is stored on disk
         
         ; open the data table
         
-        loc_id = self.Vtable_Open()
-
-        dset_name = self.dt_dataset_name
+        loc_id = self.Vtable_Open(dset_name=dset_name)
         
         ; unlink the dataset
         
@@ -1454,7 +1563,6 @@ pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
                 ; will be deleted
                 
                 file_delete, fn
-                self.dt_vtable_filename = ''
                 
             endif
             
@@ -1463,10 +1571,20 @@ pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
         ; erase the write buffer
         obj_destroy, self.dt_write_buffer
 
+    endif else if self.dt_autosave_activated eq 1 then begin
+        
+        ; the data is stored on disk (autosaved)
+        
+        self.Vtable_Close
+        
+        file_delete, self.dt_autosave_filename
+        
+        ; erase the write buffer
+        obj_destroy, self.dt_write_buffer
+        
     endif else begin
         
         ; delete the data vector from memory
-        
         obj_destroy, self.dt_datavector
 
     endelse
@@ -1476,10 +1594,16 @@ pro wmb_DataTable::Erase, delete_file_if_empty = delete_file_if_empty
     
     self.dt_nrecords         = 0
     self.dt_datavector       = obj_new()
+    
     self.dt_flag_vtable      = 0
     self.dt_vtable_open      = 0
-    self.dt_flag_table_empty = 1
+    self.dt_vtable_filename = ''
+    
+    self.dt_autosave_activated = 0
+    self.dt_autosave_vtable_open = 0
+    self.dt_autosave_filename = ''
 
+    self.dt_flag_table_empty = 1
 
 end
 
@@ -1495,27 +1619,64 @@ end
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_DataTable::Vtable_Open
+function wmb_DataTable::Vtable_Open, dset_name = dset_name
 
     compile_opt idl2, strictarrsubs
 
-    loc_id = self.dt_vtable_loc_id
-        
-    if self.dt_vtable_open eq 0 then begin
-        
-        filename = self.dt_vtable_filename
-        groupname = self.dt_full_group_name
-        
-        fid = h5f_open(filename,/WRITE)
-        loc_id = h5g_open(fid, groupname)
+    chk_autosave = self.dt_autosave_activated eq 1
+    chk_vtable = self.dt_flag_vtable eq 1
     
-        self.dt_vtable_fid = fid
-        self.dt_vtable_loc_id = loc_id
-    
-        self.dt_vtable_open = 1
-    
+    if chk_autosave eq 1 and chk_vtable eq 1 then begin
+        message, 'Autosave and virtual table out of sync'
+        return, -1
+    endif
+
+    if self.dt_autosave_activated eq 1 then begin
+        
+        loc_id = self.dt_autosave_loc_id
+        dset_name = 'autosave'        
+        
+        if self.dt_autosave_vtable_open eq 0 then begin
+        
+            ; open the autosave file
+            
+            filename = self.dt_autosave_filename
+            groupname = 'autosave'
+            
+            fid = h5f_open(filename,/WRITE)
+            loc_id = h5g_open(fid, groupname)
+        
+            self.dt_autosave_fid = fid
+            self.dt_autosave_loc_id = loc_id
+            self.dt_autosave_vtable_open = 1
+        
+        endif
+        
     endif
     
+    if self.dt_flag_vtable eq 1 then begin
+        
+        loc_id = self.dt_vtable_loc_id
+        dset_name = self.dt_dataset_name
+        
+        if self.dt_vtable_open eq 0 then begin
+                
+            ; open the virtual table file
+                
+            filename = self.dt_vtable_filename
+            groupname = self.dt_full_group_name
+            
+            fid = h5f_open(filename,/WRITE)
+            loc_id = h5g_open(fid, groupname)
+        
+            self.dt_vtable_fid = fid
+            self.dt_vtable_loc_id = loc_id
+            self.dt_vtable_open = 1
+        
+        endif
+        
+    endif
+
     return, loc_id
 
 end
@@ -1531,12 +1692,21 @@ end
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-
 pro wmb_DataTable::Vtable_Close
-
 
     compile_opt idl2, strictarrsubs
 
+    if self.dt_autosave_vtable_open eq 1 then begin
+            
+        fid = self.dt_autosave_fid
+        loc_id = self.dt_autosave_loc_id
+        
+        h5g_close, loc_id
+        h5f_close, fid
+    
+        self.dt_autosave_vtable_open = 0
+    
+    endif
         
     if self.dt_vtable_open eq 1 then begin
             
@@ -1621,6 +1791,8 @@ function wmb_DataTable::Init, Indata=indata, $
                               No_copy=no_copy, $
                               RecordDef=recorddef, $
                               Title = title, $
+                              Autosave_enable = autosave_enable, $
+                              Autosave_thresh_mbytes = autosave_thresh_mbytes, $
                               Write_buffer_length = write_buffer_length
                               
 
@@ -1631,7 +1803,12 @@ function wmb_DataTable::Init, Indata=indata, $
 
     if N_elements(title) eq 0 then title = 'Table'
 
-    if N_elements(write_buffer_length) eq 0 then write_buffer_length = 10000
+    if N_elements(write_buffer_length) eq 0 then write_buffer_length = 50000
+    
+    if N_elements(autosave_enable) eq 0 then autosave_enable = 0
+    
+    ; default autosave threshold is 256MB
+    if N_elements(autosave_thresh_mbytes) eq 0 then autosave_thresh_mbytes=256
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0
@@ -1661,6 +1838,11 @@ function wmb_DataTable::Init, Indata=indata, $
             return, 0
         endif
 
+        recdef_size_bytes = wmb_sizeofstruct(recorddef)
+        
+        autosave_thresh_nrecs = ( (autosave_thresh_mbytes*(1024LL^2)) $
+                                  / recdef_size_bytes ) + 1LL
+
     endif
     
     
@@ -1682,6 +1864,14 @@ function wmb_DataTable::Init, Indata=indata, $
     self.dt_write_buffer           = obj_new()
     self.dt_write_buffer_length    = write_buffer_length
   
+    self.dt_autosave_thresh_mbytes = autosave_thresh_mbytes
+    self.dt_autosave_enabled       = autosave_enable
+    self.dt_autosave_activated     = 0
+    self.dt_autosave_filename      = ''
+    self.dt_autosave_fid           = 0
+    self.dt_autosave_loc_id        = 0
+    self.dt_autosave_vtable_open   = 0
+  
     self.dt_flag_vtable            = 0L
     self.dt_vtable_open            = 0
     self.dt_vtable_filename        = ''
@@ -1696,6 +1886,9 @@ function wmb_DataTable::Init, Indata=indata, $
         self.dt_record_def_ptr = ptr_new(recorddef)
         self.dt_flag_record_def_init = 1
         self.dt_nfields = n_tags(recorddef)
+        
+        self.dt_size_of_record_def = recdef_size_bytes
+        self.dt_autosave_thresh_nrecs = autosave_thresh_nrecs
         
     endif
 
@@ -1754,13 +1947,9 @@ pro wmb_DataTable::Cleanup
     if obj_valid(self.dt_datavector) then obj_destroy, self.dt_datavector
     
     if obj_valid(self.dt_write_buffer) then obj_destroy, self.dt_write_buffer
-    
-    if self.dt_flag_vtable && self.dt_vtable_open then begin
-        
-        h5g_close, self.dt_vtable_loc_id
-        h5f_close, self.dt_vtable_fid
-        
-    endif
+
+    if self.dt_autosave_activated eq 1 then $
+        file_delete, self.dt_autosave_filename
 
 end
 
@@ -1797,6 +1986,7 @@ pro wmb_DataTable__define
                                                            $
         dt_record_def_ptr           : ptr_new(),           $
         dt_flag_record_def_init     : fix(0),              $
+        dt_size_of_record_def       : 0L,                  $
                                                            $
         dt_nfields                  : long64(0),           $
         dt_nrecords                 : long64(0),           $
@@ -1804,6 +1994,15 @@ pro wmb_DataTable__define
         dt_datavector               : obj_new(),           $
         dt_write_buffer             : obj_new(),           $
         dt_write_buffer_length      : 0L,                  $
+                                                           $
+        dt_autosave_thresh_mbytes   : 0LL,                 $
+        dt_autosave_thresh_nrecs    : 0LL,                 $
+        dt_autosave_enabled         : fix(0),              $
+        dt_autosave_activated       : fix(0),              $
+        dt_autosave_filename        : '',                  $
+        dt_autosave_fid             : long(0),             $
+        dt_autosave_loc_id          : long(0),             $
+        dt_autosave_vtable_open     : fix(0),              $
                                                            $
         dt_flag_vtable              : fix(0),              $
         dt_vtable_filename          : '',                  $
