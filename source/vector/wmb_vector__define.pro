@@ -367,9 +367,8 @@ pro wmb_Vector::Consolidate
         
         ; transfer the existing data
         
-        tmp_data = temporary(*self.vec_data)
+        new_array[0] = (*self.vec_data)[0:current_data_length-1]
         ptr_free, self.vec_data
-        new_array[0] = temporary(tmp_data)
         
         
         ; update the vector parameters
