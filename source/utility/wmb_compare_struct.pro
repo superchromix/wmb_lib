@@ -66,9 +66,9 @@ function wmb_compare_struct, str1, $
         
         if ntags1 ne ntags2 then return, 0
         
-        matched = 1
-        
         for i = 0, ntags1 - 1 do begin
+        
+            matched = 1
         
             ; compare the field name
         
@@ -102,7 +102,21 @@ function wmb_compare_struct, str1, $
             
             endif else begin
             
-                if ~ignore_values then matched = (tmpval1 eq tmpval2)
+                if ~ignore_values then begin
+                    
+                    matched = (tmpval1 eq tmpval2)
+            
+                    if N_elements(matched) gt 1 or $
+                       size(matched, /N_DIMENSIONS) gt 0 then begin
+                        
+                        ; ensure that matched is a scalar
+                        
+                        tmp_matched = min(matched)
+                        matched = tmp_matched
+                        
+                    endif
+                    
+                endif
             
             endelse
         
