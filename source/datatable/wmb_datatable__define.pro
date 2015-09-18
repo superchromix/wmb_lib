@@ -317,6 +317,24 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
 
 end
 
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   Overload the size function for the wmb_DataTable object
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_DataTable::_overloadSize
+
+    compile_opt idl2, strictarrsubs
+
+    result = [self.dt_nrecords]
+    
+    return, result
+
+end
+
+
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
 ;   This is the Append method
@@ -520,6 +538,93 @@ end
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
+;   This is the Append_table method
+;
+;   Returns 1 if successful
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+function wmb_DataTable::Append_table, input_table
+
+    compile_opt idl2, strictarrsubs
+
+    if isa(input_table, 'wmb_datatable') eq 0 then begin
+        
+        message, 'Input table must be a WMB_DATATABLE object'
+        return, 0
+    
+    endif
+
+    recorddef_init = self.dt_flag_record_def_init
+
+    ; if the record definition is already initialized, then compare it to
+    ; the input data.  if not, create a new record definition based on the
+    ; input data.
+
+    if recorddef_init eq 1 then begin
+
+        recdef_a = *self.dt_record_def_ptr
+        recdef_b = input_table.recorddef
+        
+        if wmb_compare_struct(recdef_a, recdef_b, /COMPARE_FIELD_NAMES, $
+                              /IGNORE_FIELD_VALUES) eq 0 then begin
+             
+            message, 'Unmatched record definitions'                   
+            return, 0
+                       
+        endif
+    
+    endif else begin
+        
+        recdef = input_table.recorddef
+        
+        self.dt_nfields = n_tags(recdef)        
+        self.dt_record_def_ptr = ptr_new(recdef)
+        self.dt_flag_record_def_init = 1
+
+        recdef_size_bytes = wmb_sizeofstruct(recdef)
+
+        autosave_thresh_mbytes = self.dt_autosave_thresh_mbytes
+        autosave_thresh_nrecs = ( (autosave_thresh_mbytes*(1024LL^2)) $
+            / recdef_size_bytes ) + 1LL
+
+        self.dt_size_of_record_def = recdef_size_bytes
+        self.dt_autosave_thresh_nrecs = autosave_thresh_nrecs
+        
+    endelse
+    
+    
+    ; copy the input table, chunk by chunk
+
+    chunksize = 50000
+    
+    table_len = input_table.nrecords
+    
+    if table_len gt 0 then begin
+    
+        n_chunks = ceil(float(table_len)/chunksize)
+        
+        for i = 0, n_chunks-1 do begin
+            
+            srec = i * chunksize
+            erec = (((i+1)*chunksize) - 1) < (table_len - 1)
+            
+            tmp_dat = input_table[srec:erec]
+            
+            result = self.Append(tmp_dat, /NO_COPY)
+            
+        endfor
+        
+    endif
+
+    return, 1
+
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
 ;   This is the Check_autosave method
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -627,7 +732,9 @@ pro wmb_DataTable::Consolidate_memory
 
     compile_opt idl2, strictarrsubs
     
-    if self.dt_flag_vtable eq 0 and self.dt_autosave_activated eq 0 then begin
+    if self.dt_flag_vtable eq 0 and $
+       self.dt_autosave_activated eq 0 and $
+       obj_valid(self.dt_datavector) then begin
         
         datavector = self.dt_datavector
         
@@ -688,11 +795,16 @@ end
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_DataTable::Read_column, col_name, start_index, n_records
+function wmb_DataTable::Read_column, col_name, $
+                                     start_index = start_index, $
+                                     n_records = n_records
 
     compile_opt idl2, strictarrsubs
     
     table_nrecs = self.dt_nrecords
+    
+    if N_elements(start_index) eq 0 then start_index = 0
+    if N_elements(n_records) eq 0 then n_records = table_nrecs
     
     if (start_index + n_records) gt table_nrecs then $
         message, 'Invalid record range'
@@ -705,54 +817,63 @@ function wmb_DataTable::Read_column, col_name, start_index, n_records
     col_ind = where(stored_colnames eq input_colname, tmpcnt)
     if tmpcnt ne 1 then message, 'Invalid column name'
 
-    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
-        
-        ; flush the write buffer
-        self -> Flush_writebuffer
-        
-        loc_id = self.Vtable_Open(dset_name=dset_name)
-        
-        wmb_h5tb_read_fields_index, loc_id, $
-                                    dset_name, $
-                                    col_ind, $
-                                    start_index, $
-                                    n_records, $
-                                    databuffer
-        
-        ; convert the array of (single field) structures into a normal array
-        databuffer = temporary(databuffer.(0))
-        
-        ; close the file
-        self.Vtable_Close
-        
-    endif else begin
-        
-        dvector = self.dt_datavector
-        
-        ; create an array of the correct type
-        
-        firstrec = dvector[0]
-        tmp_element = firstrec.(col_ind)
-        tmp_dtype = size(tmp_element, /TYPE)
-        databuffer = make_array(n_records, type=tmp_dtype, /NOZERO)
-        
-        chunksize = 100000 < n_records
-        
-        n_chunks = ceil(float(n_records) / chunksize)
-        
-        last_rec = (start_index + n_records) - 1
-        
-        for i = 0, n_chunks-1 do begin
-            
-            srec = (i*chunksize) + start_index
-            erec = ((((i+1)*chunksize) - 1) + start_index) < last_rec
-            
-            tmpdata = dvector[srec:erec]
-            databuffer[i*chunksize] = tmpdata.(col_ind)
-            
-        endfor
+    databuffer = []
+    
+    if self.dt_flag_table_empty eq 0 then begin
 
-    endelse
+        if self.dt_flag_vtable eq 1 or $
+           self.dt_autosave_activated eq 1 then begin
+            
+            ; flush the write buffer
+            self -> Flush_writebuffer
+            
+            loc_id = self.Vtable_Open(dset_name=dset_name)
+            
+            wmb_h5tb_read_fields_index, loc_id, $
+                                        dset_name, $
+                                        col_ind, $
+                                        start_index, $
+                                        n_records, $
+                                        databuffer
+            
+            ; convert the array of (single field) structures into a 
+            ; normal array
+
+            databuffer = temporary(databuffer.(0))
+            
+            ; close the file
+            self.Vtable_Close
+            
+        endif else begin
+            
+            dvector = self.dt_datavector
+            
+            ; create an array of the correct type
+            
+            firstrec = dvector[0]
+            tmp_element = firstrec.(col_ind)
+            tmp_dtype = size(tmp_element, /TYPE)
+            databuffer = make_array(n_records, type=tmp_dtype, /NOZERO)
+            
+            chunksize = 100000 < n_records
+            
+            n_chunks = ceil(float(n_records) / chunksize)
+            
+            last_rec = (start_index + n_records) - 1
+            
+            for i = 0, n_chunks-1 do begin
+                
+                srec = (i*chunksize) + start_index
+                erec = ((((i+1)*chunksize) - 1) + start_index) < last_rec
+                
+                tmpdata = dvector[srec:erec]
+                databuffer[i*chunksize] = tmpdata.(col_ind)
+                
+            endfor
+    
+        endelse
+        
+    endif
     
     return, databuffer
     
@@ -1031,7 +1152,7 @@ pro wmb_DataTable::Sort_single_index, col_name, descending=descending
     
     ; read the column which will act as the sort index
     
-    tmpdata = self.Read_column(col_name, 0, table_nrecs)
+    tmpdata = self.Read_column(col_name)
     
     sort_index = sort(tmpdata)
     
@@ -1061,11 +1182,11 @@ pro wmb_DataTable::Sort_double_index, col_name_1, $
     
     ; read the column which will act as the primary sort index
     
-    tmpdata1 = self.Read_column(col_name_1, 0, table_nrecs)
+    tmpdata1 = self.Read_column(col_name_1)
     
     ; read the column which will act as the secondary sort index
     
-    tmpdata2 = self.Read_column(col_name_2, 0, table_nrecs)
+    tmpdata2 = self.Read_column(col_name_2)
     
     sort_index = wmb_sort_two_columns(tmpdata1, tmpdata2)
     
@@ -1091,6 +1212,7 @@ end
 ;                 1: select values less than or equal to
 ;                 2: select values within [min,max] range
 ;                 3: select values equal to
+;                 4: select values not equal to
 ;                 
 ;   filter_values: A list of filter values.  For range filters,
 ;                  the value is a two-element array of [min,max].
@@ -1183,6 +1305,13 @@ function wmb_DataTable::Select, filter_columns, $
                 3: begin
 
                     tmp_rslt = where(tmpdat.(colindex) eq fval, tmpcnt)
+                    if tmpcnt gt 0 then tmp_pass_markers[tmp_rslt,tmpi] = 1
+                    
+                end
+                
+                4: begin
+
+                    tmp_rslt = where(tmpdat.(colindex) ne fval, tmpcnt)
                     if tmpcnt gt 0 then tmp_pass_markers[tmp_rslt,tmpi] = 1
                     
                 end

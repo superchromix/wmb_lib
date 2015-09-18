@@ -553,8 +553,8 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
             
     endif else begin
     
-        print, wlabel
-        print, size(wlabel)
+        ;print, wlabel
+        ;print, size(wlabel)
     
         wid_wlabel = widget_label(labelcolbase, value=wlabel, font=labelfont)
         
@@ -1500,7 +1500,7 @@ pro inputformtest_event, event
     ; layoutlist = list(layout_pg1)
     layoutlist = list(layout_pg1,layout_pg2,layout_pg3)
 
-    print, inputdat
+    ;print, inputdat
 
     wmb_input_form, event.top, $
                            wdef, $
@@ -1513,7 +1513,7 @@ pro inputformtest_event, event
                            yscroll = 200, $
                            frame=0
                            
-    print, inputdat
+    ;print, inputdat
     
 end
 
