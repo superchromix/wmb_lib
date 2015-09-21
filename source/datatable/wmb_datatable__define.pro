@@ -1197,6 +1197,32 @@ pro wmb_DataTable::Sort_double_index, col_name_1, $
 end
 
 
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the View method
+;
+;   Display the table in a new table window.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::View
+
+    compile_opt idl2, strictarrsubs
+
+    recdef = *self.dt_record_def_ptr
+
+    field_names = tag_names(recdef)
+
+    tmp_name = cmunique_id()
+
+    tw = obj_new('wmb_TableWindow', tmp_name, $
+                                    self[*], $
+                                    window_title = self.dt_title, $
+                                    col_labels = field_names)
+
+end
+
+
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -1320,7 +1346,12 @@ function wmb_DataTable::Select, filter_columns, $
             
         endforeach
         
-        overall_pass = where(total(tmp_pass_markers,1) eq n_filters, tmpcnt)
+        tmp_pass_markers = reform(tmp_pass_markers, $
+                                  tmp_nr, $
+                                  n_filters, $
+                                  /OVERWRITE)
+        
+        overall_pass = where(total(tmp_pass_markers,2) eq n_filters, tmpcnt)
         
         if tmpcnt gt 0 then select_results = [select_results, overall_pass]
         
