@@ -902,10 +902,6 @@ pro wmb_TableWindow::GUI_Init
     button = widget_button(fmenu, value='Rename...', $
                uvalue={Object:self, Method:'evt_file', Source:'rename'}, $
                uname='menu_file_rename')       
-               
-;    button = widget_button(fmenu, value='Duplicate...', $
-;                 uvalue={Object:self, Method:'evt_file', Source:'duplicate'}, $
-;                 uname='menu_file_duplicate')
                                              
     button = widget_button(fmenu, value='Close', /separator, $
                  uvalue={Object:self, Method:'evt_file', Source:'close'}, $
@@ -916,15 +912,6 @@ pro wmb_TableWindow::GUI_Init
 ;   Edit pulldown menu
 
     emenu = widget_button(mbar, value='Edit', uname='menu_edit_top')
-
-;    button = widget_button(emenu, value='Cut', $
-;                 uvalue={Object:self, Method:'evt_edit', Source:'cut'}, $       
-;                 uname='menu_edit_cut', $
-;                 accelerator='ctrl+x')
-  
-;    button = widget_button(emenu, value='Clear', $
-;                 uvalue={Object:self, Method:'evt_edit', Source:'clear'},$       
-;                 uname='menu_edit_clear')
 
     button = widget_button(emenu, value='Select all', $
                  uvalue={Object:self, Method:'evt_edit', Source:'selectall'}, $
@@ -999,11 +986,11 @@ pro wmb_TableWindow::GUI_Init
     endif
 
 
-    
     ; initially, the table size is equal to the size needed to display
     ; all of the data
     
     widget_control, tlb, tlb_get_size = base_size
+    
     table_geo = widget_info(table_id, /geometry)
 
     cur_tlb_xpix = base_size[0]
@@ -1011,16 +998,34 @@ pro wmb_TableWindow::GUI_Init
     cur_table_xpix = table_geo.scr_xsize
     cur_table_ypix = table_geo.scr_ysize
     
+
+    ; get the default table sizes
+
+    def_table_xpix = self.con_table_default_xpix
+    def_table_ypix = self.con_table_default_ypix    
+    
+    
+    ; there is a bug which sometimes causes the scr_ysize of the table
+    ; to be set to zero - avoid this scenario here
+    
+    if cur_table_ypix eq 0 then begin
+        
+        cur_table_ypix = def_table_ypix
+        widget_control, table_id, scr_ysize = cur_table_ypix
+        
+        widget_control, tlb, tlb_get_size = base_size
+        cur_tlb_ypix = base_size[1]   
+        
+    endif  
+    
+    
     ; adjust the maximum sizes - we will not allow the table to be made
     ; larger than it's contents
     
     new_max_tlb_xsize = cur_tlb_xpix < self.con_tlb_maxxsize
     new_max_tlb_ysize = cur_tlb_ypix < self.con_tlb_maxysize
     
-    ; resize the table if necessary
-    
-    def_table_xpix = self.con_table_default_xpix
-    def_table_ypix = self.con_table_default_ypix
+
     
     if cur_table_xpix gt def_table_xpix or $
        cur_table_ypix gt def_table_ypix then begin
@@ -1482,39 +1487,40 @@ end
 
 pro testtable
 
+    nrecs = 8750
+
     inputdat = {name:'',age:1L,sex:''}
     
-    inputdat = replicate(inputdat, 10)
+    inputdat = replicate(inputdat, nrecs)
     
     col_labels = ['Name','Age long long long header','Testing very long column headers']
     
-    tmp_names = ['peter','paul','mark','luke','john', $
-                 'mary','kevin','james','harold','tim']
+    tmp_names = replicate('peter', nrecs)
                           
-    tmp_ages = indgen(10) + 30
+    tmp_ages = indgen(nrecs) + 30
     
-    for i = 0, 9 do begin
+    for i = 0, nrecs-1 do begin
     
         inputdat[i].name = tmp_names[i]
         inputdat[i].age = tmp_ages[i]
         inputdat[i].sex = 'M'
-        if i eq 5 then inputdat[i].sex = 'F'
+        if i mod 5 eq 0 then inputdat[i].sex = 'F'
     
     endfor
 
-    new_inputdat = []
-    
-    for i = 0, 9 do new_inputdat = [new_inputdat, inputdat]
-
-    clabels = ['X Pixels','Y Pixels', 'Photons per pixel']
-    dat = [{xpix:0,ypix:0,opeperadu:0.0}]
-    dat[0].xpix = 512
-    dat[0].ypix = 512
-    dat[0].opeperadu = 12.3
+;    new_inputdat = []
+;    
+;    for i = 0, 9 do new_inputdat = [new_inputdat, inputdat]
+;
+;    clabels = ['X Pixels','Y Pixels', 'Photons per pixel']
+;    dat = [{xpix:0,ypix:0,opeperadu:0.0}]
+;    dat[0].xpix = 512
+;    dat[0].ypix = 512
+;    dat[0].opeperadu = 12.3
 
     otable = obj_new('wmb_TableWindow','mark2', $
-                     new_inputdat, $
-                    $; col_labels = col_labels, $
+                     inputdat, $
+                     col_labels = col_labels, $
                      window_title='Employees', $
                      bg_stripes = 1)
 
