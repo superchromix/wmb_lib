@@ -553,8 +553,8 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
             
     endif else begin
     
-        ;print, wlabel
-        ;print, size(wlabel)
+;        print, wlabel
+;        print, size(wlabel)
     
         wid_wlabel = widget_label(labelcolbase, value=wlabel, font=labelfont)
         

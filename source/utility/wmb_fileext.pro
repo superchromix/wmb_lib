@@ -6,11 +6,11 @@
 ; Return value: Returns the file extension (including the '.')
 ;   
 
-function wmb_fileext, filename
+function wmb_fileext, fname
 
     compile_opt idl2, strictarrsubs
 
-    name = file_basename(filename)
+    name = file_basename(fname)
 
     pos = strpos(name, '.', /reverse_search)
 

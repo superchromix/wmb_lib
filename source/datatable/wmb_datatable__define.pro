@@ -443,7 +443,7 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
             writebuffer = obj_new('wmb_vector', $
                                   datatype=8, $
                                   structure_type_def=recdef, $
-                                  initial_capacity = buflen+1, $           
+                                  initial_capacity = buflen, $           
                                   double_capacity_if_full = 1)
             
             self.dt_write_buffer = writebuffer
@@ -462,7 +462,7 @@ function wmb_DataTable::Append, indata, no_copy=no_copy
         
         ; is there space in the write buffer?
         
-        if indata_length lt buf_space then begin
+        if indata_length le buf_space then begin
             
             writebuffer.Append, tmp_indata, /NO_COPY
             self.dt_nrecords = self.dt_nrecords + indata_length
@@ -646,7 +646,7 @@ pro wmb_DataTable::Check_autosave
         title = 'autosave'
         dset_name = 'autosave'
         grp_name = 'autosave'
-        chunksize = 10000
+        chunksize = 100000
         compressflag = 0
         
         ; get a temporary file name
@@ -753,7 +753,6 @@ end
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-
 pro wmb_DataTable::Flush_writebuffer
 
     compile_opt idl2, strictarrsubs
@@ -764,24 +763,28 @@ pro wmb_DataTable::Flush_writebuffer
         writebuffer = self.dt_write_buffer
         writebuffer_len = self.dt_write_buffer_length
         
-        loc_id = self -> Vtable_Open(dset_name=dset_name)
-
-        buf_nrecs = writebuffer.size        
+        if writebuffer.size gt 0 then begin
         
-        ; write the contents of the write buffer to disk
-
-        buf_data = writebuffer[*]
+            loc_id = self -> Vtable_Open(dset_name=dset_name)
+    
+            buf_nrecs = writebuffer.size        
+            
+            ; write the contents of the write buffer to disk
+    
+            buf_data = writebuffer[*]
+            
+            wmb_h5tb_append_records, loc_id, $
+                                     dset_name, $
+                                     buf_nrecs, $
+                                     buf_data
+            
+            ; close the file
+            self -> Vtable_Close
+            
+            ; empty the write buffer
+            obj_destroy, writebuffer
         
-        wmb_h5tb_append_records, loc_id, $
-                                 dset_name, $
-                                 buf_nrecs, $
-                                 buf_data
-        
-        ; close the file
-        self -> Vtable_Close
-        
-        ; empty the write buffer
-        obj_destroy, writebuffer
+        endif
         
     endif
     
@@ -793,7 +796,6 @@ end
 ;   This is the Read_column method
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
 
 function wmb_DataTable::Read_column, col_name, $
                                      start_index = start_index, $
@@ -885,7 +887,6 @@ end
 ;   This is the Write_column method
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
 
 pro wmb_DataTable::Write_column, col_name, start_index, databuffer
 
@@ -985,6 +986,128 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
 end
 
 
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Write_multiple_columns method
+;
+;   Databuffer should be a 1D array of structures
+;   
+;   The field names of the structures must match the column
+;   names of the table.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::Write_multiple_columns, start_index, databuffer
+
+    compile_opt idl2, strictarrsubs
+
+    table_nrecs = self.dt_nrecords
+    n_records = N_elements(databuffer)
+
+    if (start_index + n_records) gt table_nrecs then $
+        message, 'Invalid record range'
+
+    ; which column are we working with?
+
+    recdef = *(self.dt_record_def_ptr)
+    stored_colnames = strupcase(tag_names(recdef))
+    
+    tmprec = databuffer[0]
+    if size(tmprec,/TYPE) ne 8 then message, 'Invalid data type'
+    
+    n_records = N_elements(databuffer)
+    input_colnames = strupcase(tag_names(tmprec))
+    n_cols = N_elements(input_colnames)
+
+    col_ind = lonarr(n_cols)
+
+    for i = 0, n_cols-1 do begin
+
+        tmpname = input_colnames[i]
+        col_ind[i] = where(stored_colnames eq tmpname, tmpcnt)
+
+        if tmpcnt ne 1 then message, 'Invalid column name'
+
+    endfor
+
+
+    if self.dt_flag_vtable eq 1 or self.dt_autosave_activated eq 1 then begin
+
+        ; flush the write buffer
+        self -> Flush_writebuffer
+
+        loc_id = self.Vtable_Open(dset_name=dset_name)
+
+        chunksize = 500000 < n_records
+        n_chunks = ceil(float(n_records) / chunksize)
+
+        last_read = (n_records-1)
+        last_write = (start_index + n_records) - 1
+
+        for i = 0, n_chunks-1 do begin
+
+            srec_read = (i*chunksize)
+            erec_read = (((i+1)*chunksize) - 1) < last_read
+
+            srec_write = (i*chunksize) + start_index
+            erec_write = ((((i+1)*chunksize) - 1) + start_index) < last_write
+
+            nrecs = (erec_write - srec_write) + 1
+
+            input_buffer = databuffer[srec_read:erec_read]
+
+            wmb_h5tb_write_fields_index, loc_id, $
+                                         dset_name, $
+                                         col_ind, $
+                                         srec_write, $
+                                         nrecs, $
+                                         input_buffer
+
+
+        endfor
+
+        ; close the file
+        self.Vtable_Close
+
+    endif else begin
+
+        dvector = self.dt_datavector
+
+        chunksize = 100000 < n_records
+        n_chunks = ceil(float(n_records) / chunksize)
+
+        last_read = (n_records-1)
+        last_write = (start_index + n_records) - 1
+
+        for i = 0, n_chunks-1 do begin
+
+            srec_read = (i*chunksize)
+            erec_read = (((i+1)*chunksize) - 1) < last_read
+
+            srec_write = (i*chunksize) + start_index
+            erec_write = ((((i+1)*chunksize) - 1) + start_index) < last_write
+
+            nrecs = (erec_write - srec_write) + 1
+
+            input_buffer = databuffer[srec_read:erec_read]
+
+            tmpdata = dvector[srec_write:erec_write]
+            
+            for j = 0, n_cols-1 do begin
+                
+                tmpdata.(col_ind[j]) = input_buffer.(j)
+
+            endfor
+
+            dvector[srec_write:erec_write] = tmpdata
+
+        endfor
+
+    endelse
+
+end
+
+
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -992,10 +1115,22 @@ end
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_DataTable::Reorder_table, reorder_index
+pro wmb_DataTable::Reorder_table, reorder_index, $
+                                  reorder_in_memory = reorder_in_memory, $
+                                  progress_bar = progress_bar
 
     compile_opt idl2, strictarrsubs
     
+    if N_elements(reorder_in_memory) eq 0 then reorder_in_memory = 0
+
+    ; start the progress bar if necessary
+
+    if obj_valid(progress_bar) then begin
+
+        progress_bar.label_text = 'Re-ordering data: '
+        progress_bar.Update_fraction, 0.0
+
+    endif
 
     ; open the virtual table and create a temporary file if necessary
     
@@ -1041,7 +1176,7 @@ pro wmb_DataTable::Reorder_table, reorder_index
                 
         tmp_title = 'temporary_table'
         tmp_dset_name = 'temporary_table'
-        table_chunksize = 10000
+        table_chunksize = 100000
         compressflag = 0                
             
         wmb_h5tb_make_table, tmp_title, $
@@ -1053,7 +1188,7 @@ pro wmb_DataTable::Reorder_table, reorder_index
                              compressflag
 
         n_records = self.dt_nrecords
-        chunksize = 100000 < n_records
+        chunksize = 500000 < n_records
         n_chunks = ceil(float(n_records) / chunksize)
         last_write = (n_records-1)
 
@@ -1068,12 +1203,35 @@ pro wmb_DataTable::Reorder_table, reorder_index
             
             tmp_reorder_index = reorder_index[srec:erec]
             
-            ; read a chunk
-            
-            wmb_h5tb_read_records_index, loc_id, $
-                                         dset_name, $
-                                         tmp_reorder_index, $
-                                         databuffer
+            if reorder_in_memory eq 0 then begin
+                
+                ; read a chunk
+                
+                wmb_h5tb_read_records_index, loc_id, $
+                                             dset_name, $
+                                             tmp_reorder_index, $
+                                             databuffer
+                
+            endif else begin
+                
+                firstrec = min(tmp_reorder_index)
+                lastrec  = max(tmp_reorder_index)
+                tmp_nrec = (lastrec - firstrec) + 1
+                
+                ; read a chunk
+                
+                wmb_h5tb_read_records, loc_id, $
+                                       dset_name, $
+                                       firstrec, $
+                                       tmp_nrec, $
+                                       tmp_databuffer
+                
+                ; reorder in memory
+                
+                databuffer = tmp_databuffer[tmp_reorder_index - firstrec]
+                
+            endelse
+
         
             ; write a chunk to the temporary file
             
@@ -1081,6 +1239,12 @@ pro wmb_DataTable::Reorder_table, reorder_index
                                      tmp_dset_name, $
                                      nrecs, $
                                      databuffer
+            
+            if obj_valid(progress_bar) then begin
+
+                progress_bar.Update_fraction, (float(i+1)/(2*n_chunks))
+
+            endif
             
         endfor
     
@@ -1110,6 +1274,12 @@ pro wmb_DataTable::Reorder_table, reorder_index
                                     srec, $
                                     nrecs, $
                                     databuffer
+            
+            if obj_valid(progress_bar) then begin
+
+                progress_bar.Update_fraction, (float(i+n_chunks+1)/(2*n_chunks))
+
+            endif
             
         endfor
         
@@ -1172,7 +1342,9 @@ end
 
 pro wmb_DataTable::Sort_double_index, col_name_1, $
                                       col_name_2, $
-                                      descending=descending
+                                      descending=descending, $
+                                      reorder_in_memory = reorder_in_memory, $
+                                      progress_bar = progress_bar
 
     compile_opt idl2, strictarrsubs
     
@@ -1192,7 +1364,8 @@ pro wmb_DataTable::Sort_double_index, col_name_1, $
     
     if descending eq 1 then sort_index = reverse(sort_index, /OVERWRITE)
     
-    self -> Reorder_table, sort_index
+    self -> Reorder_table, sort_index, reorder_in_memory = reorder_in_memory, $
+                                       progress_bar = progress_bar
 
 end
 
@@ -1877,6 +2050,9 @@ pro wmb_DataTable::Vtable_Close
     
     endif
 
+    ; close all HDF5 resources
+    h5_close
+
 end
 
 
@@ -1964,8 +2140,8 @@ function wmb_DataTable::Init, Indata=indata, $
     
     if N_elements(autosave_enable) eq 0 then autosave_enable = 0
     
-    ; default autosave threshold is 256MB
-    if N_elements(autosave_thresh_mbytes) eq 0 then autosave_thresh_mbytes=256
+    ; default autosave threshold is 384MB
+    if N_elements(autosave_thresh_mbytes) eq 0 then autosave_thresh_mbytes=384
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0

@@ -165,6 +165,16 @@ function wmb_Vector::_overloadBracketsRightSide, isRange, sub1, $
     chkpass = 1
     chkdim = self.vec_size
 
+    ; check if the vector is empty - note that wmb_Rangevalid will return a 
+    ; valid result if the dimension size is equal to zero
+    
+    if chkdim eq 0 then begin
+        
+        tmpdat = []
+        return, tmpdat
+        
+    endif
+
     if chk_range eq 1 then begin
         if ~ wmb_Rangevalid(sub1, chkdim, positive_range=psub1) then chkpass=0
     endif else begin
