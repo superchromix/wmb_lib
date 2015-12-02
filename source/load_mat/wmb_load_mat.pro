@@ -19,7 +19,7 @@
 ;   
 ;   Usage:
 ;   
-;   PRO load_mat, <filename>, <path>, STORE_LEVEL=store_level, $
+;   PRO load_mat, <filename>, STORE_LEVEL=store_level, $
 ;                 VERBOSE=verbose, DEBUG=debug
 ;   
 ;   By default, it will create the variables on the $MAIN$ level. To have
@@ -1198,7 +1198,7 @@ FUNCTION read_mat_element_memory, element_tag_in, $
 END
 
 
-PRO wmb_load_mat, filename, path, STORE_LEVEL=store_level, $
+PRO wmb_load_mat, file, STORE_LEVEL=store_level, $
                   VERBOSE=verbose, DEBUG=debug
 
     header = { mat_v5_header, $
@@ -1208,8 +1208,6 @@ PRO wmb_load_mat, filename, path, STORE_LEVEL=store_level, $
                endian_indicator: "" $
              }
 
-
-    file = filepath(filename, ROOT_DIR=path)
 
     file_information = file_info(file)
 
