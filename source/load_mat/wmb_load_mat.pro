@@ -1140,7 +1140,7 @@ FUNCTION read_mat_element_memory, element_tag_in, $
                                                     SWAP_ENDIAN=swap_endian, $
                                                     DEBUG=debug)
         
-                        tmp_idat = cast_to_matrix_type(real_data,matrix_class)
+                        tmp_idat = cast_to_matrix_type(imag_data,matrix_class)
         
                         if matrix_class eq 'mxDOUBLE_CLASS' then begin
                             
