@@ -209,8 +209,9 @@ function wmb_DataTable::_overloadBracketsRightSide, isRange, sub1, $
     endif
 
     if self.dt_flag_table_empty then begin
-        message, 'Error: table empty'
-        return, 0
+
+        return, []
+
     endif
 
     ; determine the number of indices/ranges specified
