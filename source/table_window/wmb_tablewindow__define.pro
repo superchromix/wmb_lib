@@ -192,6 +192,52 @@ pro wmb_TableWindow::Housekeeping
 end
 
 
+;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Ext_Force_Quit method
+;
+;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_TableWindow::Ext_Force_Quit
+
+    compile_opt idl2, strictarrsubs
+    @dv_pro_err_handler
+
+    self.flag_quit = 1
+
+    self -> Ext_Gen_Event, /NO_FORCE
+
+end
+
+
+;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Ext_Gen_Event method
+;
+;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_TableWindow::Ext_Gen_Event, no_force = no_force
+
+    compile_opt idl2, strictarrsubs
+    @dv_pro_err_handler
+
+    if N_elements(no_force) eq 0 then no_force = 0
+
+    tmpevt = {WIDGET_TABLE}
+
+    tmpevt.ID      = 0L
+    tmpevt.TOP     = 0L
+    tmpevt.HANDLER = 0L
+
+    widget_control, self.wid_table, SEND_EVENT=tmpevt
+
+    ; force event handling
+
+    if widget_info(self.wid_tlb,/VALID_ID) eq 1 and no_force eq 0 then $
+        result = widget_event(self.wid_tlb, /NOWAIT)
+
+end
+
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -267,7 +313,7 @@ end
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 pro wmb_TableWindow::Update_Widget_Geo, tlb_deltax = deltax, $
-                                       tlb_deltay = deltay
+                                        tlb_deltay = deltay
 
     compile_opt idl2, strictarrsubs
 
@@ -1157,12 +1203,48 @@ end
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_TableWindow::SetProperty, currentpath = currentpath
+pro wmb_TableWindow::SetProperty, currentpath = currentpath, $
+                                  data = data
 
     compile_opt idl2, strictarrsubs
 
     if N_elements(currentpath) ne 0 then self.stat_currentpath = currentpath
 
+    if N_elements(data) ne 0 then begin
+        
+        ; we are changing the table contents
+        
+        indata = temporary(data)
+        
+        ; determine the number of rows and columns
+        
+        nrecords = N_elements(indata)
+        n_rows = nrecords
+        n_cols = n_tags(indata[0])
+        
+        if size(indata,/type) ne 8 then $
+            message, 'Input data must be a 1D array of structures'        
+        
+        ; verify that the number of rows and columns remains the same
+        
+        if n_cols ne self.stat_table_ncols then $
+            message, 'Error: unequal number of table columns'
+            
+        if n_rows ne self.nrecords then $
+            message, 'Error: unequal number of table rows'
+            
+        ; update the table value
+            
+        wid_table = self.wid_table
+            
+        widget_control, wid_table, SET_VALUE=indata
+            
+        ; update the data pointer
+        
+        ptr_free, self.dataptr
+        self.dataptr = ptr_new(indata,/NO_COPY)
+        
+    endif
 
 end
 
@@ -1485,9 +1567,9 @@ pro wmb_TableWindow__define
 
 end
 
-pro testtable
+pro testtable, table_out = otable, data_out = outdata
 
-    nrecs = 8750
+    nrecs = 8
 
     inputdat = {name:'',age:1L,sex:''}
     
@@ -1507,6 +1589,8 @@ pro testtable
         if i mod 5 eq 0 then inputdat[i].sex = 'F'
     
     endfor
+
+    outdata = inputdat
 
 ;    new_inputdat = []
 ;    
