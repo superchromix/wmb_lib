@@ -223,7 +223,7 @@ pro wmb_TableWindow::Ext_Gen_Event, no_force = no_force
 
     if N_elements(no_force) eq 0 then no_force = 0
 
-    tmpevt = {WIDGET_TABLE}
+    tmpevt = {WIDGET_TABLE_CELL_SEL}
 
     tmpevt.ID      = 0L
     tmpevt.TOP     = 0L
@@ -898,36 +898,57 @@ pro wmb_TableWindow::GUI_Init
     row_major = self.con_table_row_major
     col_major = self.con_table_col_major
  
+    group_leader = self.con_group_leader
+    group_leader_valid = self.con_group_leader_valid
+ 
 ;   Create widgets
 
-;   Get the screen size and define the position of the window
-;   This places the window roughly in the middle of the user's screen
+    xcorner = 0
+    ycorner = 0
 
-    device, get_screen_size=screen_size
-
-    xscreen = screen_size[0]
-    yscreen = screen_size[1]
-
-    xcen = xscreen / 2
-    ycen = yscreen / 2
-
-    xcorner = xcen - 50
-    ycorner = ycen - 50
+    if group_leader_valid then begin
+        
+        ; if the window has a group_leader, then line up the table so
+        ; as not to overlap with the group leader
+        
+        gl_geo = widget_info(group_leader, /GEOMETRY)
+        
+        xcorner = gl_geo.xoffset + gl_geo.xsize
+        ycorner = gl_geo.yoffset
+        
+    endif
 
     ; We will store self.name in the uname of the widget_base of the
     ; TLB.  This means that the WID of the TLB will not be returned by 
     ; the GetWID procedure.  This information is stored in self.wid_tlb, 
     ; however, as well as event.top.
 
-    tlb = widget_base(mbar=mbar, $
-                      title=self.stat_wtitle, $
-                      xoffset=xcorner, $
-                      yoffset=ycorner, $
-                      uname=self.name, $
-                      uvalue={Object:self, Method:'evt_tlb', Source:'tlb'}, $
-                      MAP=0, $
-                      /TLB_SIZE_EVENTS, $
-                      /KBRD_FOCUS_EVENTS)
+    if group_leader_valid eq 0 then begin
+
+        tlb = widget_base(mbar=mbar, $
+                          title=self.stat_wtitle, $
+                          xoffset=xcorner, $
+                          yoffset=ycorner, $
+                          uname=self.name, $
+                          uvalue={Object:self,Method:'evt_tlb',Source:'tlb'}, $
+                          MAP=0, $
+                          /TLB_SIZE_EVENTS, $
+                          /KBRD_FOCUS_EVENTS)
+                          
+    endif else begin
+        
+        tlb = widget_base(mbar=mbar, $
+                          title=self.stat_wtitle, $
+                          xoffset=xcorner, $
+                          yoffset=ycorner, $
+                          uname=self.name, $
+                          uvalue={Object:self,Method:'evt_tlb',Source:'tlb'}, $
+                          MAP=0, $
+                          /TLB_SIZE_EVENTS, $
+                          /KBRD_FOCUS_EVENTS, $
+                          group_leader = group_leader)
+        
+    endelse
 
     ; note that the children of the tlb will be automatically resized
     ; when the tlb is resized
@@ -1104,7 +1125,7 @@ pro wmb_TableWindow::GUI_Init
 
     ; center the table on the screen 
     
-    cgCentertlb, tlb, 0.25, 0.35
+    if group_leader_valid eq 0 then cgCentertlb, tlb, 0.25, 0.35
 
 
     ; show the table 
@@ -1296,7 +1317,8 @@ function wmb_TableWindow::Init, name, $
                                 no_row_headers = no_row_headers, $
                                 window_title = window_title, $
                                 current_path = currentpath, $
-                                bg_stripes = bg_stripes
+                                bg_stripes = bg_stripes, $
+                                group_leader = group_leader
 
                                
     compile_opt idl2, strictarrsubs
@@ -1335,6 +1357,13 @@ function wmb_TableWindow::Init, name, $
         message, 'Input data must be a 1D array of structures'
         return, 0
     endif
+
+
+    ; check for a group leader
+    
+    if N_elements(group_leader) eq 0 then group_leader = 0
+    
+    group_leader_valid = widget_info(group_leader,/VALID_ID)
 
 
     ; the table will be row-major
@@ -1439,6 +1468,8 @@ function wmb_TableWindow::Init, name, $
     self.con_table_default_ypix = ysize
     self.con_table_row_major = row_major
     self.con_table_col_major = col_major
+    self.con_group_leader = group_leader
+    self.con_group_leader_valid = group_leader_valid
 
     self.stat_table_ncols = n_cols
     self.stat_table_nrows = n_rows
@@ -1546,6 +1577,8 @@ pro wmb_TableWindow__define
                      con_table_default_ypix      : 0,          $
                      con_table_row_major         : 0,          $
                      con_table_col_major         : 0,          $
+                     con_group_leader            : 0,          $
+                     con_group_leader_valid      : 0,          $
                                                                $
                      stat_wtitle                 : '',         $
                      stat_tlb_xsize              : 0,          $

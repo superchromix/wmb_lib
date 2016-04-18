@@ -1379,7 +1379,7 @@ end
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_DataTable::View
+pro wmb_DataTable::View, group_leader = group_leader
 
     compile_opt idl2, strictarrsubs
 
@@ -1392,7 +1392,8 @@ pro wmb_DataTable::View
     tw = obj_new('wmb_TableWindow', tmp_name, $
                                     self[*], $
                                     window_title = self.dt_title, $
-                                    col_labels = field_names)
+                                    col_labels = field_names, $
+                                    group_leader = group_leader)
 
 end
 
