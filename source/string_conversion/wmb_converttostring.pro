@@ -3,6 +3,8 @@
 ;
 ;   This is the wmb_ConvertToString function
 ;
+;   The FORMATCODE keyword allows the user to specify a particular format string
+;
 ;   NOTE: For arrays, only 1D arrays of simple types are allowed.
 ;
 ;   NOTE: For structures, lists, and hashes - these may only contain simple
@@ -18,9 +20,13 @@
 ;
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-function wmb_ConvertToString, invalue, error=errchk
+function wmb_ConvertToString, invalue, formatcode=formatcode, error=errchk
 
     compile_opt idl2, strictarrsubs
+    
+    chk_user_specified_format = 0
+    
+    if N_elements(formatcode) ne 0 then chk_user_specified_format = 1
     
     outstr = ''
     errchk = 0
@@ -43,6 +49,8 @@ function wmb_ConvertToString, invalue, error=errchk
         ; reach this section, since they report a value of 1 for n_dimensions
         
         formatstr = wmb_get_formatcode(invalue)
+        
+        if chk_user_specified_format eq 1 then formatstr = formatcode
         
         case dtype of
             
@@ -81,7 +89,8 @@ function wmb_ConvertToString, invalue, error=errchk
                     
                     val = invalue[i]
 
-                    str_invalue = str_invalue + wmb_converttostring(val)
+                    str_invalue = str_invalue + wmb_converttostring(val, $
+                                                    formatcode = formatcode)
                                   
                     if i ne dimsz-1 then str_invalue = str_invalue + ', '
                     
@@ -115,7 +124,9 @@ function wmb_ConvertToString, invalue, error=errchk
                         str_invalue = str_invalue + strtrim(keynames[i],2)
                         str_invalue = str_invalue + ':'
                         str_invalue = str_invalue + $
-                                      wmb_ConvertToString(sub_invalue)
+                                      wmb_ConvertToString(sub_invalue, $
+                                          formatcode = formatcode)
+                                          
                         if i ne (nkeys-1) then str_invalue = str_invalue + ', '
                     
                     endfor
@@ -140,7 +151,8 @@ function wmb_ConvertToString, invalue, error=errchk
                         
                         ; convert the hash to a structure
                         hstruct = invalue.ToStruct()
-                        str_invalue = wmb_ConvertToString(hstruct)
+                        str_invalue = wmb_ConvertToString(hstruct, $
+                                                formatcode = formatcode)
                     
                     end
                     
@@ -148,7 +160,8 @@ function wmb_ConvertToString, invalue, error=errchk
                         
                         ; convert the orderedhash to a structure
                         hstruct = invalue.ToStruct()
-                        str_invalue = wmb_ConvertToString(hstruct)
+                        str_invalue = wmb_ConvertToString(hstruct, $
+                                                formatcode = formatcode)
                     
                     end
                     
@@ -156,7 +169,8 @@ function wmb_ConvertToString, invalue, error=errchk
                         
                         ; convert the dictionary to a structure
                         hstruct = invalue.ToStruct()
-                        str_invalue = wmb_ConvertToString(hstruct)
+                        str_invalue = wmb_ConvertToString(hstruct, $
+                                                formatcode = formatcode)
                     
                     end
                     
@@ -164,7 +178,8 @@ function wmb_ConvertToString, invalue, error=errchk
                     
                         ; convert the list to an array
                         larray = invalue.ToArray()
-                        str_invalue = wmb_ConvertToString(larray)
+                        str_invalue = wmb_ConvertToString(larray, $
+                                                formatcode = formatcode)
                     
                     end
             
