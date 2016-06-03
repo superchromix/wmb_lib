@@ -48,9 +48,15 @@ function wmb_ConvertToString, invalue, formatcode=formatcode, error=errchk
         ; scalar case - note that structures, hashes, etc will never 
         ; reach this section, since they report a value of 1 for n_dimensions
         
-        formatstr = wmb_get_formatcode(invalue)
-        
-        if chk_user_specified_format eq 1 then formatstr = formatcode
+        if chk_user_specified_format eq 0 then begin
+            
+            formatstr = wmb_get_formatcode(invalue)
+
+        endif else begin
+            
+            formatstr = formatcode
+            
+        endelse
         
         case dtype of
             
