@@ -27,13 +27,13 @@ pro wmb_hmm_test
     yaxis = AXIS('Y', LOCATION='right', TITLE='Sequence', TARGET=p2)    
     
     
-    sym = ['one','two','three','four','five','six']
-    seq = wmb_hmmgenerate(100,tr,e,SYMBOLS=sym,STATES=realstates2)
-    estimatedStates2 = wmb_hmmviterbi(seq,tr,e,SYMBOLS=sym)
-    
-    pp = PLOT(realstates2, "g4-", YTITLE='State', $
-              DIM=[450,400], MARGIN=0.2, YRANGE=[-0.2,1.2], AXIS_STYLE=1)
-              
-    pp1 = PLOT(estimatedStates2, "r2-", /overplot)
+;    sym = ['one','two','three','four','five','six']
+;    seq = wmb_hmmgenerate(100,tr,e,SYMBOLS=sym,STATES=realstates2)
+;    estimatedStates2 = wmb_hmmviterbi(seq,tr,e,SYMBOLS=sym)
+;    
+;    pp = PLOT(realstates2, "g4-", YTITLE='State', $
+;              DIM=[450,400], MARGIN=0.2, YRANGE=[-0.2,1.2], AXIS_STYLE=1)
+;              
+;    pp1 = PLOT(estimatedStates2, "r2-", /overplot)
     
 end

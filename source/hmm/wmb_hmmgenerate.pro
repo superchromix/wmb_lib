@@ -2,7 +2,9 @@
 ;
 ;   wmb_hmmgenerate.pro
 ;
-;   This function calculates the most probable state path for a sequence.
+;   This function generates a sequence of symbols, given a transition
+;   matrix and an emission matrix.  It is adapted from the Matlab 
+;   function "hmmgenerate".
 ;   
 ;   SEQ = wmb_hmmgenerate(LEN,TRANSITIONS,EMISSIONS,STATES=STATES) 
 ;   generates a sequence of emission symbols, SEQ, and a random sequence of 

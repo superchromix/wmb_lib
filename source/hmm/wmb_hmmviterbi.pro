@@ -2,7 +2,8 @@
 ;
 ;   wmb_hmmviterbi.pro
 ;
-;   This function calculates the most probable state path for a sequence.
+;   This function calculates the most probable state path for a sequence. 
+;   It is adapted from the Matlab function "hmmviterbi".
 ;   
 ;   STATES = wmb_hmmviterbi(SEQ,TRANSITIONS,EMISSIONS) given a sequence, 
 ;   SEQ, calculates the most likely path through the Hidden Markov Model
