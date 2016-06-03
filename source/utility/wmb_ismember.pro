@@ -29,7 +29,7 @@ function wmb_ismember, a, s, locs=locs
         
     endfor
 
-    locs = lib
+    locs = temporary(lib)
 
     return, lia
 

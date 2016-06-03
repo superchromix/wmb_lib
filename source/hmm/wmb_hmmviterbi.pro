@@ -9,9 +9,9 @@
 ;   specified by transition probability matrix, TRANSITIONS, and emission
 ;   probability matrix, EMISSIONS. 
 ;   
-;   TRANSITIONS(I,J) is the probability of transition from state I to state J. 
+;   TRANSITIONS[I,J] is the probability of transition from state I to state J. 
 ;   
-;   EMISSIONS(K,L) is the probability that symbol L is emitted from state K. 
+;   EMISSIONS[K,L] is the probability that symbol L is emitted from state K. 
 ;
 ;   The SYMBOLS keyword allows you to specify the symbols that are emitted. 
 ;   SYMBOLS can be a numeric array or a string array of the names of the 
@@ -31,17 +31,21 @@
 ;
 ;   Examples:
 ;
-;       tr = [0.95,0.05;
-;             0.10,0.90];
+;       tr = [[0.95,0.10], [0.05,0.90]]
 ;           
-;       e = [1/6,  1/6,  1/6,  1/6,  1/6,  1/6;
-;            1/10, 1/10, 1/10, 1/10, 1/10, 1/2;];
+;       e = [[1./6, 1./10], [1./6, 1./10], [1./6, 1./10], $
+;            [1./6, 1./10], [1./6, 1./10], [1./6, 1./2]]
 ;
 ;       seq = wmb_hmmgenerate(100,tr,e);
 ;       estimatedStates = wmb_hmmviterbi(seq,tr,e);
 ;
 ;       seq = wmb_hmmgenerate(100,tr,e,STATENAMES=['fair','loaded'])
-;       estimatesStates = wmb_hmmviterbi(seq,tr,e,STATENAMES=['fair','loaded'])
+;       estimatedStates = wmb_hmmviterbi(seq,tr,e,STATENAMES=['fair','loaded'])
+;
+;       sym = ['one','two','three','four','five','six']
+;       seq = wmb_hmmgenerate(100,tr,e,SYMBOLS=sym)
+;       estimatedStates = wmb_hmmviterbi(seq,tr,e,SYMBOLS=sym)
+;
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -56,12 +60,12 @@ function wmb_hmmviterbi, seq, $
 
     ; check the dimensions of the input variables
     tr_dims = size(tr, /DIMENSIONS)
-    numstates = tr_dims[0]
+    n_states = tr_dims[0]
     if tr_dims[0] ne tr_dims[1] then message, 'Invalid transition matrix'
 
-    ; number of rows of em must be same as number of states
+    ; number of columns of em must be same as number of states
     em_dims = size(em, /DIMENSIONS)
-    if em_dims[0] ne numstates then message, 'Input size mismatch'
+    if em_dims[0] ne n_states then message, 'Input size mismatch'
     n_emissions = em_dims[1]
      
     custom_statenames = 0
@@ -82,57 +86,57 @@ function wmb_hmmviterbi, seq, $
     if N_elements(statenames) ne 0 then begin
         
         n_state_names = N_elements(statenames)
-        if n_state_names ne numstates then message, 'Bad state names'
+        if n_state_names ne n_states then message, 'Bad state names'
         custom_statenames = 1
         
     endif
 
     ; work in log space to avoid numerical issues
 
-    L = N_elements(seq)
+    len = N_elements(seq)
     
     if min(seq) lt 0 OR $
        min(seq eq round(seq)) eq 0 OR $
        max(seq) gt (n_emissions-1) OR $
-       L eq 0 then begin
+       len eq 0 then begin
         
         message, 'Bad sequence'
         
     endif
     
-    currentstate = lonarr(L)
+    currentstate = lonarr(len)
     
     logTR = alog(tr)
     logEM = alog(em)
     
     ; allocate space
     
-    pTR = lonarr(numstates, L)
+    pTR = lonarr(n_states, len)
     
-    ; assumption is that model is in state 1 at step 0
+    ; assumption is that model is in state 0 at step 0
     
-    v = dblarr(numstates, /NOZERO)
+    v = dblarr(n_states, /NOZERO)
     v[*] = - !VALUES.F_INFINITY
-    v[0] = 0
+    v[0] = 0.0D
     vOld = v
     
     ; loop through the model
     
-    for cnta = 0, L-1 do begin
+    for cnta = 0, len-1 do begin
         
-        for cur_state = 0, numstates-1 do begin
+        for tmp_state = 0, n_states-1 do begin
             
             ; for each state we calculate 
             ; v(state) = e(state,seq(count))* max_k(vOld(:)*tr(k,state))
             
             bestVal = - !VALUES.F_INFINITY
-            bestPTR = 0
+            bestPTR = -1
             
             ; use a loop to avoid lots of calls to max
             
-            for inner = 0, numStates-1 do begin
+            for inner = 0, n_states-1 do begin
                 
-                val = vOld[inner] + logTR[inner,cur_state]
+                val = vOld[inner] + logTR[inner,tmp_state]
                 
                 if val gt bestVal then begin
                     
@@ -145,11 +149,11 @@ function wmb_hmmviterbi, seq, $
             
             ; save the best transition information for later backtracking
             
-            pTR[cur_state,cnta] = bestPTR
+            pTR[tmp_state,cnta] = bestPTR
             
             ; update v
             
-            v[cur_state] = logEM[cur_state,seq[cnta]] + bestVal
+            v[tmp_state] = logEM[tmp_state,seq[cnta]] + bestVal
             
         endfor
 
@@ -163,13 +167,13 @@ function wmb_hmmviterbi, seq, $
     
     ; Now back trace through the model
     
-    currentState[L] = finalState
+    currentState[len-1] = finalState
 
-    for cnta = L-2, 0, -1 do begin
+    for cnta = len-2, 0, -1 do begin
         
         currentState[cnta] = pTR[currentState[cnta+1],cnta+1]
         
-        if currentState[cnta] eq 0 then message, 'Zero transition probability'
+        if currentState[cnta] eq -1 then message, 'Zero transition probability'
         
     endfor
     
