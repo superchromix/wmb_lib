@@ -1105,8 +1105,7 @@ end
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-pro wmb_input_form, grpleader, $
-                    widget_definition_hash, $
+pro wmb_input_form, widget_definition_hash, $
                     layout_list, $
                     data_hash, $
                     formcancel, $
@@ -1115,7 +1114,8 @@ pro wmb_input_form, grpleader, $
                     fieldfont = fieldfont, $
                     yscroll = cb_yscroll, $
                     frame = rowframe, $
-                    yspace = rowyspace
+                    yspace = rowyspace, $
+                    group_leader = group_leader
                            
 
 
@@ -1129,10 +1129,7 @@ pro wmb_input_form, grpleader, $
     if N_elements(cb_yscroll) eq 0 then flag_autosize_cb = 1
     if N_elements(rowframe) eq 0 then rowframe = 0
     if N_elements(rowyspace) eq 0 then rowyspace = 0
-
-
-    if N_elements(grpleader) eq 0 then $
-            message, 'Group leader must be specified'
+    
             
     if N_elements(widget_definition_hash) eq 0 then $
             message, 'Widget definition list must be specified'
@@ -1159,11 +1156,13 @@ pro wmb_input_form, grpleader, $
 ;   Create widgets
 ;
 
+    chk_modal = N_elements(group_leader) ne 0 
+
     tlb = widget_base(column=1, title=wtitle, space=5, $
                       uname='tlb', xpad=5, ypad=5, $
-                      /modal, /floating, GROUP_LEADER=grpleader, $
-                      /base_align_center,  $
-                      tlb_frame_attr = 1)
+                      GROUP_LEADER=group_leader, $
+                      /base_align_center, MODAL=chk_modal, $
+                      tlb_frame_attr = 1, FLOATING=chk_modal)
 
 
     ; Create the dropdown list for page selection
@@ -1243,7 +1242,15 @@ pro wmb_input_form, grpleader, $
 
     ; Center the top level base widget on display
 
-    wmb_center_tlb_on_parent, tlb, grpleader
+    if N_elements(group_leader) ne 0 then begin
+        
+        wmb_center_tlb_on_parent, tlb, group_leader
+
+    endif else begin
+        
+        cgcentertlb, tlb
+        
+    endelse
 
     Widget_Control, tlb, /Realize
 
@@ -1502,16 +1509,16 @@ pro inputformtest_event, event
 
     ;print, inputdat
 
-    wmb_input_form, event.top, $
-                           wdef, $
-                           layoutlist, $
-                           inputdat, $
-                           formcancel, $
-                           wintitle = wtitle, $
-                           labelfont = labelfont, $
-                           fieldfont = fieldfont, $
-                           yscroll = 200, $
-                           frame=0
+    wmb_input_form, wdef, $
+                    layoutlist, $
+                    inputdat, $
+                    formcancel, $
+                    wintitle = wtitle, $
+                    labelfont = labelfont, $
+                    fieldfont = fieldfont, $
+                    yscroll = 200, $
+                    frame = 0
+                    ;group_leader = event.top
                            
     ;print, inputdat
     
