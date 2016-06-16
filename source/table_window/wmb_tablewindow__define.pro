@@ -771,13 +771,13 @@ pro wmb_TableWindow::Evt_File, event
             input_dat = hash('str1', existing_name)
             layout_list = list(pg1_layout)
             
-            wmb_input_form, event.top, $
-                            wid_def, $
+            wmb_input_form, wid_def, $
                             layout_list, $
                             input_dat, $
                             formcancel, $
                             wintitle = wintitle, $
-                            frame=0
+                            frame = 0, $
+                            group_leader = event.top
             
             if ~formcancel and input_dat['str1'] ne '' then begin
                 
