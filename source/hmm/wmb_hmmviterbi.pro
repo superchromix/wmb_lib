@@ -24,10 +24,10 @@
 ;   states. The default statenames are 0 through M-1, where M is the number 
 ;   of states.
 ;
-;   This function always starts the model in state 1 and then makes a
+;   This function always starts the model in state 0 and then makes a
 ;   transition to the first step using the probabilities in the first row
 ;   of the transition matrix. So in the example given below, the first
-;   element of the output states will be 1 with probability 0.95 and 2 with
+;   element of the output states will be 0 with probability 0.95 and 1 with
 ;   probability .05.
 ;
 ;   Examples:
