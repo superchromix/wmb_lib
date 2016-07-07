@@ -2142,8 +2142,8 @@ function wmb_DataTable::Init, Indata=indata, $
     
     if N_elements(autosave_enable) eq 0 then autosave_enable = 0
     
-    ; default autosave threshold is 384MB
-    if N_elements(autosave_thresh_mbytes) eq 0 then autosave_thresh_mbytes=384
+    ; default autosave threshold is 1024MB
+    if N_elements(autosave_thresh_mbytes) eq 0 then autosave_thresh_mbytes=1024
 
     indata_present = N_elements(indata) ne 0
     recorddef_present = N_elements(recorddef) ne 0
