@@ -62,7 +62,7 @@ pro wmb_h5tb_read_records_range,  loc_id, $
     
     ; calculate the number of records to return
     
-    nrecs_output = ceil((abs(firstrecord-lastrecord)+1)/float(abs_stride),/L64)
+    nrecs_output = ceil((abs(firstrecord-lastrecord)+1)/double(abs_stride),/L64)
     
     
     

@@ -58,7 +58,7 @@ pro wmb_h5_getdata_computeslab, bounds, $
     
     stride = reform(bounds[2,*])
 
-    dims = ceil( (endselect-startselect+1) / float(stride), /L64 ) > 1
+    dims = ceil( (endselect-startselect+1) / double(stride), /L64 ) > 1
     
 end
 

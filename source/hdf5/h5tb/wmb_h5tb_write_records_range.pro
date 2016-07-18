@@ -76,7 +76,7 @@ pro wmb_h5tb_write_records_range, loc_id, $
     
     ; calculate the number of records to write
     
-    nrecs_write = ceil((abs(firstrecord-lastrecord)+1)/float(abs_stride),/L64)
+    nrecs_write = ceil((abs(firstrecord-lastrecord)+1)/double(abs_stride),/L64)
     
     
     ; check that the size of the databuffer matches the size of the range
