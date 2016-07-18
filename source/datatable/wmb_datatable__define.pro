@@ -2138,7 +2138,7 @@ function wmb_DataTable::Init, Indata=indata, $
 
     if N_elements(title) eq 0 then title = 'Table'
 
-    if N_elements(write_buffer_length) eq 0 then write_buffer_length = 50000
+    if N_elements(write_buffer_length) eq 0 then write_buffer_length = 250000
     
     if N_elements(autosave_enable) eq 0 then autosave_enable = 0
     
