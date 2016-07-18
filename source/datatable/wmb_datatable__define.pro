@@ -112,7 +112,7 @@ pro wmb_DataTable::_overloadBracketsLeftSide, objref,  $
         ; in value matches the size of the range
         
         range_size = ceil( (abs(startrecord-endrecord)+1) $
-                           / float(abs(stride)), /L64)
+                           / double(abs(stride)), /L64)
     
         input_matches_range = range_size eq value_n_elts
 
@@ -604,7 +604,7 @@ function wmb_DataTable::Append_table, input_table
     
     if table_len gt 0 then begin
     
-        n_chunks = ceil(float(table_len)/chunksize)
+        n_chunks = ceil(double(table_len)/chunksize)
         
         for i = 0, n_chunks-1 do begin
             
@@ -860,7 +860,7 @@ function wmb_DataTable::Read_column, col_name, $
             
             chunksize = 100000 < n_records
             
-            n_chunks = ceil(float(n_records) / chunksize)
+            n_chunks = ceil(double(n_records) / chunksize)
             
             last_rec = (start_index + n_records) - 1
             
@@ -923,7 +923,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
         loc_id = self.Vtable_Open(dset_name=dset_name)
         
         chunksize = 100000 < n_records
-        n_chunks = ceil(float(n_records) / chunksize)
+        n_chunks = ceil(double(n_records) / chunksize)
         
         last_read = (n_records-1)
         last_write = (start_index + n_records) - 1
@@ -958,7 +958,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
         dvector = self.dt_datavector
         
         chunksize = 100000 < n_records
-        n_chunks = ceil(float(n_records) / chunksize)
+        n_chunks = ceil(double(n_records) / chunksize)
         
         last_read = (n_records-1)
         last_write = (start_index + n_records) - 1
@@ -1040,7 +1040,7 @@ pro wmb_DataTable::Write_multiple_columns, start_index, databuffer
         loc_id = self.Vtable_Open(dset_name=dset_name)
 
         chunksize = 500000 < n_records
-        n_chunks = ceil(float(n_records) / chunksize)
+        n_chunks = ceil(double(n_records) / chunksize)
 
         last_read = (n_records-1)
         last_write = (start_index + n_records) - 1
@@ -1075,7 +1075,7 @@ pro wmb_DataTable::Write_multiple_columns, start_index, databuffer
         dvector = self.dt_datavector
 
         chunksize = 100000 < n_records
-        n_chunks = ceil(float(n_records) / chunksize)
+        n_chunks = ceil(double(n_records) / chunksize)
 
         last_read = (n_records-1)
         last_write = (start_index + n_records) - 1
@@ -1190,7 +1190,7 @@ pro wmb_DataTable::Reorder_table, reorder_index, $
 
         n_records = self.dt_nrecords
         chunksize = 500000 < n_records
-        n_chunks = ceil(float(n_records) / chunksize)
+        n_chunks = ceil(double(n_records) / chunksize)
         last_write = (n_records-1)
 
         ; reorder the table into temporary storage
@@ -1458,7 +1458,7 @@ function wmb_DataTable::Select, filter_columns, $
     
     n_recs = self.dt_nrecords
     
-    nchunks = ceil(float(n_recs)/chunksize)
+    nchunks = ceil(double(n_recs)/chunksize)
     
     select_results = []
     

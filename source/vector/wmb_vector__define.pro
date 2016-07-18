@@ -90,7 +90,7 @@ pro wmb_Vector::_overloadBracketsLeftSide, objref,  $
         ; in value matches the size of the range
         
         range_size = ceil( (abs(startrecord-endrecord)+1) $
-                           / float(abs(stride)), /L64)
+                           / double(abs(stride)), /L64)
     
         input_matches_range = range_size eq value_n_elts
 
