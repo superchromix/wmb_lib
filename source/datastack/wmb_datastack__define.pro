@@ -439,6 +439,7 @@ end
 pro wmb_DataStack::GetProperty,  Rank = rank, $
                                  Datadims = datadims, $
                                  DataType = datatype, $
+                                 Varray_obj = varray_obj, $
                                  Varray_flag = varray_flag, $
                                  Varray_filename = varray_filename
 
@@ -447,6 +448,8 @@ pro wmb_DataStack::GetProperty,  Rank = rank, $
     if Arg_present(rank) ne 0 then rank=self.ds_rank
     if Arg_present(datadims) ne 0 then datadims=long(*self.ds_dimsptr)    
     if Arg_present(datatype) ne 0 then datatype=self.ds_datatype 
+    
+    if Arg_present(varray_obj) ne 0 then varray_obj = self.ds_varray
     
     if Arg_present(varray_flag) ne 0 then varray_flag=self.ds_flag_varray
     

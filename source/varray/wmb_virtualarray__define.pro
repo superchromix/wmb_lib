@@ -23,7 +23,6 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     arr_rank = self.va_rank
     arr_dims = *self.va_dimsptr
 
-
     if N_elements(sub1) eq 0 then begin
         message, 'No array subscript specified'
         return, 0
@@ -217,6 +216,110 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     endelse
 
     return, od
+
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Copy method
+;
+;   Copies the data in the virtual array to another file.
+;
+;   Source data range is a list of 3-element arrays, of the 
+;   following form: [start_index,end_index,stride].  The number
+;   of elements in the list must be equal to the number of 
+;   dimensions of the virtual array.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_VirtualArray::Copy, dest_lun, $
+                            source_data_range = source_data_range, $ 
+                            all = all, $
+                            n_bytes_copied = n_bytes_copied
+
+    compile_opt idl2, strictarrsubs
+
+    arr_rank = self.va_rank
+    arr_dims = *self.va_dimsptr
+
+    if N_elements(all) eq 0 then all = 0
+
+    if all eq 1 then begin
+        
+        source_data_range = list()
+        for i = 0, arr_rank-1 do source_data_range.Add, [0,-1,1]
+        
+    endif
+
+    if N_elements(source_data_range) ne arr_rank then begin
+        
+        message, 'Invalid source data range'
+
+    endif
+    
+
+    isrange = bytarr(arr_rank)
+    isrange[*] = 1
+    
+    chkpass = 1
+    
+    for i = 0, arr_rank-1 do begin
+        
+        tmpsub = source_data_range[i]
+        if N_elements(tmpsub) ne 3 then chkpass = 0
+        
+        if ~ wmb_Rangevalid(tmpsub, arr_dims[i]) then chkpass = 0
+        
+    endfor
+    
+    if chkpass eq 0 then message, 'Invalid source data range'
+
+    
+    ; calculate the number of file reads required, and the list of 
+    ; read positions
+
+    wmb_varray_generate_read_sequence, isrange, $
+                                       source_data_range, $
+                                       arr_dims, $
+                                       output_scalar, $
+                                       output_dims, $
+                                       n_reads, $                                       
+                                       read_size, $
+                                       read_start, $                                    
+                                       readstart_pos_array
+
+    ; calculate the read end positions
+    
+    readend_pos_array = readstart_pos_array + (read_size-1)
+    
+    
+    ; convert the read positions and read size to bytes
+    
+    dtype_size = self.va_dtype_size
+    
+    readstart_pos_array_bytes = (readstart_pos_array * dtype_size) + $
+                                self.va_offset
+  
+    read_size_bytes = read_size * dtype_size
+    
+    ; copy the data to the destination file
+    
+    src_lun = self.va_lun
+    total_bytes_written = 0ULL
+    
+    for i = 0, n_reads-1 do begin
+    
+        point_lun, src_lun, readstart_pos_array_bytes[i]
+        
+        copy_lun, src_lun, dest_lun, read_size_bytes, $
+                  TRANSFER_COUNT = bytes_written
+    
+        total_bytes_written += bytes_written 
+            
+    endfor
+            
+    n_bytes_copied = total_bytes_written
 
 end
 

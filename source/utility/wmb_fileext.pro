@@ -24,6 +24,6 @@ function wmb_fileext, fname
 
     endelse
     
-    return, file_ext
+    return, strlowcase(file_ext)
 
 end
