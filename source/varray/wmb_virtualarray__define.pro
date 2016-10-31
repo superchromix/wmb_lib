@@ -133,8 +133,8 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     ; read the data and transfer it to the output array
     
     tmp_write_pos = 0ULL
-    loaded_chunk = -1
-    
+    loaded_chunk = self.va_data_current_chunk
+    if loaded_chunk ge 0 then tmp_data_block = *(self.va_data_chunk_ptr)
     
     foreach tmp_readstart_rel, readstart_relative_pos, indexa do begin
     
@@ -202,6 +202,25 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
         
     endforeach
     
+    
+    if loaded_chunk ne self.va_data_current_chunk then begin
+        
+        ; store the loaded chunk in memory
+        
+        if ptr_valid(self.va_data_chunk_ptr) eq 1 then begin
+            
+            *self.va_data_chunk_ptr = temporary(tmp_data_block)
+            
+        endif else begin
+            
+            self.va_data_chunk_ptr = ptr_new(tmp_data_block, /NO_COPY)
+            
+        endelse
+
+        self.va_data_current_chunk = loaded_chunk
+
+    endif
+
 
     ; ensure that the output array has the correct dimensions
 
@@ -235,8 +254,7 @@ end
 
 pro wmb_VirtualArray::Copy, dest_lun, $
                             source_data_range = source_data_range, $ 
-                            all = all, $
-                            n_bytes_copied = n_bytes_copied
+                            all = all
 
     compile_opt idl2, strictarrsubs
 
@@ -293,33 +311,198 @@ pro wmb_VirtualArray::Copy, dest_lun, $
     
     readend_pos_array = readstart_pos_array + (read_size-1)
     
+
+    ; for each element of the read position list, calculate in which
+    ; data chunk it is contained
     
-    ; convert the read positions and read size to bytes
+    tmp_data_chunk_size = self.va_data_chunk_size
     
-    dtype_size = self.va_dtype_size
+    readstart_chunk_arr = readstart_pos_array / tmp_data_chunk_size
+    readend_chunk_arr = readend_pos_array / tmp_data_chunk_size
     
-    readstart_pos_array_bytes = (readstart_pos_array * dtype_size) + $
-                                self.va_offset
-  
-    read_size_bytes = read_size * dtype_size
+    readstart_relative_pos = readstart_pos_array mod tmp_data_chunk_size
+    readend_relative_pos = readend_pos_array mod tmp_data_chunk_size
     
-    ; copy the data to the destination file
+    span_chunks = readstart_chunk_arr ne readend_chunk_arr
+
+
+    ; if the read size is small, create a write buffer for the copy operation, 
+    ; having a size equal to a multiple of the chunk size of the virtual array
     
-    src_lun = self.va_lun
-    total_bytes_written = 0ULL
+    data_buf_size = tmp_data_chunk_size * 10
     
-    for i = 0, n_reads-1 do begin
-    
-        point_lun, src_lun, readstart_pos_array_bytes[i]
+    if read_size lt round(0.5*data_buf_size) then begin
         
-        copy_lun, src_lun, dest_lun, read_size_bytes, $
-                  TRANSFER_COUNT = bytes_written
+        tmp_use_data_buf = 1
+        tmp_data_buf = make_array(data_buf_size, TYPE=self.va_dtype, /NOZERO)
+        
+    endif else begin
+        
+        tmp_use_data_buf = 0
+        
+    endelse
     
-        total_bytes_written += bytes_written 
+
+    ; read the data and write it to the output file
+    
+    tmp_write_pos = 0ULL
+
+    loaded_chunk = self.va_data_current_chunk
+    if loaded_chunk ge 0 then tmp_data_block = *(self.va_data_chunk_ptr)
+    
+    foreach tmp_readstart_rel, readstart_relative_pos, indexa do begin
+    
+        ; check the space remaining in the data buffer
+        if tmp_use_data_buf eq 1 and $
+           (data_buf_size-tmp_write_pos) lt read_size then begin
             
-    endfor
+            writeu, dest_lun, tmp_data_buf[0:(tmp_write_pos-1)]
+            tmp_write_pos = 0ULL
             
-    n_bytes_copied = total_bytes_written
+        endif
+    
+        if span_chunks[indexa] eq 0 then begin
+        
+            ; this read operation does not span a chunk boundary
+        
+            tmp_read_chunk = readstart_chunk_arr[indexa]
+        
+            if tmp_read_chunk ne loaded_chunk then begin
+                
+                tmp_data_block = (*self.va_assoc_ptr)[tmp_read_chunk]
+
+                loaded_chunk = tmp_read_chunk
+                
+            endif 
+        
+            readend = readend_relative_pos[indexa]
+        
+        
+            if tmp_use_data_buf eq 1 then begin
+                
+                tmp_data_buf[tmp_write_pos] = $
+                                    tmp_data_block[tmp_readstart_rel:readend]
+        
+            endif else begin
+                
+                writeu, dest_lun, tmp_data_block[tmp_readstart_rel:readend]
+                
+            endelse
+            
+            
+            tmp_write_pos = tmp_write_pos + read_size
+            
+        endif else begin
+            
+            ; the read operation spans a chunk boundary
+            
+            startchunk = readstart_chunk_arr[indexa]
+            endchunk = readend_chunk_arr[indexa]
+            
+            nchunks_span = endchunk - startchunk + 1
+            
+            for i = 0, nchunks_span-1 do begin
+                
+                tmp_read_chunk = startchunk + i
+                
+                if tmp_read_chunk ne loaded_chunk then begin
+                    
+                    tmp_data_block = (*self.va_assoc_ptr)[tmp_read_chunk]
+
+                    loaded_chunk = tmp_read_chunk
+                    
+                endif 
+                
+                if i eq 0 then readstart = tmp_readstart_rel $
+                          else readstart = 0LL
+                          
+                if i eq (nchunks_span-1) then begin
+                    
+                    readend = readend_relative_pos[indexa]
+                    
+                endif else begin
+                    
+                    ; last element in the chunk
+                    readend = tmp_data_chunk_size - 1  
+                    
+                endelse
+                
+                
+                if tmp_use_data_buf eq 1 then begin
+                    
+                    tmp_data_buf[tmp_write_pos] = $
+                                        tmp_data_block[readstart:readend]
+                                        
+                endif else begin
+                    
+                    writeu, dest_lun, tmp_data_block[readstart:readend]
+                    
+                endelse
+                    
+        
+                tmp_write_pos = tmp_write_pos + ((readend - readstart) + 1)
+                
+            endfor
+        endelse
+        
+    endforeach
+    
+    
+    if loaded_chunk ne self.va_data_current_chunk then begin
+        
+        ; store the loaded chunk in memory
+        
+        if ptr_valid(self.va_data_chunk_ptr) eq 1 then begin
+            
+            *self.va_data_chunk_ptr = temporary(tmp_data_block)
+            
+        endif else begin
+            
+            self.va_data_chunk_ptr = ptr_new(tmp_data_block, /NO_COPY)
+            
+        endelse
+
+        self.va_data_current_chunk = loaded_chunk
+
+    endif
+    
+    
+    ;empty the data buffer
+    if tmp_use_data_buf eq 1 and tmp_write_pos gt 0 then begin
+        
+        writeu, dest_lun, tmp_data_buf[0:(tmp_write_pos-1)]
+        
+    endif
+    
+;    n_bytes_copied = tmp_write_pos * self.va_dtype_size
+    
+;    ; convert the read positions and read size to bytes
+;    
+;    dtype_size = self.va_dtype_size
+;    
+;    readstart_pos_array_bytes = (readstart_pos_array * dtype_size) + $
+;                                self.va_offset
+;  
+;    read_size_bytes = read_size * dtype_size
+;    
+;    
+;    ; copy the data to the destination file
+;    
+;    src_lun = self.va_lun
+;    total_bytes_written = 0ULL
+;    
+;    for i = 0, n_reads-1 do begin
+;    
+;        point_lun, src_lun, readstart_pos_array_bytes[i]
+;        
+;        copy_lun, src_lun, dest_lun, read_size_bytes, $
+;                  TRANSFER_COUNT = bytes_written
+;    
+;        total_bytes_written += bytes_written 
+;            
+;    endfor
+;            
+;    n_bytes_copied = total_bytes_written
 
 end
 
@@ -486,7 +669,7 @@ function wmb_VirtualArray::Init, filename, $
         
         ; this sets the default file read chunk size (bytes)
         
-        chunksize_bytes = 524288LL     ; 512KB
+        chunksize_bytes = 2097152LL     ; 2MB
         
     endif
     
@@ -648,6 +831,7 @@ function wmb_VirtualArray::Init, filename, $
     self.va_lun = tmplun
     self.va_offset = fileoffset_bytes
     self.va_writeable = chk_write
+    self.va_data_current_chunk = -1LL
     self.va_data_chunk_size = adjusted_data_chunk_size
     self.va_nchunks = n_chunks
     self.va_assoc_ptr = filedata_assoc_ptr
@@ -686,6 +870,8 @@ pro wmb_VirtualArray::Cleanup
     ptr_free, self.va_dimsptr
     
     ptr_free, self.va_assoc_ptr
+
+    ptr_free, self.va_data_chunk_ptr
 
     close, self.va_lun
 
@@ -751,6 +937,8 @@ pro wmb_VirtualArray__define
                 va_lun                : fix(0),       $               
                 va_offset             : long64(0),    $            
                 va_writeable          : fix(0),       $
+                va_data_current_chunk : 0LL,          $
+                va_data_chunk_ptr     : ptr_new(),    $
                 va_data_chunk_size    : long64(0),    $
                 va_nchunks            : long64(0),    $
                 va_assoc_ptr          : ptr_new()     }
