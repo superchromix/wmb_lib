@@ -1125,7 +1125,15 @@ pro wmb_TableWindow::GUI_Init
 
     ; center the table on the screen 
     
-    if group_leader_valid eq 0 then cgCentertlb, tlb, 0.25, 0.35
+    if group_leader_valid eq 0 then begin
+        
+        cgCentertlb, tlb, 0.25, 0.35
+
+    endif else begin
+        
+        wmb_center_tlb_on_parent, tlb, group_leader, /align_top_right
+        
+    endelse
 
 
     ; show the table 

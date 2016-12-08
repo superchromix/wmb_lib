@@ -52,7 +52,6 @@ pro wmb_center_tlb_on_parent, tlb, $
     calc_xoff = 0 > newtlbxoff 
     calc_yoff = 0 > newtlbyoff 
 
-
     if align_top_right eq 1 then begin
         
         gl_x_tr = gl_xoff + gl_xsize
@@ -60,6 +59,9 @@ pro wmb_center_tlb_on_parent, tlb, $
         
         newtlbxoff = gl_x_tr
         newtlbyoff = gl_y_tr
+        
+        calc_xoff = 0 > newtlbxoff 
+        calc_yoff = 0 > newtlbyoff 
         
     endif
     
