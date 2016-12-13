@@ -1244,13 +1244,14 @@ pro wmb_input_form, widget_definition_hash, $
 
     if N_elements(group_leader) ne 0 then begin
         
-        wmb_center_tlb_on_parent, tlb, group_leader
+        wmb_center_tlb_on_parent, tlb, group_leader, /ALIGN_TOP_RIGHT
 
     endif else begin
         
         cgcentertlb, tlb
         
     endelse
+
 
     Widget_Control, tlb, /Realize
 

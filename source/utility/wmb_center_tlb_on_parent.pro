@@ -34,6 +34,9 @@ pro wmb_center_tlb_on_parent, tlb, $
     gl_geo = widget_info(gl_tlb, /GEOMETRY)
     tlbgeo = Widget_Info(tlb, /GEOMETRY)    
     
+    tlb_xpad = tlbgeo.xpad
+    tlb_ypad = tlbgeo.ypad
+    
     gl_xsize = gl_geo.scr_xsize
     gl_ysize = gl_geo.scr_ysize
     
@@ -66,7 +69,7 @@ pro wmb_center_tlb_on_parent, tlb, $
     endif
     
     ; set the offsets
-    widget_control, tlb, xoffset = calc_xoff + in_xoff, $
-                         yoffset = calc_yoff + in_yoff
+    widget_control, tlb, xoffset = calc_xoff + in_xoff + tlb_xpad, $
+                         yoffset = calc_yoff + in_yoff + tlb_ypad
 
 end
