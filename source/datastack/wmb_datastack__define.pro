@@ -537,6 +537,20 @@ function wmb_DataStack::Init, Indata=indata, $
             tmp_dims = size(indata, /Dimensions)
             tmp_dtype = size(indata, /Type)
             
+            
+            ; handle the NO_COPY keyword
+            
+            if no_copy eq 0 then begin
+            
+                tmpdata = indata
+                
+            endif else begin
+            
+                tmpdata = temporary(indata)
+                
+            endelse
+            
+            
             ; the datadims keyword gives the option of reforming the data
             ; to a given dimension
             
@@ -547,9 +561,9 @@ function wmb_DataStack::Init, Indata=indata, $
                 if datadims_prod ne tmp_dims_prod then $
                         message, 'Invalid data dimensions'
                         
-                indata = reform(indata,datadims,/overwrite)
-                tmp_rank = size(indata, /N_dimensions)
-                tmp_dims = size(indata, /Dimensions)
+                tmpdata = reform(tmpdata,datadims,/overwrite)
+                tmp_rank = size(tmpdata, /N_dimensions)
+                tmp_dims = size(tmpdata, /Dimensions)
             
             endif
             
@@ -562,18 +576,7 @@ function wmb_DataStack::Init, Indata=indata, $
                
             endif            
             
-            
-            if no_copy eq 0 then begin
-            
-                tmpdata = indata
-                
-            endif else begin
-            
-                tmpdata = temporary(indata)
-                
-            endelse
-                
-                
+
             tmp_dataptr = ptr_new(tmpdata, /NO_COPY)
             tmp_varray = obj_new()
             tmp_flag_varray = 0       
