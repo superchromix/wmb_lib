@@ -29,7 +29,7 @@ pro wmb_obf_si_unit__define
     tags = ['exponent', 'scalefactor']
 
     tmps = create_struct(tags, tmpb, $
-                               double(0), $
+                               double(0.0), $
                                NAME='wmb_obf_si_unit')
 
 end
