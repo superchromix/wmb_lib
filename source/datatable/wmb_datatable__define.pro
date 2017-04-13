@@ -1526,7 +1526,8 @@ function wmb_DataTable::Select, filter_columns, $
                                   n_filters, $
                                   /OVERWRITE)
         
-        overall_pass = where(total(tmp_pass_markers,2) eq n_filters, tmpcnt)
+        overall_pass = where(total(tmp_pass_markers,2) eq n_filters, tmpcnt) $
+                       + si
         
         if tmpcnt gt 0 then select_results = [select_results, overall_pass]
         
