@@ -122,6 +122,7 @@ pro wmb_TableWindow::Event_Handler, event
     endif
 
 
+;    print, 'Source: ' + tag_names(self, /structure_name)
 ;    print, 'Event type:' + tag_names(event, /structure_name)
 ;    print, 'Tag names:', tag_names(event)
 ;    print, event
