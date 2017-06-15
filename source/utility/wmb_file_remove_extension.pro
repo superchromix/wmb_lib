@@ -12,6 +12,8 @@ function wmb_file_remove_extension, fname
 
     compile_opt idl2, strictarrsubs
     
+    if fname.contains('.') eq 0 then return, fname
+    
     return, fname.substring(0,fname.lastindexof('.')-1)
 
 end

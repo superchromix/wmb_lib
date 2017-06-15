@@ -604,8 +604,10 @@ end
 
 
 pro wmb_VirtualArray::GetProperty,  filename=filename, $
+                                    fileoffset_bytes=fileoffset_bytes, $
+                                    fileswapendian=fileswapendian, $
                                     datadims=datadims, $
-                                    datatype=datatype, $                             
+                                    datatype=datatype, $                 
                                     filewritable=filewritable
                                     _Ref_Extra=extra
 
@@ -613,6 +615,8 @@ pro wmb_VirtualArray::GetProperty,  filename=filename, $
 
 
     if Arg_present(filename) ne 0 then filename=self.va_filename
+    if Arg_present(fileoffset_bytes) ne 0 then fileoffset=self.va_offset
+    if Arg_present(fileswapendian) ne 0 then fileswapendian=self.va_swapendian
     if Arg_present(datadims) ne 0 then datadims=(*self.va_dimsptr)    
     if Arg_present(datatype) ne 0 then datatype=self.va_dtype 
     if Arg_present(filewritable) ne 0 then filewritable=self.va_writeable
@@ -830,6 +834,7 @@ function wmb_VirtualArray::Init, filename, $
     self.va_filename = filename
     self.va_lun = tmplun
     self.va_offset = fileoffset_bytes
+    self.va_swapendian = fileswapendian
     self.va_writeable = chk_write
     self.va_data_current_chunk = -1LL
     self.va_data_chunk_size = adjusted_data_chunk_size
@@ -935,7 +940,8 @@ pro wmb_VirtualArray__define
                                                       $
                 va_filename           : '',           $
                 va_lun                : fix(0),       $               
-                va_offset             : long64(0),    $            
+                va_offset             : long64(0),    $   
+                va_swapendian         : fix(0),       $         
                 va_writeable          : fix(0),       $
                 va_data_current_chunk : 0LL,          $
                 va_data_chunk_ptr     : ptr_new(),    $
