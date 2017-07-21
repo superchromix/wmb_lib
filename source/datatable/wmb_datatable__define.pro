@@ -1409,11 +1409,11 @@ end
 ;   filter_columns: a list of column names which will be used
 ;                   for selection
 ;                   
-;   filter_types: 0: select values greater than or equal to
-;                 1: select values less than or equal to
-;                 2: select values within [min,max] range
-;                 3: select values equal to
-;                 4: select values not equal to
+;   filter_types (list): 0: select values greater than or equal to
+;                        1: select values less than or equal to
+;                        2: select values within [min,max] range
+;                        3: select values equal to
+;                        4: select values not equal to
 ;                 
 ;   filter_values: A list of filter values.  For range filters,
 ;                  the value is a two-element array of [min,max].
@@ -1425,7 +1425,8 @@ end
 
 function wmb_DataTable::Select, filter_columns, $
                                 filter_types, $
-                                filter_values
+                                filter_values, $
+                                n_selected = n_selected
 
     compile_opt idl2, strictarrsubs
 
@@ -1532,6 +1533,8 @@ function wmb_DataTable::Select, filter_columns, $
         if tmpcnt gt 0 then select_results = [select_results, overall_pass]
         
     endfor
+
+    n_selected = N_elements(select_results)
 
     return, select_results
 

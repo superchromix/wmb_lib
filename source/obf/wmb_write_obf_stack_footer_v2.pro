@@ -1,6 +1,6 @@
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-; wmb_write_stack_footer_v2.pro
+; wmb_write_obf_stack_footer_v2.pro
 ;
 ; units:  0: dimensionless
 ;         1: micrometers
@@ -11,7 +11,7 @@
 ;                       
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_write_stack_footer_v2, obf_uid, $
+pro wmb_write_obf_stack_footer_v2, obf_uid, $
                       rank, $
                       value_unit, $
                       dimension_units, $

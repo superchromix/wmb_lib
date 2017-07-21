@@ -12,6 +12,8 @@
 
 pro wmb_meshgrid, x_domain, y_domain, X_out, Y_out
 
+    compile_opt idl2, strictarrsubs
+
     len_x = N_ELEMENTS(x_domain)
     len_y = N_ELEMENTS(y_domain)
     
