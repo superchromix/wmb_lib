@@ -32,7 +32,6 @@ pro wmb_write_obf_stack_footer_v2, obf_uid, $
    
     if N_elements(value_scalefactor) eq 1 then flag_edit_value_scalefactor = 1
     
-    
     stack_footer_size = 1408ULL
 
     ulon_zero_arr = ulonarr(15)
