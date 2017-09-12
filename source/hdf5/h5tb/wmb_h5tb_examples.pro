@@ -189,7 +189,7 @@ pro wmb_h5tb_make_table_example
     ; Create a buffer of data to write to the table
     ;-----------------------------------------------------------------
     
-    nrecords = 100543
+    nrecords = 100
     
     databuffer = replicate(record_definition,nrecords)
     

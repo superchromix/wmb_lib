@@ -1850,6 +1850,40 @@ function wmb_DataTable::Save, filename, $
 end
 
 
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Copy method
+;
+;   Returns a complete copy of the datatable object.
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_DataTable::Copy
+
+    compile_opt idl2, strictarrsubs
+
+    tmp_autosave_enable = self.dt_autosave_enabled
+    tmp_autosave_thresh = self.dt_autosave_thresh_mbytes
+    tmp_write_buf_len = self.dt_write_buffer_length
+    tmp_title = self.dt_title
+    tmp_recorddef = *(self.dt_record_def_ptr)
+    
+    tmp_data = self[*]
+    
+    ; make a new datatable
+    
+    new_dt = obj_new('wmb_DataTable', Indata=tmp_data, $
+                              RecordDef=tmp_recorddef, $
+                              Title = tmp_title, $
+                              Autosave_enable = tmp_autosave_enable, $
+                              Autosave_thresh_mbytes = tmp_autosave_thresh, $
+                              Write_buffer_length = tmp_write_buf_len, $
+                              /NO_COPY)
+                              
+    return, new_dt
+
+end
+
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
