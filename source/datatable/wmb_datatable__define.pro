@@ -1854,13 +1854,15 @@ end
 ;
 ;   This is the Copy method
 ;
-;   Returns a complete copy of the datatable object.
+;   Returns a copy of the datatable object.
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-function wmb_DataTable::Copy
+function wmb_DataTable::Copy, index = data_indices
 
     compile_opt idl2, strictarrsubs
+    
+    tmp_copy_all = N_elements(data_indices) eq 0
 
     tmp_autosave_enable = self.dt_autosave_enabled
     tmp_autosave_thresh = self.dt_autosave_thresh_mbytes
@@ -1868,7 +1870,8 @@ function wmb_DataTable::Copy
     tmp_title = self.dt_title
     tmp_recorddef = *(self.dt_record_def_ptr)
     
-    tmp_data = self[*]
+    if tmp_copy_all eq 0 then tmp_data = self[data_indices] $
+                         else tmp_data = self[*]
     
     ; make a new datatable
     
