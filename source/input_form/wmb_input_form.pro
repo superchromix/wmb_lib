@@ -1240,6 +1240,12 @@ pro wmb_input_form, widget_definition_hash, $
                               xsize=bxsize, ysize=bysize, font=labelfont)
 
 
+    ; Align the widgets into ordered columns
+
+    wmb_input_form_align_widgets, centerbase, xpad=5, ypad=5, $
+                                  xspace = 5, yspace = rowyspace
+                                  
+                                  
     ; Center the top level base widget on display
 
     if N_elements(group_leader) ne 0 then begin
@@ -1255,11 +1261,6 @@ pro wmb_input_form, widget_definition_hash, $
 
     Widget_Control, tlb, /Realize
 
-
-    ; Align the widgets into ordered columns
-
-    wmb_input_form_align_widgets, centerbase, xpad=5, ypad=5, $
-                                  xspace = 5, yspace = rowyspace
 
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

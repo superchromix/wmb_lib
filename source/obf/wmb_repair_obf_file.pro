@@ -10,8 +10,9 @@
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_repair_obf_file, obf_filename, $
-                              template_obf_filename
+function wmb_repair_obf_file, obf_filename = obf_filename, $
+                              template_obf_filename = template_obf_filename, $
+                              default_path = default_path
 
     compile_opt idl2, strictarrsubs
 
@@ -20,6 +21,41 @@ function wmb_repair_obf_file, obf_filename, $
     if error_status ne 0 then begin
         ; the program encountered an error - hence the file was not repaired
         return, 0
+    endif
+
+    query_user = 0
+
+    if N_elements(obf_filename) eq 0 or $
+       N_elements(template_obf_filename) eq 0 then begin
+        
+        query_user = 1
+    
+    endif
+
+    if query_user eq 1 then begin
+        
+        msgtxt = 'Choose the OBF file to repair'
+        
+        obf_fn = DIALOG_PICKFILE(title=msgtxt, $
+                                 filter='*.obf', $
+                                 path=default_path, $
+                                 get_path=output_path, $
+                                 /MUST_EXIST)
+                                 
+        if obf_fn eq '' then return, 0
+
+        msgtxt = 'Choose an OBF file to serve as a template'
+                                 
+        template_fn = DIALOG_PICKFILE(title=msgtxt, $
+                                      path=output_path, $
+                                      filter='*.obf', $
+                                      /READ)
+                                 
+        if template_fn eq '' then return, 0
+        
+        obf_filename = obf_fn
+        template_obf_filename = template_fn
+        
     endif
 
     repair_successful = 0

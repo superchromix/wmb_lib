@@ -52,8 +52,8 @@ pro wmb_center_tlb_on_parent, tlb, $
     newtlbxoff = gl_xcen - (tlb_xsize/2.0)
     newtlbyoff = gl_ycen - (tlb_ysize/2.0)
 
-    calc_xoff = 0 > newtlbxoff 
-    calc_yoff = 0 > newtlbyoff 
+    calc_xoff = newtlbxoff 
+    calc_yoff = newtlbyoff 
 
     if align_top_right eq 1 then begin
         
@@ -63,10 +63,39 @@ pro wmb_center_tlb_on_parent, tlb, $
         newtlbxoff = gl_x_tr
         newtlbyoff = gl_y_tr
         
-        calc_xoff = 0 > newtlbxoff 
-        calc_yoff = 0 > newtlbyoff 
+        calc_xoff = newtlbxoff 
+        calc_yoff = newtlbyoff 
         
     endif
+    
+    ; don't let the new window fall off the right side of the screen
+    
+    new_tlb_x_max = newtlbxoff + tlb_xsize
+    
+    oMonInfo = Obj_New('IDLsysMonitorInfo')
+    n_monitors = oMonInfo -> GetNumberOfMonitors()
+    rects = oMonInfo -> GetRectangles(/Exclude_Taskbar)
+    
+    if n_monitors eq 1 then begin
+        
+        screen_xmax = rects[0] + rects[2]
+        
+    endif else begin
+
+        screen_xmin = rects[0,*]
+        screen_xsize = rects[2,*]
+        
+        rects_screen_xmax = screen_xmin + screen_xsize
+        
+        screen_xmax = max(rects_screen_xmax)
+        
+    endelse
+
+    new_tlb_x_max = new_tlb_x_max < screen_xmax
+    
+    newtlbxoff = new_tlb_x_max - tlb_xsize
+    
+    calc_xoff = newtlbxoff
     
     ; set the offsets
     widget_control, tlb, xoffset = calc_xoff + in_xoff + tlb_xpad, $
