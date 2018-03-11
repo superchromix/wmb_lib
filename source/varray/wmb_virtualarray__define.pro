@@ -608,14 +608,14 @@ pro wmb_VirtualArray::GetProperty,  filename=filename, $
                                     fileswapendian=fileswapendian, $
                                     datadims=datadims, $
                                     datatype=datatype, $                 
-                                    filewritable=filewritable
+                                    filewritable=filewritable, $
                                     _Ref_Extra=extra
 
     compile_opt idl2, strictarrsubs
 
 
     if Arg_present(filename) ne 0 then filename=self.va_filename
-    if Arg_present(fileoffset_bytes) ne 0 then fileoffset=self.va_offset
+    if Arg_present(fileoffset_bytes) ne 0 then fileoffset_bytes=self.va_offset
     if Arg_present(fileswapendian) ne 0 then fileswapendian=self.va_swapendian
     if Arg_present(datadims) ne 0 then datadims=(*self.va_dimsptr)    
     if Arg_present(datatype) ne 0 then datatype=self.va_dtype 
