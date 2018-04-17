@@ -1142,14 +1142,31 @@ pro wmb_input_form, widget_definition_hash, $
 
 
     
-
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
 ;   Create two hashes to store the input data and the output data
 ;
 
-    input_hash = data_hash[*]
-    output_hash = data_hash[*]
+    ; which data do we need?
+    
+    tmp_layout_key_list = list()
+    
+    foreach tmp_layout, layout_list do begin
+        
+        tmp_layout_keys = tmp_layout.widget_key_list
+        tmp_layout_key_list = tmp_layout_key_list + tmp_layout_keys
+        
+    endforeach
+
+    input_hash = hash()
+    output_hash = hash()
+    
+    foreach tmpkey, tmp_layout_key_list do begin
+        
+        input_hash[tmpkey] = data_hash[tmpkey]
+        output_hash[tmpkey] = data_hash[tmpkey]
+        
+    endforeach
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
@@ -1310,10 +1327,13 @@ pro wmb_input_form, widget_definition_hash, $
     output_hash = result.output_hash
     formcancel = result.cancel
 
-    obj_destroy, data_hash
-
-    if formcancel then data_hash = input_hash[*] $
-                  else data_hash = output_hash[*]
+    if formcancel then output_hash = input_hash[*] 
+    
+    foreach tmpval, output_hash, tmpkey do begin
+        
+        data_hash[tmpkey] = tmpval
+        
+    endforeach
     
     obj_destroy, input_hash
     obj_destroy, output_hash
