@@ -131,6 +131,22 @@ pro wmb_input_form_event, event
                 
             end
             
+            'array': begin
+            
+                if N_elements(objref -> Get_Value()) ne 0 then begin
+                
+                    tmpinput = objref -> Get_Value()
+                    
+                    tmparray = wmb_ConvertFromString(tmpinput, $
+                                                     'array', $
+                                                     error=errchk)
+                                                     
+                    if errchk eq 0 then output_hash[widget_uname] = tmparray
+                
+                endif
+            
+            end
+            
         endcase
 
         ; print the modified data (for debug purposes)
@@ -867,6 +883,22 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
             endfor
 
         end
+        
+        'array' : begin
+                             
+            if ~ widgetdef.Haskey('xsize') then tmpxsize = 24 else $
+                                                tmpxsize = widgetdef['xsize']
+              
+            tmpxsize = tmpxsize > strlen(wmb_ConvertToString(inputdata))
+            
+            oinput   = fsc_inputfield(iorowbase, Title=prelabel, $
+                                      Value=wmb_ConvertToString(inputdata), $
+                                      Xsize=tmpxsize, $
+                                      Fieldfont=fieldfont, $
+                                      Name=uname_base, $
+                                      Event_pro='wmb_input_form_event')
+
+        end
     
     endcase
 
@@ -1001,6 +1033,7 @@ end
 ;                   'Vertical_Radiobuttons: a column of radio buttons 
 ;                   'Checkboxes'   : a row of checkboxes (nonexclusive, min 1)
 ;                   'MultiNumeric' : multiple numeric entries on the same line
+;                   'Array'        : a string representation of an array
 ;       
 ;       
 ;       additional fields for 'Numeric' type:
@@ -1462,6 +1495,12 @@ pro inputformtest_event, event
     def_flt1b['integertype'] = 0
     def_flt1b['label'] = ['Test float','(multiline label)']
     def_flt1b['postfixlabel'] = 'nm'
+
+    def_array = hash()
+    def_array['type'] = 'array'
+    def_array['label'] = ['Test array','(multiline label)']
+    def_array['postfixlabel'] = ''
+
     
     wkeynames = ['testint1', $
                  'testflt1', $
@@ -1477,13 +1516,14 @@ pro inputformtest_event, event
                  'teststr1a', $
                  'testint1b', $
                  'testflt1b', $
-                 'teststr1b']
+                 'teststr1b', $
+                 'testarray'  ]
                  
     wdef = orderedhash()
     wdef[wkeynames] = [def_int1, def_flt1, def_dl1, def_dl1, $
                        def_rb1, def_cb1, def_str1, def_multinumeric1, $
                        def_vrb1, def_int1a, def_flt1a, def_str1a, $
-                       def_int1b, def_flt1b, def_str1b]
+                       def_int1b, def_flt1b, def_str1b, def_array]
                        
     inputdat = hash()
     inputdat[wkeynames[0]] = 1
@@ -1501,6 +1541,7 @@ pro inputformtest_event, event
     inputdat[wkeynames[12]] = 1
     inputdat[wkeynames[13]] = 1.0
     inputdat[wkeynames[14]] = 'first'
+    inputdat[wkeynames[15]] = [1,2,3,4,5]
     
     
     layout_pg1 = {wmb_input_form_layout}
@@ -1513,7 +1554,7 @@ pro inputformtest_event, event
     layout_pg2 = {wmb_input_form_layout}
     layout_pg2.page_title = 'This is page 2'
     layout_pg2.description = 'Here are MORE widgets'
-    wklist2 = list('testdl1', 'testdl2')
+    wklist2 = list('testdl1', 'testdl2', 'testarray')
     layout_pg2.widget_key_list = wklist2
     
     layout_pg3 = {wmb_input_form_layout}
@@ -1542,7 +1583,7 @@ pro inputformtest_event, event
                     frame = 0
                     ;group_leader = event.top
                            
-    ;print, inputdat
+    print, inputdat
     
 end
 

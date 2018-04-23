@@ -18,12 +18,13 @@ function wmb_h5_list_groups, filename, n_groups = n_groups
     list_dims = size(list_output, /DIMENSIONS)
     list_ndims = size(list_output, /N_DIMENSIONS)
     
-    if list_ndims eq 1 then n_groups = 0 $
-                       else n_groups = list_dims[1] - 1
+    if list_ndims eq 1 then return, []
+    
+    chk_grp_index = where(list_output[0,1:-1] eq 'group', n_groups)
     
     if n_groups eq 0 then return, []
     
-    group_list_arr = reform(list_output[1,1:-1])
+    group_list_arr = reform(list_output[1,chk_grp_index + 1])
     
     ; strip off the leading '/'
     

@@ -122,21 +122,32 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 substr = strmid(instr, 1, strlen(instr)-2)
                 
-                extstr = strsplit(substr, ',', /EXTRACT)
+                extstr = strsplit(substr, ', []', /EXTRACT)
             
                 dim = N_elements(extstr)
                 
+                chk_all_numeric = 1
+                
+                ; ensure that each of the elements is numeric
+                foreach tmpstr, extstr, tmpindex do begin
+
+                    testnum = ~stregex( tmpstr, '[^0-9.-]', /boolean )
+                    if ~testnum then chk_all_numeric = 0
+                    
+                endforeach
+                
                 outval = []
                 
-                for i = 0, dim-1 do begin
-                
-                    tmpstr = extstr[i]
-                    tmpval = wmb_ConvertFromString(tmpstr,'undefined')
-                    outval = [outval,tmpval]
-                
-                endfor
+                if chk_all_numeric eq 1 then begin
+                    foreach tmpstr, extstr, tmpindex do begin
+                    
+                        tmpval = wmb_ConvertFromString(tmpstr,'undefined')
+                        outval = [outval,tmpval]
+                    
+                    endforeach
+                endif else errchk = 1
             
-            endif else message, 'Misformed array string'
+            endif else errchk = 1
         
         end
         
@@ -183,7 +194,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
 
                 endfor
             
-            endif else message, 'Misformed structure string'
+            endif else errchk = 1
             
         end
         
@@ -220,7 +231,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 outval = hash(tmp_labels, tmp_values)
 
-            endif else message, 'Misformed hash string'
+            endif else errchk = 1
             
         end
     
@@ -257,7 +268,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 outval = orderedhash(tmp_labels, tmp_values)
 
-            endif else message, 'Misformed orderedhash string'
+            endif else errchk = 1
             
         end
     
@@ -294,7 +305,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
             
                 outval = dictionary(tmp_labels, tmp_values)
 
-            endif else message, 'Misformed dictionary string'
+            endif else errchk = 1
             
         end
     
@@ -324,7 +335,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
                 
                 endfor
             
-            endif else message, 'Misformed list string'
+            endif else errchk = 1
         
         end
         

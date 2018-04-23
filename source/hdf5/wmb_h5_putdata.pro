@@ -237,7 +237,25 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
 
         if wmb_h5_putdata_varexists(loc_id, objname) then begin
         
-            datasetId = h5d_open(loc_id, objname)
+            ; if the data is an array or a string, the size of the data must
+            ; match the existing array or string
+            
+            chk_array = size(data, /n_dimensions) ne 0L
+            chk_string = size(data, /TYPE) eq 7
+            
+            if chk_array eq 1 or chk_string eq 1 then begin
+                
+                ; delete the old object
+                h5g_unlink, loc_id, objname
+                
+                ; create the new object
+                datasetId = h5d_create(loc_id, objname, datatypeId, dataspaceId)
+                
+            endif else begin
+        
+                datasetId = h5d_open(loc_id, objname)
+                
+            endelse
         
         endif else begin
         
