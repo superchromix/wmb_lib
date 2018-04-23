@@ -238,7 +238,9 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
         if wmb_h5_putdata_varexists(loc_id, objname) then begin
         
             ; if the data is an array or a string, the size of the data must
-            ; match the existing array or string
+            ; match the existing array or string - we can't easily change the
+            ; size of the existing array or string, so simply delete the old
+            ; object and create a new one in this case
             
             chk_array = size(data, /n_dimensions) ne 0L
             chk_string = size(data, /TYPE) eq 7
