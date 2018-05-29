@@ -389,9 +389,15 @@ end
 ;           attribute/variable in the file instead of actual data
 ;-
 
-pro wmb_h5_putdata, file_id, name, data, reference=reference
+pro wmb_h5_putdata, file_id, $
+                    name, $
+                    data, $
+                    reference = reference, $
+                    attribute = attribute
 
     compile_opt idl2, strictarrsubs
+
+    if N_elements(attribute) eq 0 then attribute = 0
 
     ; check the file id
     
@@ -406,7 +412,9 @@ pro wmb_h5_putdata, file_id, name, data, reference=reference
     
     dotPos = strpos(name, '.', /reverse_search)
   
-    if (dotPos eq -1) then begin
+    write_attribute = (dotpos ne -1 and attribute eq 1)
+  
+    if (write_attribute eq 0) then begin
       
         ; write a variable
         

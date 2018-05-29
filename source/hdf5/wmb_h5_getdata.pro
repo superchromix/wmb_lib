@@ -214,9 +214,15 @@ end
 ;           error value
 ;-
 
-function wmb_h5_getdata, file_id, variable, bounds=bounds, error=error
+function wmb_h5_getdata, file_id, $
+                         variable, $
+                         attribute = attribute, $
+                         bounds=bounds, $
+                         error=error
 
     compile_opt idl2, strictarrsubs
+
+    if N_elements(attribute) eq 0 then attribute = 0
 
     ; check the file id
     
@@ -225,11 +231,13 @@ function wmb_h5_getdata, file_id, variable, bounds=bounds, error=error
     
     if N_elements(variable) eq 0 then message, 'No variable requested'
 
-    ; check if we are writing an attribute
+    ; check if we are reading an attribute
     
     dotPos = strpos(variable, '.', /reverse_search)
 
-    if (dotPos eq -1) then begin
+    read_attribute = (dotPos ne -1 and attribute eq 1)
+
+    if (read_attribute eq 0) then begin
     
         ; read a variable
 

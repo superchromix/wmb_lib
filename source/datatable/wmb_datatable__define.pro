@@ -885,6 +885,34 @@ end
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
+;   This is the Read_column_index method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_DataTable::Read_column_index, col_index, $
+                                           start_index = start_index, $
+                                           n_records = n_records
+
+    compile_opt idl2, strictarrsubs
+    
+    table_nrecs = self.dt_nrecords
+    
+
+    ; which column are we working with?
+    
+    recdef = *(self.dt_record_def_ptr)
+    stored_colnames = strupcase(tag_names(recdef))
+    input_colname = stored_colnames[col_index]
+    
+    return, self.Read_column(input_colname, $
+                             start_index = start_index, $
+                             n_records = n_records)
+    
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
 ;   This is the Write_column method
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1362,6 +1390,47 @@ pro wmb_DataTable::Sort_double_index, col_name_1, $
     tmpdata2 = self.Read_column(col_name_2)
     
     sort_index = wmb_sort_two_columns(tmpdata1, tmpdata2)
+    
+    if descending eq 1 then sort_index = reverse(sort_index, /OVERWRITE)
+    
+    self -> Reorder_table, sort_index, reorder_in_memory = reorder_in_memory, $
+                                       progress_bar = progress_bar
+
+end
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Sort_triple_index method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+pro wmb_DataTable::Sort_triple_index, col_name_1, $
+                                      col_name_2, $
+                                      col_name_3, $
+                                      descending=descending, $
+                                      reorder_in_memory = reorder_in_memory, $
+                                      progress_bar = progress_bar
+
+    compile_opt idl2, strictarrsubs
+    
+    if N_elements(descending) ne 1 then descending = 0
+    
+    table_nrecs = self.dt_nrecords
+    
+    ; read the column which will act as the primary sort index
+    
+    tmpdata1 = self.Read_column(col_name_1)
+    
+    ; read the column which will act as the secondary sort index
+    
+    tmpdata2 = self.Read_column(col_name_2)
+    
+    ; read the column which will act as the tertiary sort index
+    
+    tmpdata3 = self.Read_column(col_name_3)
+    
+    sort_index = wmb_sort_three_columns(tmpdata1, tmpdata2, tmpdata3)
     
     if descending eq 1 then sort_index = reverse(sort_index, /OVERWRITE)
     

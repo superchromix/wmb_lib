@@ -1,36 +1,22 @@
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
-;   wmb_sort_two_columns
+;   wmb_sort_three_columns
 ;
-;   Note that this function works with both arrays and lists.
-;   
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 
-function wmb_sort_two_columns, col_a, col_b
+function wmb_sort_three_columns, col_a, col_b, col_c
 
     compile_opt idl2, strictarrsubs
 
 
-    ; check if the inputs are lists
-    
-    input_a_list = isa(col_a, 'List')
-    input_b_list = isa(col_b, 'List')
-    
-    if input_a_list eq 1 then col_a_mod = col_a.ToArray() $
-                         else col_a_mod = temporary(col_a)
-
-    if input_b_list eq 1 then col_b_mod = col_b.ToArray() $
-                         else col_b_mod = temporary(col_b)
-
-
-
     ; perform simple sort on the primary sort column
 
-    inda = sort(col_a_mod)
+    inda = sort(col_a)
 
-    sorted_col_a = col_a_mod[inda]
-    sorted_col_b = col_b_mod[inda]
+    sorted_col_a = col_a[inda]
+    sorted_col_b = col_b[inda]
+    sorted_col_c = col_c[inda]
 
     ; extract boundaries of equal values in major index (sorted_col_a)
 
@@ -54,22 +40,16 @@ function wmb_sort_two_columns, col_a, col_b
         if(i2 gt i1) then begin
 
             subdat_b = sorted_col_b[i1:i2]
+            subdat_c = sorted_col_c[i1:i2]
             sub_inda = inda[i1:i2]
 
-            indb = sort(subdat_b)
+            indb = wmb_sort_two_columns(subdat_b, subdat_c)
             
             inda[i1:i2] = sub_inda[indb]
 
         endif
 
     endfor
-
-
-    ; return the input variables to their original state
-    
-    if input_a_list eq 0 then col_a = temporary(col_a_mod)
-    if input_b_list eq 0 then col_b = temporary(col_b_mod)
-
 
     return, inda
 
