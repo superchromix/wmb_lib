@@ -415,6 +415,47 @@ pro wmb_TableWindow::Evt_Context, event
     
     case src of
         
+        'plot_histogram': begin
+
+            ; get the column to be sorted
+
+            tmpcol = self.stat_context_evt_col
+
+            tabledata = *self.dataptr
+
+            coldata = tabledata.(tmpcol)
+
+            ; is the data numeric?
+
+            datasample = coldata[0]
+
+            dtype = size(datasample, /type)
+
+            if dtype eq 0 or $
+                dtype eq 8 or $
+                dtype eq 10 or $
+                dtype eq 11 then begin
+
+                msgtxt = 'This function is supported only for numeric types'
+                ok = dialog_message(msgtxt, dialog_parent=event.top, $
+                    /INFORMATION)
+
+            endif else begin
+
+                ; the datatype is plotable - create the histogram and plot
+
+                tmp_hist = wmb_histogram(coldata, x_center_locations = tmp_x)
+                
+                result = daxview_plot_xy_data(tmp_x, $
+                                              tmp_hist, $
+                                              viewwindow_ref_out = ovw, $
+                                              HISTOGRAM = 1)
+
+            endelse
+
+        end
+
+        
         'sort_ascending': begin
 
             ; get the column to be sorted
@@ -1192,6 +1233,11 @@ pro wmb_TableWindow::Context_menu_init
 
     cmenu = widget_base(table_wid_id, /context_menu)
     
+    button = widget_button(cmenu, value='Plot histogram', $
+              uvalue={Object:self, Method:'Evt_Context', $
+                      Source:'plot_histogram'}, uname='cont_menu_plot_hist', $
+                      /checked_menu)  
+    
     button = widget_button(cmenu, value='Sort table ascending', $
               uvalue={Object:self, Method:'Evt_Context', $
                       Source:'sort_ascending'}, uname='cont_menu_sort_up', $
@@ -1201,6 +1247,8 @@ pro wmb_TableWindow::Context_menu_init
               uvalue={Object:self, Method:'Evt_Context', $
                       Source:'sort_descending'}, uname='cont_menu_sort_down', $
                       /checked_menu) 
+
+
 
     self.wid_context_menu = cmenu
    
