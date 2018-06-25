@@ -4,7 +4,7 @@
 ;   Returns the minimum euclidean distance point between a given 
 ;   (measured) vector and a theoretical array of such vectors. 
 ;
-;   The function just returns the column in which the distance is 
+;   The function returns the row in which the distance is 
 ;   minimum and the corresponding minimum distance. The squared 
 ;   deviations are weighted if a weight vector is provided.
 ;   

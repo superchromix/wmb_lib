@@ -1,0 +1,125 @@
+29 July 2016:
+ - Added VELFRAME (file existed but contained DISTMOD code).
+27 May 2015:
+ - Made minor changes to ORD. RMS now passes extra arguments to MEAN.
+1 May 2013:
+ - Put PUSH back in - not sure where it disappeared to.
+27 March 2013:
+ - Minor speed improvements to POINT_CONVOLVE.
+7 March 2013:
+ - Bugfix in ORD for when there is only one unique value.
+ - created JBMAJORITYFILTER.
+17 February 2013:
+ - Moved READ_CSV and WRITE_CSV to deprecated (now IDL8 routines).
+6 December 2012:
+ - Added SHRINKINTTYPE. Bug fixes and other improvements to JBBILATERALFILTER.
+3 December 2012:
+ - Added JBBILATERALFILTER.
+18 October 2011:
+ - Added JBIMATCH.
+9 August 2011:
+ - Bug fix in MATCHALL_SPH (some matches were missed).
+22 July 2011:
+ - Added SHAPE_ITERATIVE.
+ - Bug fix in INERTIATENS so /R2WEIGHT works.
+21 July 2011:
+ - READDOLPHOT updated to deal with output from v2.0 of Dolphot.
+24 June 2011:
+ - Bug fix to YLADDER.
+20 June 2011:
+ - Added HIST_ND_ADAPTIVE.
+17 June 2011:
+ - Ported HISTOGRAM_WEIGHT bug fix to HIST_ND_WEIGHT.
+ - Bug and speed fixes to HISTEQ.
+ - ORD returns same dimensions as input, rather than a flat array.
+13 June 2011:
+ - XYLADDER: Added /ISOTROPIC keyword.
+ - XLADDER, YLADDER: Changed to wrappers to XYLADDER.
+8 June 2011:
+ - Slight modification to READPARAM.
+26 May 2011:
+ - READPARAM memory leak fix.
+23 May 2011:
+ - READPARAM seems to have never existed?! But I know it existed somewhere at
+   at some point because I have code that calls it! Weird. Anyway,
+   it's been re-written and definitely exists now.
+20 May 2011:
+ - Added IS_SORTED.
+17 May 2011:
+ - Added MINFINITE.
+20 April 2011:
+ - Added SIXTYV.
+13 April 2011:
+ - Bug fix in MATCH_SPH and MATCH_ND.
+1 April 2011:
+ - Added COMBIGEN.
+28 March 2011:
+ - Added JBLINFIT.
+11 March 2011:
+ - Changed all relevant plotting routines to use Coyote Graphics.
+ - Rename SPLINEOPLOT to SPLINEPLOT and allowed overplotting as an option.
+9 March 2011:
+ - Added UNIQIFY.
+9 Feb 2011:
+ - Added MATCH_ND. Added DISTANCE keyword to MATCHALL_ND and MATCHALL_2D.
+lost in time:
+ - Added MATCHALL_ND, MATCH_SPH, renamed WITHINSPHRAD_VEC3D to MATCHALL_SPH.
+ - Added READDOLPHOT and READFAKEDOLPHOT.
+ - Added SKY2XY and XY2SKY.
+ - Added SORTROWS.
+ - various undocumented (sigh) bug fixes.
+ - ML_DISTFIT has a serious bug in the FITA parameter. Put caution in the
+   comments to never use it.
+3 Dec 2010:
+ - Added GETPTS and SPLINEOPLOT.
+29 Nov 2010:
+ - Added VECREP.
+26 Sept 2010:
+ - Added MAPPING keyword to HISTEQ.
+6 May 2010:
+ - Added MATCHALL_2D, which is a 2D Euclidean version of WITHINWPHRAD_VEC3D
+   (i.e. like MATCH_2D but returns all matches within the given radius).
+15 Sept 2009:
+ - Modified READPARAM to deal with tabs as well as spaces between identifiers
+   and their equals sign.
+18 July 2009:
+ - Added BETWEEN.
+10 July 2009:
+ - PLOT_BINNEDDATA bug fix (for bins which contain one data point), added ROBUST,
+   HISTOGRAM and REVERSE_INDICES keywords.
+19 June 2009:
+ - Added READPARAM, which reads GASOLINE and PKDGRAV style parameter files
+   into a structure.
+13 May 2009:
+ - Added WITHINSPHRAD_VEC3D, which is a vectorized version of WITHINSPHRAD
+   (and removed much less efficient WITHINSPHRAD_VEC).
+3 May 2009:
+ - Edited PLOT_BINNEDDATA to evenly distribute the excess elements
+   when using BIN<0.
+24 April 2009:
+ - Added WITHINSPHRAD_VEC, which is a vectorized version of WITHINSPHRAD.
+16 APRIL 2009:
+ - Released as JBIUv1.3
+15 April 2009:
+ - Bug fix to POINT_CONVOLVE to deal with histogram sometimes adding
+   an extra bin due to floating point input and to be more memory-efficient.
+11 April 2009:
+ - Major bug fix to HISTOGRAM_WEIGHT so that it actually works.
+28 March 2009:
+ - Added ORD function for mapping values to their ordinals in an array.
+12 December 2008:
+ - Added HISTEQ function for performing histogram equalization.
+27 November 2008:
+ - Added ML_DISTFIT maximum likelihood distribution fitter.
+ - Added MATRIX2QUATERNION and QUAT2ROTAXIS to deal with rotations
+   using quaternions.
+ - Added ATANH.
+ - Added SAVE_PLOTSYSVARS and RESTORE_PLOTSYSVARS for saving/restoring
+   various useful system variables for plotting.
+ - Release: 1.2
+21 November 2008:
+ - Added SPRSADD function to add two sparse matrices.
+12 August 2008:
+ - Updated READ_CSV to ensure that tag names are IDL compliant (courtesy
+	of Vittorio Brando), and count file lines using FILE_LINES.
+
