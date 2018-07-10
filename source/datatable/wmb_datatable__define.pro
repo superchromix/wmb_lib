@@ -2170,6 +2170,33 @@ end
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;
+;   This is the SetProperty method
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+
+pro wmb_DataTable::SetProperty,  title = title, $
+                                 _Extra=extra
+
+    compile_opt idl2, strictarrsubs
+
+
+    if N_elements(title) ne 0 then begin
+        
+        self.dt_title = title
+        
+    endif
+
+    
+    ; pass extra keywords
+
+    
+end
+
+
+
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
 ;   This is the GetProperty method
 ;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
