@@ -39,6 +39,13 @@ pro wmb_TableWindow_events, event
         
     endif
 
+    ; verify that the table window object is still valid - if not, 
+    ; destroy the top level base
+    
+    Widget_Control, event.top, Get_UValue = tlb_uvalue
+    oTableWindow = tlb_uvalue.object
+    if obj_valid(oTableWindow) eq 0 then Widget_Control, event.top, /DESTROY
+
 end 
 
 
@@ -128,7 +135,9 @@ pro wmb_TableWindow::Event_Handler, event
 ;    print, event
 
     ; quit the program
-    if self.flag_quit then widget_control, event.top, /destroy
+    if self.flag_quit then begin
+        widget_control, event.top, /destroy
+    endif
 
 end 
 
@@ -230,7 +239,8 @@ pro wmb_TableWindow::Ext_Gen_Event, no_force = no_force
     tmpevt.TOP     = 0L
     tmpevt.HANDLER = 0L
 
-    widget_control, self.wid_table, SEND_EVENT=tmpevt
+    if widget_info(self.wid_table,/VALID_ID) eq 1 then $
+        widget_control, self.wid_table, SEND_EVENT=tmpevt
 
     ; force event handling
 

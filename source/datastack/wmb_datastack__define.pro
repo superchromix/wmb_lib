@@ -317,6 +317,37 @@ function wmb_DataStack::Change_Datatype, newtype
 end
 
 
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+;
+;   This is the Negate_Data method
+;   
+;   Returns 1 if successful
+;
+;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+
+function wmb_DataStack::Negate_Data
+
+    compile_opt idl2, strictarrsubs
+
+
+    if self.ds_flag_varray eq 0 then begin
+        
+        newdata = - *(self.ds_dataptr)
+
+        ptr_free, self.ds_dataptr
+        
+        self.ds_dataptr = ptr_new(newdata, /NO_COPY)
+        
+    endif else begin
+        
+        return, 0
+        
+    endelse
+    
+    return, 1
+
+end
+
 
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ;

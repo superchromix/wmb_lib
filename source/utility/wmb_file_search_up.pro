@@ -80,7 +80,7 @@ function wmb_file_search_up, start_dir, filename
                                       /test_regular, $
                                       /fully_qualify_path)
                                       
-        if result ne '' and file_found eq 0 then begin
+        if result[0] ne '' and file_found eq 0 then begin
             
             file_found = 1
             return, result
