@@ -673,7 +673,7 @@ function wmb_VirtualArray::Init, filename, $
         
         ; this sets the default file read chunk size (bytes)
         
-        chunksize_bytes = 2097152LL     ; 2MB
+        chunksize_bytes = 1048576LL     ; 1MB
         
     endif
     
