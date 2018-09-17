@@ -3,7 +3,7 @@
 ; 
 ; Purpose: Given a file name, determine the file extension
 ;          
-; Return value: Returns the file extension (including the '.')
+; Return value: Returns the file extension (including the '.') in lower case
 ;   
 
 function wmb_fileext, fname
