@@ -1148,7 +1148,8 @@ pro wmb_input_form, widget_definition_hash, $
                     yscroll = cb_yscroll, $
                     frame = rowframe, $
                     yspace = rowyspace, $
-                    group_leader = group_leader
+                    group_leader = group_leader, $
+                    align_tlb_center = align_tlb_center
                            
 
 
@@ -1162,6 +1163,7 @@ pro wmb_input_form, widget_definition_hash, $
     if N_elements(cb_yscroll) eq 0 then flag_autosize_cb = 1
     if N_elements(rowframe) eq 0 then rowframe = 0
     if N_elements(rowyspace) eq 0 then rowyspace = 0
+    if N_elements(align_tlb_center) eq 0 then align_tlb_center = 0
     
             
     if N_elements(widget_definition_hash) eq 0 then $
@@ -1300,7 +1302,15 @@ pro wmb_input_form, widget_definition_hash, $
 
     if N_elements(group_leader) ne 0 then begin
         
-        wmb_center_tlb_on_parent, tlb, group_leader, /ALIGN_TOP_RIGHT
+        if align_tlb_center eq 0 then begin
+
+            wmb_center_tlb_on_parent, tlb, group_leader, /ALIGN_TOP_RIGHT
+
+        endif else begin
+        
+            wmb_center_tlb_on_parent, tlb, group_leader
+        
+        endelse
 
     endif else begin
         
