@@ -42,9 +42,12 @@ pro wmb_TableWindow_events, event
     ; verify that the table window object is still valid - if not, 
     ; destroy the top level base
     
-    Widget_Control, event.top, Get_UValue = tlb_uvalue
-    oTableWindow = tlb_uvalue.object
-    if obj_valid(oTableWindow) eq 0 then Widget_Control, event.top, /DESTROY
+    if widget_info(event.top, /VALID_ID) eq 1 then begin
+        widget_control, event.top, Get_UValue = tlb_uvalue
+        oTableWindow = tlb_uvalue.object
+        if obj_valid(oTableWindow) eq 0 then widget_control, event.top, /DESTROY
+    endif
+
 
 end 
 
