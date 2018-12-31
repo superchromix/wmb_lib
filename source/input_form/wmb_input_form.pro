@@ -614,7 +614,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                               else logscale = alog10(abs(inputdata))
             
             dec_digits = 0
-            if doubletype then dec_digits = 3
+            if doubletype then dec_digits = 6
             if logscale lt 0 then dec_digits = dec_digits + abs(round(logscale))
             
             std_digits = dec_digits + 4
