@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+
+<head>
+<title>Rick Towler's IDL: RHTgrCamera View Frustum Culling</title>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="MSSmartTagsPreventParsing" content="true" />
+<meta http-equiv="imagetoolbar" content="no" />
+<link rel="stylesheet" type="text/css" href="help.css" media="screen,projection,print" />
+</head>
+
+<body>
+
+<div id="head">
+</div>
+
+<div id="body">
+<div id="content">
+
+	<h2>RHTgrCamera View Frustum Culling</h2>
+
+	<p>
+		Visibility culling is a common technique used to speed the rendering of complex scenes in
+		interactive applications. Visibility culling is based on the idea that if an object isn't going to be seen then you don't want to send those polygons down the rendering pipeline.  At this point I should stress that visibility culling is for <i>interactive applications</i> or complex animations where camera movement is such that large numbers of polygons will be moving in and out of view. If you simply want to use RHTgrCamera to set up views of scenes that are wholly contained in your view you do not need to trouble yourself with frustum culling.
+	</p>
+	
+	<h3>View Frustum Culling in RHTgrCamera</h3>
+	<p>
+		View frustum culling (VFC) is a form of visibility culling based on the premise that only objects in the current view volume must be drawn. There are many ways to approach VFC but most assume a prior knowledge of the scene geometry based on pre-processing of the data and most operate at a much lower level. While this approach is effective, it is neither general nor reasonable to do in IDL. With RHTgrCamera I have attempted to implement VFC in a general sense so that it it integrates seamlessly into the IDL object graphics subsystem.
+	</p>
+	<p>
+		VFC in RHTgrCamera occurs at the model level.  By setting the appropriate keyword, models added to the camera are considered for culling. In its simplest form, each model's graphics tree is traversed and the model's bounds are calculated by determining the extent of the data contained in the model and then applying any transformations.  If a model's bounding box intersects the view frustum it is drawn.  If the model falls entirely out of the view frustum it is not drawn. By controlling the number and size of your models you can control the granularity of the culling.
+	</p>
+	
+	<h3><code>STATC</code> vs. <code>DYNAMIC</code> culling</h3>
+	<p>
+		RHTgrCamera has two culling "modes".  <code>DYNAMIC</code> culling, given its name as it is intended to be used with moving objects, calculates model bounds every time the camera updates it's transformation. <code>STATC</code> culling, as you have already guessed, is used with objects that don't move or change their dimensions in any way.
+	</p>
+	<strong>Dynamic Culling</strong>
+	<p>
+		Dynamic culling groups each object into a list and iterates over the items for culling for each rendering pass.  This is costly.  Since dynamic objects can move, for each update of the camera's transformation the bounding box for every model added as dynamically culled content must be calculated. Even with simple model hierarchies this takes time.  As you add more and more objects this time adds up, slowing your application down. Because of this care should be taken to balance the cost of dynamic culling with the cost of rendering the objects.  In practice this means either having very few objects dynamically culled or ensuring that enough objects will be culled at any one time.
+	</p>
+	<div id="block">
+		<b>Dynamic culling performance</b>
+		<p>
+			One simple test of culling performance I used was the "Swarm of Orbs".  In this test a uniformly distributed cloud of modified orb objects are created and the camera, starting at one side, is moved thru the middle towards the opposite side.  As it moves through the cloud, more and more orbs fall from view as they move outside the field of view.
+		</p>
+		<div id="figureCNC">
+			<img src="images/cloud-ntris-dynamic.png"/>
+		</div>
+		<p>
+			Note that while there is always a price to pay for dynamic culling the point at which dynamic culling improves performance is reached more quickly as the number of polygons that comprise the culled objects increases.
+		</p>
+		<div id="figureCNC">
+			<img src="images/cloud-nobjs-dynamic.png"/>
+		</div>
+		<p>
+			When we increase the number of objects in the scene we see the drawback of this simplified culling approach. As the number of objects increases, we increase the time it takes to test each object for intersection with the view frustum. When most all of these objects are in view there is nothing to offset the cost associated with these tests and performance suffers.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<strong>Static Culling</strong>
+	<p>
+		Static culling is a different story. Since we assume that static objects will not move, bounding box data can be obtained and organized in a way that makes testing for view frustum intersection more efficient. When static models are added to the camera a binary tree data structure is created by bisecting the static model space and storing information about which models intersect each sub-space.  When the camera's transformations are updated, the binary tree is traversed and each node is tested for intersection with the viewing frustum.  If a node is found to be completely in or out of the viewing frustum the visibility of all the models in the node are set and traversal stops. If a node intersects the frustum boundaries traversal continues.
+	</p>
+	<p>
+		While static culling can perform much better than dynamic culling, its success depends heavily on the structure of the binary tree and the camera trajectory.  Currently the static model space is subdivided using axially aligned planes. The static model space is recursively bisected along the long axis until further bisection delivers no unique nodes.  With certain scene/trajectory combinations this yields a less than optimal solution. While a general algorithm for optimally subdividing the static model space would be difficult to implement RHTgrCamera does allow custom binary tree structures to be used instead of the automatically generated one.  The feature is as of yet undocumented, please refer to the source for the RHTgrCamera::Add and RHTgrCamera::BuildBTree methods for insight.
+	</p>
+	<div id="block">
+		<b>Static culling performance</b>
+		<p>
+			Back to the "Swarm of Orbs"...  This time the orbs are added as static content.
+		</p>
+		<div id="figureCNC">
+			<img src="images/cloud-ntris-static.png"/>
+		</div>
+		<p>
+			The first thing to note about the plot above is that with only 100 objects in the scene, there is little to no real cost associated with static culling.  This test represents a best-case scenario for static culling.
+		</p>
+		<div id="figureCNC"">
+			<img src="images/cloud-nobjs-static.png"/>
+		</div>
+		
+		<p>
+			Here we see the complexity of the binary tree affecting the rendering performance.  With fewer objects the tree will be shallower, allowing it to be traversed quickly. As the number of objects increase the depth of the tree increases (in this case, but not always).  As depth increases traversal becomes more costly if many nodes intersect the viewing frustum but few occur completely outside. In many cases this can be remedied by providing an optimized data structure to RHTgrCamera.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<p>
+		While the performance evaluations above are far from exhaustive, they should give you a general idea of what to expect from the VFC system in RHTgrCamera. Static models are the best candidates for VFC.  Performance of static culling suffers only with complex tree structures which, can be mitigated by providing the camera with an optimal data structure. Dynamic culling, while more limited, can be quite effective with smaller numbers of high-poly models.
+	</p>
+	<h3>Oddities and Quirks</h3>
+	<p>
+		There are a few other considerations when using VFC.
+		<li>
+			You shouldn't alter the <code>HIDE</code> property of the models that are being considered for culling.  RHTgrCamera caches the visibility state of these models when they are added and there is no current (or planned) mechanism to force the camera to synchronize this cache.
+		</li>
+		<li>
+			Changes in camera orientation that cause large numbers of objects to suddenly appear within the viewing frustum will slow culling.  Ensure that the <code>Set_Property</code> methods of the models considered for culling are as streamlined as possible.
+		</li>
+		<li>
+			When adding or removing models for static culling it is best done at once, instead of adding/removing each model individually.  For simplicities sake, the camera <i>rebuilds</i> the binary tree when a new model or array of models are added or removed. Adding or removing models in groups saves the camera from needless reconstruction.
+		</li>
+	</p>
+	
+	
+
+</div>
+<!--** includes\sidebar.html **-->
+</div>
+</body>
+</html>

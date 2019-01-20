@@ -1,0 +1,427 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>Rick Towler's IDL: RHTgrCamera Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="MSSmartTagsPreventParsing" content="true" />
+<meta http-equiv="imagetoolbar" content="no" />
+<link rel="stylesheet" type="text/css" href="help.css" media="screen,projection,print" />
+</head>
+
+<body>
+
+<div id="head">
+</div>
+
+<div id="body">
+<div id="content">
+
+<h2>RHTgrCamera Reference</h2>
+
+<p><h3>Calling Sequence</h3></p>
+
+<div id="block">
+	<div id="syntax">
+		<p>
+			oCamera = Obj_New("RHTgrCamera", [, CAMERA_LOCATION{Get, Set}=[x,y,z]]
+			[, COLOR{Get, Set}=index or RGB vector] [, DEPTH_CUE{Get, Set}=[zbright, zdim]]
+			[, DIMENSIONS{Get, Set}=[width, height]] [, /DOUBLE {Get, Set}] [, EYE{Set}=value]
+			[, FORCE_AR{Get, Set}={0 | 1}] [, FOV{Get, Set}=value] [, FRUSTUM_DIMS{Get, Set}=[width, height, depth]] [, LOCATION{Get, Set}=[x, y]] [, /LOCK{Get, Set] [, PITCH{Get, Set}=value{0 to 360}] [, ROLL{Get, Set}=value{0 to 360}] [,THIRD_PERSON{Get, Set}=value] [, /TRACK{Get, Set}] [, /TRANSPARENT{Get, Set}] [, UNITS{Get, Set}={0 | 1 | 2 | 3}] [, UVALUE{Get, Set}=value] [, YAW{Get, Set}=value{0 to 360}] [, ZOOM{Get, Set}=value])
+		</p>
+	</div>
+</div>
+
+<p><h3>Keywords</h3></p>
+
+<div id="block">
+	<div id="label">
+		<p><code>camera_location</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a 3 element vector [x,y,z] 
+			that defines the camera's position in world space.
+		</p>
+		<p><i>Default</i>: [0.,0.,1.]</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>depth_cue</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a 2 element vector [zbright, zdim] specifying the
+			near and far Z planes between which depth cueing is in effect.
+			Depth (Z) distance is measured in positive units away from the camera.
+			For example, if the <code>depth_cue</code> property is set to [5,10] an object
+			would start to fade into the background 5 units from the camera
+			and would fade completely into the background 10 units from the camera.
+		</p>
+		<p>
+			zbright < zdim, rendering darkens with depth<br>
+			zbringt > zdim, rendering lightens with depth<br>
+			zbright = zdim, no depth cueing<br>
+		</p>
+		<p><i>Default</i>: [0.0, 0.0]</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>force_AR</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to lock the pixel aspect ratio based on
+			the camera's viewplane dimensions and the initial dimensions
+			of the destination object.  Subsequent changes to the
+			dimensions of the destination object will result in changes
+			to the viewplane dimensions to preserve the initial pixel
+			aspect ratio.
+		</p>
+		<p><i>Default</i>: 0</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>fov</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a 2 element vector [width, height]
+			specifying the camera's natural (unzoomed) field of view
+			in degrees .  You can only set this property via the camera's
+			<code>SetProperty</code> method.
+		</p>
+		<p>0 > FOV < 180</p>
+		<p><i>Default</i>: Defined by frustum Dimensions.</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>frustum_dims</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a 3 element vector [width, height, depth] that
+			defines the camera's viewing volume.  Objects contained within the
+			view volume are rendered, objects outside of the view volume are not.
+		</p>
+		<p><i>Default</i>: [2.0, 2.0, 2.0]</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>lock</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to lock the camera to prevent 
+			rolling when simultaneously changing the pitch 
+			and yaw while panning. This roll is a result of 
+			normal quaternion rotation (?) but can be disorienting 
+			and by default is suppressed. If you desire a 
+			true quaternion camera, set this keyword to 0.
+		</p>
+		<p><i>Default: </i>1</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>pitch</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the pitch 
+			(rotation about the X axis)of the camera in degrees. 
+			0 >= pitch =< 360
+		</p>
+		<p><i>Default</i>: 0.0</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>roll</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the roll 
+			(rotation about the Z axis) of the camera in degrees. 
+			0 >= roll =< 360
+		</p>
+		<p><i>Default</i>: 0.0</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>third_person</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the number 
+			of units the camera will lag behind the defined 
+			camera position. This creates a simple 3rd person 
+			effect. Setting this keyword equal to 0 will disable 
+			it.
+		</p>
+		<p><i>Default</i>: 0.0</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>yaw</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the yaw 
+			(rotation about the Y axis) of the camera in degrees. 
+			0 >= yaw =< 360
+		</p>
+		<p><i>Default</i>: 0.0</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>zerror</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining, in relative terms, the precision
+			of the Z buffer.  Poor precision results in "flimmering" where objects
+			close to one another randomly show thru each other, usually at distance.
+			Note that increasing Z buffer precision by setting <code>zerror</code> to a small
+			value will increase the distance between the eye and the near clipping
+			plane which will limit how "close" you can get to objects before they
+			are clipped.  Conversely, setting <code>zerror</code> to a large value will bring the eye right up to the near clipping plane allowing you to get very
+			close to objects but at the same time reducing the precision of the Z
+			buffer at distance.
+		</p>
+		<p><i>Default</i>: 6.0</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>zoom</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the zoom factor of the
+			camera.  Setting zoom < 0 will zoom the camera out (increasing
+			field of view) while setting zoom > 0 will zoom it in (decreasing
+			field of view).  The default field of view of the camera (zoom = 0)
+			depends on the frustum dimensions (as set by either the 
+			<code>frustum_dims</code> or <code>FOV</code> keywords).
+		</p>
+		<p><i>Default</i>: 0.0</p>
+	</div>
+</div>
+
+<p>&nbsp;</p>
+
+<p><h3>Methods</h3></p>
+
+<p>
+	This object inherits methods from it's superclass, IDLgrView, and adds or
+	modifies the following methods:
+</p>
+
+<div id="block">
+	<div id="label">
+		<p><code>Add</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method adds a model to the camera's view.
+			Models added to the camera will be rendered if they fall within
+			the viewing volume.
+		</p>
+		<p>
+			Set the <code>position</code> keyword to specify where the model should be
+			added relative to the models currently contained within the
+			camera.
+		</p>
+		<p>
+			Set the <code>dynamic</code> keyword to add the model(s) as dynamically
+			culled content.  During transformation, the extent of dynamic
+			models is determined and any models falling completely outside
+			the viewing frustum will not be rendered.
+		</p>
+		<p>
+			Set the <code>static</code> keyword to add the model(s) as statically
+			culled content.  A binary tree is constructed to spatially
+			partition the static model space.  During transformation,
+			this tree is traversed to determine which models fall within
+			the view frustum.  Models outside the view frustum will not be
+			rendered.  Static model geometry and transformations must not
+			be modified after being added to the camera.
+		</p>
+		<p>
+			The performance of view frustum culling depends on
+			many factors.  In general, static culling is far more efficient
+			than dynamic culling and can be used without penalty in most situations.
+			Dynamic culling is very costly and its applicability is limited.
+			Follow the hints provided in the examples and experiment.
+		</p>
+		<p>
+			The <code>position</code> keyword will be ignored if the <code>dynamic</code> and
+			<code>static</code> keywords are set.
+		</p>
+
+		<p>
+<pre>
+oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Add,<SPAN CLASS="syntax125"> </SPAN>oModel
+</pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>GetDirectionVector</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns a unit 
+			vector representing the current camera orientation.
+		</p>
+		<p>
+<pre>
+lvector<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetDirectionVector()
+</pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>Lookat</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method changes the camera's orientation 
+			by calculating a direction vector from the camera's 
+			position to a given point in space, a.k.a. the 
+			lookat point. The lookat point is in world coordinates. 
+		</p>
+		<p>
+			Set the <code>track</code> keyword to force the camera 
+			to follow your lookat point thru subsequent transformations
+		</p>
+		<p>
+			To point the camera at [5,10,20]:
+		</p>
+		<p>
+<pre>
+oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Lookat,<SPAN CLASS="syntax125"> </SPAN>[<SPAN CLASS="syntax12">5</SPAN>,<SPAN CLASS="syntax12">10</SPAN>,<SPAN CLASS="syntax12">20</SPAN>]
+</pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>Pan</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method changes the camera's orientation 
+			by changing its pitch and yaw. The values passed 
+			are the changes in pitch and yaw in degrees. Positive 
+			changes rotate the camera counterclockwise, negative 
+			changes rotate it clockwise.
+		</p>
+		<p>
+			To pan the camera 15 deg. to the right and 5 deg. down:
+		</p>
+		<p>
+<pre>
+oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Pan,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">15</SPAN>.<SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax12">5</SPAN>.<SPAN CLASS="syntax12">0</SPAN>
+</pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>Roll</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method roll's the camera about 
+			the z axis. The value passed is the change in 
+			roll in degrees. Positive values roll counterclockwise, 
+			negative values roll clockwise.
+		</p>
+		<p>
+			To roll the camera 10 degrees about the Z axis:
+		</p>
+		<p>
+<pre>
+oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Roll,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">10</SPAN>.<SPAN CLASS="syntax12">0</SPAN>
+</pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>Truck</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method moves the camera along 
+			a defined vector relative to the current orientation. 
+			You must define the vector to move along [x, y, 
+			z] and a distance to move the camera. Note: <i><b>when 
+			trucking the camera, positive z is forward</b></i>. 
+		</p>
+		<p>
+			To move the camera forward 10 units:
+		</p>
+		<p>
+<pre>
+oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Truck,<SPAN CLASS="syntax125"> </SPAN>[<SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">1</SPAN>],<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">10</SPAN>.
+<pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>Zoom</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method "zooms" the camera by specified 
+			zoom factor.
+		</p>
+		<p>
+			To zoom in the camera so that your subject is 
+			5 times it's size:
+		</p>
+		<p>
+<pre>
+oCamera<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax8">Zoom</SPAN>,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">5</SPAN>.
+</pre>
+		</p>
+	</div>
+</div>
+<p>
+</p>
+</div>
+<!--** includes\sidebar.html **-->
+</div>
+</body>
+</html>

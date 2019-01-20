@@ -1,0 +1,3 @@
+LIBRARY			RHTgrAABB
+DESCRIPTION		'Support routines for RHTgrAABB__define.pro'
+EXPORTS			IDL_Load

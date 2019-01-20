@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>Rick Towler's IDL: RHTgrQuaternion Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="MSSmartTagsPreventParsing" content="true" />
+<meta http-equiv="imagetoolbar" content="no" />
+<link rel="stylesheet" type="text/css" href="help.css" media="screen,projection,print" />
+</head>
+
+<body>
+
+<div id="head">
+</div>
+
+<div id="body">
+<div id="content">
+
+<h2>RHTgrQuaternion</h2>
+
+<p>
+	The quaternion object stores, manipulates and returns orientation information. Quaternions extend the concept of rotation in 3 dimensions to rotation in 4 dimensions eliminating "gimbal-lock" allowing for smooth and continuous rotation. An added advantage quaternions have over the Euler angle system is that quaternions can easily be interpolated.  RHTgrCamera is dependent upon this object and this object is also useful for interpolating actor orientations in key framed animations.
+</p>
+
+<p>&nbsp;</p>
+
+<p><h3>Calling Sequence</h3></p>
+
+<div id="block">
+	<div id="syntax">
+		<p>
+			oQuaternion = Obj_New("RHTgrQuaternion", [, PITCH{Get, Set}=value{0 to 360}]
+			[, YAW{Get, Set}=value{0 to 360}] [, ROLL{Get, Set}=value{0 to 360}])
+		</p>
+	</div>
+</div>
+
+<p><h3>Keywords</h3></p>
+
+<div id="block">
+	<div id="label">
+		<p><code>pitch</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the initial orientation about the
+			X axis in degrees.
+		</p>
+		<p><i>Default</i>: 0.</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>yaw</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the initial orientation about the
+			Y axis in degrees.
+		</p>
+		<p><i>Default</i>: 0.</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>roll</code></p>
+	</div>
+	<div id="description">
+		<p>
+			Set this keyword to a scalar defining the initial orientation about the
+			Z axis in degrees.
+		</p>
+		<p><i>Default</i>: 0.</p>
+	</div>
+</div>
+
+<p></p>
+
+<p><h3>Methods</h3></p>
+
+<div id="block">
+	<div id="label">
+		<p><code>GetCTM</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns a 4x4 transformation matrix
+			representing the quaternion orientation.
+		</p>
+		<p>
+<pre>
+matrix<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">FLTARR</SPAN>(<SPAN CLASS="syntax12">4</SPAN>,<SPAN CLASS="syntax12">4</SPAN>)
+matrix<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetCTM()
+</pre>
+		</p>
+	</div>
+</div>
+
+<div id="block">
+	<div id="label">
+		<p><code>GetDirectionVector</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns a unit vector representing
+			the object's current orientation as a 3 element float
+			[X,Y,Z].
+		</p>
+		<p>
+<pre>
+vector<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">FLTARR</SPAN>(<SPAN CLASS="syntax12">3</SPAN>)
+vector<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetDirectionVector()
+</pre>
+		</p>
+	</div>
+</div>
+
+
+<div id="block">
+	<div id="label">
+		<p><code>GetPYR</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns the object's current orientation
+			as a 3 element vector [pitch,yaw,roll] (as defined in the
+			keywords section above).
+		</p>
+		<p>
+<pre>
+pyr<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">FLTARR</SPAN>(<SPAN CLASS="syntax12">3</SPAN>)
+pyr<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetPYR()
+</pre>
+		</p>
+	</div>
+</div>
+<div id="block">
+	<div id="label">
+		<p><code>GetQuat</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns the object's value
+			as a 4 element float.  The values returned are in the form
+			[w,x,y,z]
+		</p>
+		<p>
+<pre>
+q<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">DBLARR</SPAN>(<SPAN CLASS="syntax12">4</SPAN>)
+q<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetQuat()
+</pre>
+		</p>
+	</div>
+</div>
+<div id="block">
+	<div id="label">
+		<p><code>GetDirectionVector</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns a unit vector representing
+			the object's current orientation as a 3 element float
+			[X,Y,Z].
+		</p>
+		<p>
+<pre>
+vector<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">fltarr</SPAN>(<SPAN CLASS="syntax12">3</SPAN>)
+vector<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetDirectionVector()
+</pre>
+		</p>
+	</div>
+</div>
+<div id="block">
+	<div id="label">
+		<p><code>Interpolate</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This function method returns a quaternion in the form
+			[w,x,y,z] which represents a spherically interpolated
+			orientation based on the object's value, a "to" value,
+			and a blend value ranging from 0.0 to 1.0.  A blend of
+			0.0 will return this object's value and a blend of 1.0
+			will return the "to" value.
+		</p>
+		<p>
+<pre>
+quat_one<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">RHTgrQuaternion</SPAN><SPAN CLASS="syntax3">'</SPAN>,<SPAN CLASS="syntax125"> </SPAN>PITCH=<SPAN CLASS="syntax12">20</SPAN>.)
+quat_two<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">RHTgrQuaternion</SPAN><SPAN CLASS="syntax3">'</SPAN>,<SPAN CLASS="syntax125"> </SPAN>YAW=<SPAN CLASS="syntax12">235</SPAN>.)
+
+<SPAN CLASS="syntax1">;</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">get</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">a</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">quaternion</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">with</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">orientation</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">halfway</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">between</SPAN>
+<SPAN CLASS="syntax1">;</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">quat_one</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">and</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">quat_two</SPAN>
+q<SPAN CLASS="syntax125"></SPAN>=<SPAN CLASS="syntax125"></SPAN><SPAN CLASS="syntax9">DBLARR</SPAN>(<SPAN CLASS="syntax12">4</SPAN>)
+q<SPAN CLASS="syntax125"></SPAN>=<SPAN CLASS="syntax125"></SPAN>quat_one<SPAN CLASS="syntax125"></SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"></SPAN><SPAN CLASS="syntax9">Interpolate</SPAN>(<SPAN CLASS="syntax125"></SPAN>quat_two<SPAN CLASS="syntax125"></SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"></SPAN>GetQuat(),<SPAN CLASS="syntax125"></SPAN><SPAN CLASS="syntax12">0</SPAN>.<SPAN CLASS="syntax12">5</SPAN>)
+</pre>
+		</p>
+	</div>
+</div>
+<div id="block">
+	<div id="label">
+		<p><code>Reset</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method resets the quaternion to it's initial orientation.
+		</p>
+		<p>
+<pre>
+oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Reset
+</pre>
+		</p>
+	</div>
+</div>
+<div id="block">
+	<div id="label">
+		<p><code>Set</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method will set the current orientation to the
+			provided pitch, yaw, and roll values.
+		</p>
+		<p>
+<pre>
+oQuaternion<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Set,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">15</SPAN>.,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">90</SPAN>.,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">0</SPAN>.
+</pre>
+		</p>
+	</div>
+</div>
+<div id="block">
+	<div id="label">
+		<p><code>SetQuat</code></p>
+	</div>
+	<div id="description">
+		<p>
+			This procedure method sets the object's value to the
+			given value.  The value must be in the form:
+			[w,x,y,z].
+		</p>
+		<p>
+<pre>
+quat_one<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">RHTgrQuaternion</SPAN><SPAN CLASS="syntax3">'</SPAN>)
+quat_two<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">RHTgrQuaternion</SPAN><SPAN CLASS="syntax3">'</SPAN>)
+
+<SPAN CLASS="syntax1">;</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">&lt;do</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">something</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">to</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">quat_one&gt;</SPAN>
+
+<SPAN CLASS="syntax1">;</SPAN><SPAN CLASS="syntax1">set</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">quat_two</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">equal</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">to</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">quat_one</SPAN>
+quat_two<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>SetQuat,<SPAN CLASS="syntax125"> </SPAN>quat_one<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetQuat()
+</pre>
+		</p>
+	</div>
+</div>
+</div>
+<!--** includes\sidebar.html **-->
+</div>
+</body>
+</html>

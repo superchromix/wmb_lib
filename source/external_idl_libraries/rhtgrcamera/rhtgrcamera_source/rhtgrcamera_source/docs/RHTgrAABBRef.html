@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>Rick Towler's IDL: RHTgrAABB Reference</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="MSSmartTagsPreventParsing" content="true" />
+<meta http-equiv="imagetoolbar" content="no" />
+<link rel="stylesheet" type="text/css" href="help.css" media="screen,projection,print" />
+</head>
+
+<body>
+
+<div id="head">
+</div>
+
+<div id="body">
+<div id="content">
+
+<h2>RHTgrAABB</h2>
+
+<p>
+The RHTgrAABB class implements an axially aligned bounding box which calculates the position and extents, in world space, of the box that defines the bounds of the items contained within it.  RHTgrAABB also provides methods for determining bounding box intersection, and bisection.
+</p>
+
+<p>&nbsp;</p>
+
+<p><h3>Calling Sequence</h3></p>
+
+<div id="block">
+<div id="syntax">
+	<p>
+		oAABB = OBJ_NEW('RHTgrAABB', [oModel], [, COLOR=index or RGB vector]
+			[, DOUBLE{Get, Set}={0 | 1}], [, /SHOWBOUNDS {Get, Set}])
+	</p>
+</div>
+</div>
+
+<p><h3>Keywords</h3></p>
+
+<div id="block">
+<div id="label">
+	<p><code>color</code></p>
+</div>
+<div id="description">
+	<p>
+		Set this keyword to a 3 element vector specifying the
+		color of the bounding box.
+	</p>
+	<p><i>Default</i>: [128,128,128]</p>
+</div>
+</div>
+
+<div id="block">
+<div id="label">
+	<p><code>double</code></p>
+</div>
+<div id="description">
+	<p>
+		Set this keyword to store and return the bounding box
+		position and extents in double precision.
+	</p>
+	<p><i>Default</i>: 0.</p>
+</div>
+</div>
+
+<div id="block">
+<div id="label">
+	<p><code>showBounds</code></p>
+</div>
+<div id="description">
+	<p>
+		Set this keyword to make the bounds of the bounding box
+		visible when drawn.
+	</p>
+	<p><i>Default</i>: 0.</p>
+</div>
+</div>
+
+<p></p>
+
+<p><h3>Methods</h3></p>
+<p>
+This object inherits methods from it's superclass, IDLgrModel, and adds or modifies the following methods:
+</p>
+<div id="block">
+<div id="label">
+	<p><code>Add</code></p>
+</div>
+<div id="description">
+	<p>
+		This procedure method adds a model (or models) to the
+		bounding box.  You can only add IDLgrModels or children
+		of IDLgrModel.  You cannot add children of IDLgrGraphic
+		a.k.a. graphics "atoms".  Care should be taken when
+		constructing the object hierarchy being added to the
+		bounding box.  Extraneous instances of IDLgrModel in the
+		object hierarchy will slow the calculation of the bounding
+		box.  After adding the new model(s) the bounding box
+		updates it's position and extents properties.
+	</p>
+	<p>
+<pre>
+oOrbOne<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">orb</SPAN><SPAN CLASS="syntax3">'</SPAN>,<SPAN CLASS="syntax125"> </SPAN>POS=[<SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax12">10</SPAN>,<SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax12">0</SPAN>])
+oOrbTwo<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">orb</SPAN><SPAN CLASS="syntax3">'</SPAN>,<SPAN CLASS="syntax125"> </SPAN>POS=[<SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax12">5</SPAN>])
+oAABB<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">RHTgrAABB</SPAN><SPAN CLASS="syntax3">'</SPAN>)
+oAABB<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Add,<SPAN CLASS="syntax125"> </SPAN>[oOrbOne,<SPAN CLASS="syntax125"> </SPAN>oOrbTwo]
+</pre>
+	</p>
+</div>
+</div>
+
+<div id="block">
+<div id="label">
+	<p><code>Bisect</code></p>
+</div>
+<div id="description">
+	<p>
+		This function method bisects the bounding box about the
+		specified axis and location and returns two structures [left,
+		right] containing information about the objects in the
+		bisected halves.  If an object spans the bisecting axis it will
+		appear in both the left and right structures.  The returned
+		data structures have the following form:
+
+<pre>
+left<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>{position:[<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.],<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>extents:[<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.],<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>models:<SPAN CLASS="syntax9">OBJARR</SPAN>(),<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>nModels:<SPAN CLASS="syntax12">0L</SPAN><SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>}
+right<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>{position:[<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.],<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>extents:[<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.,<SPAN CLASS="syntax12">0</SPAN>.],<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>models:<SPAN CLASS="syntax9">OBJARR</SPAN>(),<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>nModels:<SPAN CLASS="syntax12">0L</SPAN><SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>}
+</pre>
+
+		where position is the position (center) of the left or right
+		bounding box created by the bisection, extents is the
+		extents of this bounding box, and models contains an array
+		of object references specifying the models contained within
+		the box.  Nmodels contains a long representing the number
+		of models contained within the bounding box.
+
+		Set the AXIS argument to 0,1, or 2 to specify bisection
+		along the X, Y, or Z axis respectively.  Set the LOCATION
+		argument to specify where on the axis to cut the bounding
+		box.
+
+		Set the DUPLICATES keyword to return a 2xn array containing
+		the index values of left.models and right.models respectivly
+		that span the bisecting axis.
+
+		<i>This method is under construction.</i>
+	</p>
+	<p>
+<pre>
+leftRight<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oAABB<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Bisect(<SPAN CLASS="syntax12">0</SPAN>,<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax12">5</SPAN>.<SPAN CLASS="syntax12">0</SPAN>)
+</pre>
+	</p>
+</div>
+</div>
+
+
+<div id="block">
+<div id="label">
+	<p><code>GetAABB</code></p>
+</div>
+<div id="description">
+	<p>
+		This procedure method updates the position and extents
+		properties and optionally returns this data to the caller.
+		This procedure method must be called if any of the objects
+		contained in the bounding box have changed (models have
+		been manipulated, vertices changed, coordinate
+		conversions altered).  Set the ALL keyword to return
+		positions and extents for all models that have been added to
+		the bounding box.
+	</p>
+	<p>
+<pre>
+oAABB<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>GetAABB,<SPAN CLASS="syntax125"> </SPAN>POSITION=pos,<SPAN CLASS="syntax125"> </SPAN>EXTENTS=ext
+</pre>
+	</p>
+</div>
+</div>
+<div id="block">
+<div id="label">
+	<p><code>Intersects</code></p>
+</div>
+<div id="description">
+	<p>
+		This function method tests the intersection between this
+		bounding box and another.  The other bounding box can be
+		either a valid reference to another instance of RHTgrAABB
+		or it can be provided via the POSITION and EXTENTS
+		keywords.  You must provide either a reference to a second
+		RHTgrAABB object or both the POSITION and
+		EXTENTS keywords.  The function returns TRUE (1) if
+		the two bounding boxes intersect and FALSE (0) if they do
+		not.
+	</p>
+	<p>
+<pre>
+OrbThree<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">orb</SPAN><SPAN CLASS="syntax3">'</SPAN>,<SPAN CLASS="syntax125"> </SPAN>POS=[<SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax12">1</SPAN>,<SPAN CLASS="syntax12">1</SPAN>,<SPAN CLASS="syntax12">2</SPAN>],<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>RADIUS=<SPAN CLASS="syntax12">2</SPAN>.<SPAN CLASS="syntax12">0</SPAN>)
+oAABBTwo<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax9">OBJ_NEW</SPAN>(<SPAN CLASS="syntax3">'</SPAN><SPAN CLASS="syntax3">RHTgrAABB</SPAN><SPAN CLASS="syntax3">'</SPAN>)
+oAABBTwo<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Add,<SPAN CLASS="syntax125"> </SPAN>oOrbThree
+
+intersect<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oAABB<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Intersects,<SPAN CLASS="syntax125"> </SPAN>oAABBTwo
+
+<SPAN CLASS="syntax1">;</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">Or</SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax1">alternatively:</SPAN>
+intersect<SPAN CLASS="syntax125"> </SPAN>=<SPAN CLASS="syntax125"> </SPAN>oAABB<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>POSITION=[<SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax12">1</SPAN>,<SPAN CLASS="syntax12">1</SPAN>,<SPAN CLASS="syntax12">2</SPAN>],<SPAN CLASS="syntax125"> </SPAN>$
+<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax125"> </SPAN>EXTENTS=[<SPAN CLASS="syntax12">2</SPAN>,<SPAN CLASS="syntax12">2</SPAN>,<SPAN CLASS="syntax12">2</SPAN>]
+</pre>
+	</p>
+</div>
+</div>
+<div id="block">
+<div id="label">
+	<p><code>Remove</code></p>
+</div>
+<div id="description">
+	<p>
+		This procedure method removes a model from the
+		bounding box.  Set the ALL keyword to remove all models
+		contained within the bounding box.  After removing the
+		model(s) the bounding box updates it's position and extents
+		properties.
+	</p>
+	<p>
+<pre>
+oAABB<SPAN CLASS="syntax125"> </SPAN><SPAN CLASS="syntax11">-</SPAN><SPAN CLASS="syntax11">&gt;</SPAN><SPAN CLASS="syntax125"> </SPAN>Remove,<SPAN CLASS="syntax125"> </SPAN>oOrbOne
+</pre>
+	</p>
+</div>
+</div>
+
+</div>
+<!--** includes\sidebar.html **-->
+</div>
+</body>
+</html>

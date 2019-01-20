@@ -1,0 +1,3 @@
+LIBRARY			RHTgrCamera
+DESCRIPTION		'Support routines for RHTgrCamera__define.pro'
+EXPORTS			IDL_Load

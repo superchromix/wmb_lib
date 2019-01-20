@@ -945,8 +945,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
         
         tmpstruct = create_struct(col_name, databuffer[0])
         tmpbuffer = replicate(tmpstruct, n_records)
-        tmpbuffer.(0) = temporary(databuffer)
-        databuffer = temporary(tmpbuffer)
+        tmpbuffer.(0) = databuffer
         
         loc_id = self.Vtable_Open(dset_name=dset_name)
         
@@ -966,7 +965,7 @@ pro wmb_DataTable::Write_column, col_name, start_index, databuffer
             
             nrecs = (erec_write - srec_write) + 1
             
-            input_buffer = databuffer[srec_read:erec_read]
+            input_buffer = tmpbuffer[srec_read:erec_read]
             
             wmb_h5tb_write_fields_index, loc_id, $
                                          dset_name, $
