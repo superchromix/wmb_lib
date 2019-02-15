@@ -150,7 +150,13 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
 
                 loaded_chunk = tmp_read_chunk
                 
-            endif 
+                ;print, 'Virtual array: File read'
+                
+            endif else begin
+                
+                ;print, 'Virtual array: Memory read'
+                
+            endelse
         
             readend = readend_relative_pos[indexa]
         
@@ -161,6 +167,8 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
         endif else begin
             
             ; the read operation spans a chunk boundary
+            
+            ;print, 'Virtual array: Span chunks'
             
             startchunk = readstart_chunk_arr[indexa]
             endchunk = readend_chunk_arr[indexa]
