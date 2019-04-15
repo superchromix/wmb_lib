@@ -19,7 +19,8 @@ function wmb_h5_object_exists, loc_id, name
     for i = 0, nobjs-1 do begin
 
         if h5g_get_obj_name_by_idx(loc_id, i) eq name then return, 1
-
+        ;print, h5g_get_obj_name_by_idx(loc_id, i)
+        
     endfor
 
     return, 0
