@@ -170,6 +170,9 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
 
     if tmp_dtype eq 8 and tmp_ndims eq 1 then begin
     
+        ; delete the existing object if a table of the same name already exists
+        if wmb_h5_putdata_varexists(loc_id, objname) then h5g_unlink, loc_id, objname
+    
         ; we are writing a table
     
         table_title = objname
