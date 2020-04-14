@@ -1730,9 +1730,10 @@ end
 function wmb_DataTable::Save, filename, $
                               full_group_name, $
                               dset_name, $
-                              Title = title, $
-                              Chunksize = chunksize, $
-                              CompressFlag = compressflag
+                              title = title, $
+                              chunksize = chunksize, $
+                              compressflag = compressflag, $
+                              skip_file_association = skip_file_association
 
 
     compile_opt idl2, strictarrsubs
@@ -1755,6 +1756,8 @@ function wmb_DataTable::Save, filename, $
     if N_elements(title) eq 0 then title = self.dt_title
     if N_elements(chunksize) eq 0 then chunksize = 10000
     if N_elements(compressflag) eq 0 then compressflag = 0
+    if N_elements(skip_file_association) eq 0 then skip_file_association = 0
+
 
     if self.dt_flag_table_empty then begin
         message, 'Error: empty table'
@@ -1785,26 +1788,31 @@ function wmb_DataTable::Save, filename, $
     endif
 
 
-    ; has an autosave file already been created?  if so, simply write the 
-    ; data to the new location
+    ; get the data
     
-    if self.dt_autosave_activated eq 1 then begin
+    tmp_data = self[*]
+
+
+    if skip_file_association eq 0 then begin
+    
+        ; has an autosave file already been created?  if so, simply write the 
+        ; data to the new location
         
-        tmp_data = self[*]
-        
-        file_delete, self.dt_autosave_filename
+        if self.dt_autosave_activated eq 1 then begin
+    
+            file_delete, self.dt_autosave_filename
+    
+            self.dt_autosave_activated = 0
+    
+        endif else begin
+    
+            ; destroy the datavector object
+            obj_destroy, self.dt_datavector
+    
+        endelse
 
-        self.dt_autosave_activated = 0
-
-    endif else begin
-
-        tmp_data = (self.dt_datavector)[*]
-
-        ; destroy the datavector object
-        obj_destroy, self.dt_datavector
-
-    endelse
-
+    endif
+    
 
     ; check if filename exists and is writable
 
@@ -1896,22 +1904,26 @@ function wmb_DataTable::Save, filename, $
                          databuffer = tmp_data
 
 
-    ; we are done!  populate the self fields
-
-    self.dt_title = title
-    self.dt_dataset_name = dset_name
-    self.dt_full_group_name = full_group_name
     
-    self.dt_flag_vtable = 1
-    self.dt_vtable_open = 1
-    self.dt_vtable_filename = filename
-    self.dt_vtable_fid = fid
-    self.dt_vtable_loc_id = loc_id
+    if skip_file_association eq 0 then begin
 
+        ; we are done!  populate the self fields
 
-    ; close the hdf file
-    self -> Vtable_Close
+        self.dt_title = title
+        self.dt_dataset_name = dset_name
+        self.dt_full_group_name = full_group_name
         
+        self.dt_flag_vtable = 1
+        self.dt_vtable_open = 1
+        self.dt_vtable_filename = filename
+        self.dt_vtable_fid = fid
+        self.dt_vtable_loc_id = loc_id
+    
+        ; close the hdf file
+        self -> Vtable_Close
+        
+    endif
+
 
     return, 1
 

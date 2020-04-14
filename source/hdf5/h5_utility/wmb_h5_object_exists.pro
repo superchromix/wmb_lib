@@ -25,6 +25,9 @@ function wmb_h5_object_exists, loc_id, name
         tmp_group = strmid(name, 0, last_backslash_pos)
         tmp_name = strmid(name, last_backslash_pos+1, strlen(name) - (last_backslash_pos+1) )
         
+        chk_group_exists = wmb_h5_object_exists(loc_id, tmp_group)
+        if chk_group_exists eq 0 then return, 0
+        
         tmp_loc_id = h5g_open(loc_id, tmp_group)
         
     endif else begin
