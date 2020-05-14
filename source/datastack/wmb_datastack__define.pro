@@ -413,7 +413,7 @@ pro wmb_DataStack::SetProperty, Data = indata, $
 
     if N_elements(no_copy) eq 0 then no_copy = 0
 
-    if N_elements(data) ne 0 then begin
+    if N_elements(indata) ne 0 then begin
 
         ; we are erasing the existing datastack
 
