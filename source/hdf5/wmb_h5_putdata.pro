@@ -24,7 +24,7 @@
 ;       reference identifier
 ;
 ;   :Params:
-;       file_id : in, required, type=ulong64
+;       loc_id : in, required, type=ulong64
 ;           file identifier
 ;       obj_to_reference : in, required, type=string
 ;           string specifying full path of object to reference
@@ -33,7 +33,7 @@
 ;           closed by caller
 ;-
 
-function wmb_h5_putdata_getreference, file_id, $
+function wmb_h5_putdata_getreference, loc_id, $
                                       obj_to_reference, $
                                       refgroup
 
@@ -44,7 +44,7 @@ function wmb_h5_putdata_getreference, file_id, $
     if slash_pos eq -1 then groupname = '/' $
                        else groupname = strmid(obj_to_reference, 0, slash_pos)
 
-    refgroup = h5g_open(file_id, groupname)
+    refgroup = h5g_open(loc_id, groupname)
 
     if slash_pos eq -1 then objname = obj_to_reference $
                        else objname = strmid(obj_to_reference, slash_pos+1)
@@ -392,7 +392,7 @@ end
 ;           attribute/variable in the file instead of actual data
 ;-
 
-pro wmb_h5_putdata, file_id, $
+pro wmb_h5_putdata, loc_id, $
                     name, $
                     data, $
                     reference = reference, $
@@ -404,8 +404,8 @@ pro wmb_h5_putdata, file_id, $
 
     ; check the file id
     
-    idtype = h5i_get_type(file_id)
-    if idtype ne 'FILE' then message, 'Invalid HDF5 file ID'
+    idtype = h5i_get_type(loc_id)
+    if idtype ne 'FILE' and idtype ne 'GROUP' then message, 'Invalid HDF5 file or group ID'
 
     ; strip off the leading '/' in name if it is present
     
@@ -421,7 +421,7 @@ pro wmb_h5_putdata, file_id, $
       
         ; write a variable
         
-        wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
+        wmb_h5_putdata_putvariable, loc_id, name, data, reference=reference
       
     endif else begin
   
@@ -430,7 +430,7 @@ pro wmb_h5_putdata, file_id, $
         objpath = strmid(name, 0, dotPos)
         attname = strmid(name, dotPos + 1L)
         
-        wmb_h5_putdata_putattribute, file_id, objpath, attname, data, $
+        wmb_h5_putdata_putattribute, loc_id, objpath, attname, data, $
                                      reference=reference
                                     
     endelse

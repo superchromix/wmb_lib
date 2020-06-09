@@ -72,8 +72,8 @@ end
 ;       value of data read from dataset
 ;
 ;   :Params:
-;       fileId : in, required, type=long
-;           HDF 5 indentifier of the file
+;       loc_id : in, required, type=long
+;           HDF 5 indentifier of the location
 ;       variable : in, required, type=string
 ;           string navigating the path to the dataset
 ;
@@ -85,13 +85,13 @@ end
 ;           set to a named variable to return whether the dataset is empty
 ;-
 
-function wmb_h5_getdata_getvariable, file_id, variable, bounds=bounds, $
+function wmb_h5_getdata_getvariable, loc_id, variable, bounds=bounds, $
                                      empty=empty
                                     
     compile_opt idl2, strictarrsubs
 
     ; open the dataset
-    did = h5d_open(file_id, variable)
+    did = h5d_open(loc_id, variable)
     
     ; get the dataspace id
     sid = h5d_get_space(did)
@@ -163,8 +163,8 @@ end
 ;       attribute value
 ;
 ;   :Params:
-;       fileId : in, required, type=long
-;           HDF 5 file identifier of the file to read
+;       loc_id : in, required, type=long
+;           HDF 5 identifier of the location to read
 ;       variable : in, required, type=string
 ;           path to attribute using '/' to navigate groups/datasets 
 ;           and '.' to indicate the attribute name
@@ -174,11 +174,11 @@ end
 ;           error value
 ;-
 
-function wmb_h5_getdata_getattribute, file_id, objpath, attname
+function wmb_h5_getdata_getattribute, loc_id, objpath, attname
 
     compile_opt idl2, strictarrsubs
 
-    obj_id = wmb_h5o_open(file_id, objpath)
+    obj_id = wmb_h5o_open(loc_id, objpath)
     
     att_id = h5a_open_name(obj_id, attname)
     
@@ -201,8 +201,8 @@ end
 ;       data array
 ;
 ;   :Params:
-;       file_id : in, required, type=long
-;           file_id of the HDF5 file
+;       loc_id : in, required, type=long
+;           loc_id of the HDF5 file
 ;       variable : in, required, type=string
 ;           variable name (with path if inside a group)
 ;
@@ -214,7 +214,7 @@ end
 ;           error value
 ;-
 
-function wmb_h5_getdata, file_id, $
+function wmb_h5_getdata, loc_id, $
                          variable, $
                          attribute = attribute, $
                          bounds=bounds, $
@@ -226,8 +226,8 @@ function wmb_h5_getdata, file_id, $
 
     ; check the file id
     
-    idtype = h5i_get_type(file_id)
-    if idtype ne 'FILE' then message, 'Invalid HDF5 file ID'
+    idtype = h5i_get_type(loc_id)
+    if idtype ne 'FILE' and idtype ne 'GROUP' then message, 'Invalid HDF5 file or group ID'
     
     if N_elements(variable) eq 0 then message, 'No variable requested'
 
@@ -241,7 +241,7 @@ function wmb_h5_getdata, file_id, $
     
         ; read a variable
 
-        result = wmb_h5_getdata_getvariable(file_id, $
+        result = wmb_h5_getdata_getvariable(loc_id, $
                                             variable, $
                                             bounds=bounds, $
                                             empty=empty)
@@ -253,7 +253,7 @@ function wmb_h5_getdata, file_id, $
         objpath = strmid(variable, 0, dotPos)
         attname = strmid(variable, dotPos + 1L)
         
-        result = wmb_h5_getdata_getattribute(file_id, objpath, attname)
+        result = wmb_h5_getdata_getattribute(loc_id, objpath, attname)
         
     endelse
 
