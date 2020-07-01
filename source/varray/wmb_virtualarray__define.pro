@@ -47,10 +47,16 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     endif
     
 
-    ; make a list of the input indices/ranges
-    
-    subscript_list = list(sub1,sub2,sub3,sub4,sub5,sub6,sub7,sub8) 
-
+    ; make a pointer array of the input indices/ranges
+    subscript_ptr_arr = ptrarr(8)
+    subscript_ptr_arr[0] = ptr_new(sub1)
+    subscript_ptr_arr[1] = ptr_new(sub2)
+    subscript_ptr_arr[2] = ptr_new(sub3)
+    subscript_ptr_arr[3] = ptr_new(sub4)
+    subscript_ptr_arr[4] = ptr_new(sub5)
+    subscript_ptr_arr[5] = ptr_new(sub6)
+    subscript_ptr_arr[6] = ptr_new(sub7)
+    subscript_ptr_arr[7] = ptr_new(sub8)
 
     ; test validity of indices and ranges
     
@@ -58,7 +64,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
 
     for i = 0, n_inputs-1 do begin
         
-        tmp_input = subscript_list[i]
+        tmp_input = *subscript_ptr_arr[i]
         
         if isrange[i] eq 1 then begin
             if ~ wmb_Rangevalid(tmp_input, arr_dims[i]) then chkpass = 0
@@ -79,7 +85,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     
     for i = 0, n_inputs-1 do begin
         
-        tmp_input = subscript_list[i]
+        tmp_input = *subscript_ptr_arr[i]
         
         index_is_array[i] = (isrange[i] eq 0) && (N_elements(tmp_input) gt 1)
         
@@ -95,7 +101,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
     ; read positions
 
     wmb_varray_generate_read_sequence, isrange, $
-                                       subscript_list, $
+                                       subscript_ptr_arr, $
                                        arr_dims, $
                                        output_scalar, $
                                        output_dims, $
@@ -150,7 +156,7 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
 
                 loaded_chunk = tmp_read_chunk
                 
-                ;print, 'Virtual array: File read'
+                ;print, 'Virtual array: File read, chunk ' + string(loaded_chunk)
                 
             endif else begin
                 
@@ -184,6 +190,8 @@ function wmb_VirtualArray::_overloadBracketsRightSide, isRange, sub1, $
                     tmp_data_block = (*self.va_assoc_ptr)[tmp_read_chunk]
 
                     loaded_chunk = tmp_read_chunk
+                    
+                    ;print, 'Virtual array: File read, chunk ' + string(loaded_chunk)
                     
                 endif 
                 

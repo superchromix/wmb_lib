@@ -1,6 +1,6 @@
 
 pro wmb_varray_generate_read_sequence, isrange, $
-                                       subscript_list, $
+                                       subscript_ptr_arr, $
                                        arr_dims, $
                                        output_scalar, $
                                        output_dims, $
@@ -41,7 +41,7 @@ pro wmb_varray_generate_read_sequence, isrange, $
     for i = 0, n_subscripts-1 do begin
 
         chkdim = arr_dims[i]
-        tmp_input = subscript_list[i]
+        tmp_input = *subscript_ptr_arr[i]
 
         if ~isrange[i] then begin
 

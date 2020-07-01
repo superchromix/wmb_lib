@@ -50,15 +50,23 @@ function wmb_DataStack::_overloadBracketsRightSide, isRange, sub1, $
     endif
 
 
-    ; make a list of the input indices/ranges
-    inputlist = list(sub1,sub2,sub3,sub4,sub5,sub6,sub7,sub8) 
-
+    ; make a pointer array of the input indices/ranges
+    input_indices_ptr_arr = ptrarr(8)
+    input_indices_ptr_arr[0] = ptr_new(sub1)
+    input_indices_ptr_arr[1] = ptr_new(sub2)
+    input_indices_ptr_arr[2] = ptr_new(sub3)
+    input_indices_ptr_arr[3] = ptr_new(sub4)
+    input_indices_ptr_arr[4] = ptr_new(sub5)
+    input_indices_ptr_arr[5] = ptr_new(sub6)
+    input_indices_ptr_arr[6] = ptr_new(sub7)
+    input_indices_ptr_arr[7] = ptr_new(sub8)
+   
    
     ; test validity of indices and ranges
     chkpass = 1
     for i = 0, n_inputs-1 do begin
         
-        tmpinput = inputlist[i]
+        tmpinput = *input_indices_ptr_arr[i]
         chkdim = tmp_dims[i]
                     
         if isrange[i] eq 1 then begin
@@ -66,6 +74,7 @@ function wmb_DataStack::_overloadBracketsRightSide, isRange, sub1, $
         endif else begin
             if ~ wmb_Indexvalid(tmpinput, chkdim) then chkpass = 0
         endelse
+        
     endfor
     
 
@@ -87,40 +96,40 @@ function wmb_DataStack::_overloadBracketsRightSide, isRange, sub1, $
     tmpa = lonarr(3)
     for i = 0, n_inputs-1 do begin
         if ~ isrange[i] then begin
-            tmpinput = inputlist[i]
+            tmpinput = *input_indices_ptr_arr[i]
             tmpa[0] = tmpinput
             tmpa[1] = tmpinput
             tmpa[2] = 1
-            inputlist[i] = tmpa
+            input_indices_ptr_arr[i] = ptr_new(tmpa)
         endif
     endfor
     
     
     ; set up explicit variables for all of the ranges
-    a1 = (inputlist[0])[0]
-    a2 = (inputlist[0])[1]
-    a3 = (inputlist[0])[2]
-    b1 = (inputlist[1])[0]
-    b2 = (inputlist[1])[1]
-    b3 = (inputlist[1])[2]
-    c1 = (inputlist[2])[0]
-    c2 = (inputlist[2])[1]
-    c3 = (inputlist[2])[2]
-    d1 = (inputlist[3])[0]
-    d2 = (inputlist[3])[1]
-    d3 = (inputlist[3])[2]
-    e1 = (inputlist[4])[0]
-    e2 = (inputlist[4])[1]
-    e3 = (inputlist[4])[2]
-    f1 = (inputlist[5])[0]
-    f2 = (inputlist[5])[1]
-    f3 = (inputlist[5])[2]
-    g1 = (inputlist[6])[0]
-    g2 = (inputlist[6])[1]
-    g3 = (inputlist[6])[2]
-    h1 = (inputlist[7])[0]
-    h2 = (inputlist[7])[1]
-    h3 = (inputlist[7])[2]
+    a1 = (*input_indices_ptr_arr[0])[0]
+    a2 = (*input_indices_ptr_arr[0])[1]
+    a3 = (*input_indices_ptr_arr[0])[2]
+    b1 = (*input_indices_ptr_arr[1])[0]
+    b2 = (*input_indices_ptr_arr[1])[1]
+    b3 = (*input_indices_ptr_arr[1])[2]
+    c1 = (*input_indices_ptr_arr[2])[0]
+    c2 = (*input_indices_ptr_arr[2])[1]
+    c3 = (*input_indices_ptr_arr[2])[2]
+    d1 = (*input_indices_ptr_arr[3])[0]
+    d2 = (*input_indices_ptr_arr[3])[1]
+    d3 = (*input_indices_ptr_arr[3])[2]
+    e1 = (*input_indices_ptr_arr[4])[0]
+    e2 = (*input_indices_ptr_arr[4])[1]
+    e3 = (*input_indices_ptr_arr[4])[2]
+    f1 = (*input_indices_ptr_arr[5])[0]
+    f2 = (*input_indices_ptr_arr[5])[1]
+    f3 = (*input_indices_ptr_arr[5])[2]
+    g1 = (*input_indices_ptr_arr[6])[0]
+    g2 = (*input_indices_ptr_arr[6])[1]
+    g3 = (*input_indices_ptr_arr[6])[2]
+    h1 = (*input_indices_ptr_arr[7])[0]
+    h2 = (*input_indices_ptr_arr[7])[1]
+    h3 = (*input_indices_ptr_arr[7])[2]
     
     
     ; determine the dimensions of the output array
@@ -128,11 +137,11 @@ function wmb_DataStack::_overloadBracketsRightSide, isRange, sub1, $
     
     for i = 0, n_inputs-1 do begin
         tmpdimsize = (*self.ds_dimsptr)[i]
-        rstart = (inputlist[i])[0]
+        rstart = (*input_indices_ptr_arr[i])[0]
         if rstart lt 0 then rstart = tmpdimsize+rstart
-        rend = (inputlist[i])[1]
+        rend = (*input_indices_ptr_arr[i])[1]
         if rend lt 0 then rend = tmpdimsize+rend
-        rstride = (inputlist[i])[2]
+        rstride = (*input_indices_ptr_arr[i])[2]
         alldims[i] = abs((rend - rstart) / rstride) + 1
     endfor
 
