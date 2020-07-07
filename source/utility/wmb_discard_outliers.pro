@@ -15,7 +15,9 @@
 function wmb_discard_outliers, array_in, $
                                k_factor = k_factor, $
                                n_values_returned = n_values_returned, $
-                               retained_values_index = retained_values_index
+                               n_values_discarded = n_values_discarded, $
+                               retained_values_index = retained_values_index, $
+                               discarded_values_index = discarded_values_index
                                
 
     compile_opt idl2, strictarrsubs
@@ -29,7 +31,9 @@ function wmb_discard_outliers, array_in, $
     outlier_upper_lim = array_quartiles[1] + (k_factor * array_iqr)
 
     good_values_index = where(array_in ge outlier_lower_lim AND $
-                              array_in le outlier_upper_lim, n_good_val)
+                              array_in le outlier_upper_lim, n_good_val, $
+                              COMPLEMENT = discarded_values_index, $
+                              NCOMPLEMENT = n_values_discarded)
                               
     retained_values_index = good_values_index
                               
