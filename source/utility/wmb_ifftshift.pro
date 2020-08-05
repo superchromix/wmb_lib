@@ -1,7 +1,7 @@
 ;
-;   wmb_fftshift
+;   wmb_ifftshift
 ;
-;   Replicates the functionality of the Matlab function "fftshift"
+;   Replicates the functionality of the Matlab function "ifftshift"
 ;
 
 function wmb_ifftshift, input_array
