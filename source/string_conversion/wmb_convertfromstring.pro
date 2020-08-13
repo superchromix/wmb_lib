@@ -28,6 +28,7 @@ function wmb_ConvertFromString, invalue, outputtype, error=errchk
 
     compile_opt idl2, strictarrsubs
     
+
     outval = 0
     errchk = 0
 
