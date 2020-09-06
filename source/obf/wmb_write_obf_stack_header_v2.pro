@@ -13,11 +13,42 @@ pro wmb_write_obf_stack_header_v2, obf_uid, $
                                compression, $
                                stack_size_disk_bytes, $
                                next_stack_position, $
+                               stack_name = stack_name, $
+                               stack_description = stack_description, $
                                stack_header_position = stack_header_position, $
                                stack_data_position = stack_data_position
                                     
     compile_opt idl2, strictarrsubs
     @dv_pro_err_handler
+    
+    
+    if N_elements(stack_name) eq 0 then stack_name = ''
+    if N_elements(stack_description) eq 0 then stack_description = ''
+    
+    if stack_name eq '' then begin
+        
+        stack_name_data = []
+        stack_name_len = 0
+        
+    endif else begin
+        
+        stack_name_data = byte(stack_name)
+        stack_name_len = N_elements(stack_name_data)
+
+    endelse
+    
+    if stack_description eq '' then begin
+        
+        stack_description_data = []
+        stack_description_len = 0
+        
+    endif else begin
+        
+        stack_description_data = byte(stack_description)
+        stack_description_len = N_elements(stack_description_data)
+
+    endelse
+    
     
     if N_elements(dim_sizes) ne stack_data_rank then $
         message, 'Invalid dimension sizes'
@@ -27,6 +58,7 @@ pro wmb_write_obf_stack_header_v2, obf_uid, $
         
     if N_elements(offsets) ne stack_data_rank then $
         message, 'Invalid offsets'
+    
     
     stack_header_size = 368ULL
     
@@ -54,8 +86,9 @@ pro wmb_write_obf_stack_header_v2, obf_uid, $
     stack_header.off = stk_off
     stack_header.dt = dv_idl2omastype(datatype)
 
-    stack_header.name_len = 0
-    stack_header.descr_len = 0
+
+    stack_header.name_len = stack_name_len
+    stack_header.descr_len = stack_description_len
     stack_header.reserved = 0
     stack_header.next_stack_pos = next_stack_position
 
@@ -70,6 +103,14 @@ pro wmb_write_obf_stack_header_v2, obf_uid, $
     ; write the stack header
     
     writeu, obf_uid, stack_header
+    
+    ; write the stack name
+    
+    if stack_name_len gt 0 then writeu, obf_uid, stack_name_data
+    
+    ; write the stack description
+    
+    if stack_description_len gt 0 then writeu, obf_uid, stack_description_data
     
     ; store the stack data position
     

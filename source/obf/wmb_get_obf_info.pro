@@ -6,11 +6,24 @@
 ; 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
-pro wmb_get_obf_info, obf_filename, obf_header, n_stack, stack_header_arr, $
-                      data_pos_arr, stackname_arr, description_arr, $
-                      stack_footer_arr, dimlabel_list_arr, $
-                      col_pos_list_arr, col_label_list_arr, $
-                      error_status = error_status, query_user = query_user
+pro wmb_get_obf_info, obf_filename, $
+                      obf_header, $
+                      n_stacks, $
+                      stack_header_arr, $
+                      data_pos_arr, $
+                      stackname_arr, $
+                      description_arr, $
+                      stack_footer_arr, $
+                      dimlabel_list_arr, $
+                      col_pos_list_arr, $
+                      col_label_list_arr, $
+                      stack_header_pos_arr = stack_header_pos_arr, $
+                      n_image_stacks = n_image_stacks, $
+                      image_stack_indices = image_stack_indices, $
+                      n_non_image_stacks = n_non_image_stacks, $
+                      non_image_stack_indices = non_image_stack_indices, $
+                      error_status = error_status, $
+                      query_user = query_user
 
     compile_opt idl2, strictarrsubs
 
@@ -34,6 +47,7 @@ pro wmb_get_obf_info, obf_filename, obf_header, n_stack, stack_header_arr, $
     ; initialize the output arrays 
     
     stack_header_arr = []
+    stack_header_pos_arr = []
     data_pos_arr = []
     stackname_arr = []
     description_arr = []
@@ -55,16 +69,17 @@ pro wmb_get_obf_info, obf_filename, obf_header, n_stack, stack_header_arr, $
     
     
     ; loop on multiple stacks in the OBF file
-    n_stack = 0
+    n_stacks = 0
     
     while next_stack_pos gt stack_pos do begin
     
-        n_stack = n_stack + 1
+        n_stacks = n_stacks + 1
     
         ; get the stack header
         point_lun, obf_uid, next_stack_pos
         readu, obf_uid, tmp_stack_header
         stack_pos = next_stack_pos
+        stack_header_pos_arr = [stack_header_pos_arr, stack_pos]
         stack_header_arr = [stack_header_arr, tmp_stack_header]
     
         ; get the data start position
@@ -79,7 +94,7 @@ pro wmb_get_obf_info, obf_filename, obf_header, n_stack, stack_header_arr, $
         if namelen gt 0 then begin
             stacknamebyte = bytarr(namelen)
             readu, obf_uid, stacknamebyte
-            stackname = string(namelen)
+            stackname = string(stacknamebyte)
         endif else begin
             stackname = ''
         endelse
@@ -217,6 +232,25 @@ pro wmb_get_obf_info, obf_filename, obf_header, n_stack, stack_header_arr, $
 
     close, obf_uid
     free_lun, obf_uid
+
+
+    ; scan the description array for special stack descriptions
+    
+    non_image_stack_flag = bytarr(n_stacks)
+    for i = 0, n_stacks-1 do begin
+        
+        tmp_stack_desc = description_arr[i]
+        
+        tmp_non_image = tmp_stack_desc.Contains('ISOSURFACE', /FOLD_CASE)
+        
+        non_image_stack_flag[i] = tmp_non_image
+        
+    endfor
+    
+    image_stack_indices = where(non_image_stack_flag eq 0, $
+                                n_image_stacks, $
+                                COMPLEMENT = non_image_stack_indices, $
+                                NCOMPLEMENT = n_non_image_stacks)
     
     error_status = 0
     
