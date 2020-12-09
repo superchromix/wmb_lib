@@ -44,9 +44,9 @@ pro wmb_input_form_event, event
 
     event_struct_name = tag_names(event, /STRUCTURE_NAME)
 
-    if event_struct_name eq 'FSC_INPUTFIELD_EVENT' then begin
+    if event_struct_name eq 'WMB_INPUTFIELD_EVENT' then begin
     
-        ; if the event came from an fsc_inputfield, then we need to use
+        ; if the event came from an wmb_inputfield, then we need to use
         ; the object reference to talk to it
         
         objref = event.ObjRef
@@ -624,7 +624,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                                 xsize = widgetdef['xsize']
        
        
-            oinput   = fsc_inputfield(iorowbase, Title=prelabel, $
+            oinput   = wmb_inputfield(iorowbase, Title=prelabel, $
                                       Value=inputdata, $
                                       Longvalue=integertype, $
                                       Doublevalue=doubletype,$
@@ -633,6 +633,8 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                       Xsize=xsize, $
                                       Fieldfont=fieldfont, $
                                       Name=uname_base, $
+                                      FOCUS_EVENTS = 1, $
+                                      CR_ONLY = 1, $
                                       Event_pro='wmb_input_form_event')
 
         end
@@ -705,7 +707,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                 ; store the index of this entry in the multinumeric widget
                 ; in the UValue of the object
            
-                oinput   = fsc_inputfield(iorowbase, Title=tmplbl, $
+                oinput   = wmb_inputfield(iorowbase, Title=tmplbl, $
                                       Value=indat, $
                                       Longvalue=integertype, $
                                       Doublevalue=doubletype,$
@@ -717,6 +719,8 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
                                       Labelfont=fieldfont, $
                                       Name=uname_base, $
                                       UValue = index, $
+                                      FOCUS_EVENTS = 1, $
+                                      CR_ONLY = 1, $
                                       Event_pro='wmb_input_form_event')
     
                 if plabel ne '' then postlabelwid = widget_label(iorowbase, $
@@ -735,11 +739,13 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
               
             tmpxsize = tmpxsize > strlen(inputdata)
             
-            oinput   = fsc_inputfield(iorowbase, Title=prelabel, $
+            oinput   = wmb_inputfield(iorowbase, Title=prelabel, $
                                       Value=inputdata, $
                                       Xsize=tmpxsize, $
                                       Fieldfont=fieldfont, $
                                       Name=uname_base, $
+                                      FOCUS_EVENTS = 1, $
+                                      CR_ONLY = 1, $
                                       Event_pro='wmb_input_form_event')
 
         end
@@ -891,11 +897,13 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
               
             tmpxsize = tmpxsize > strlen(wmb_ConvertToString(inputdata))
             
-            oinput   = fsc_inputfield(iorowbase, Title=prelabel, $
+            oinput   = wmb_inputfield(iorowbase, Title=prelabel, $
                                       Value=wmb_ConvertToString(inputdata), $
                                       Xsize=tmpxsize, $
                                       Fieldfont=fieldfont, $
                                       Name=uname_base, $
+                                      FOCUS_EVENTS = 1, $
+                                      CR_ONLY = 1, $
                                       Event_pro='wmb_input_form_event')
 
         end
