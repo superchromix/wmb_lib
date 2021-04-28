@@ -413,9 +413,13 @@ end
 ;   Setting the data property allows the entire content of the
 ;   datastack to be changed.
 ;
+;   Note that the dimensions keyword is only used in conjunction 
+;   with the data keyword
+;
 ;cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 pro wmb_DataStack::SetProperty, Data = indata, $
+                                Dimensions = dimensions, $
                                 No_Copy = no_copy
 
     compile_opt idl2, strictarrsubs
@@ -423,6 +427,8 @@ pro wmb_DataStack::SetProperty, Data = indata, $
     if N_elements(no_copy) eq 0 then no_copy = 0
 
     if N_elements(indata) ne 0 then begin
+
+        if N_elements(dimensions) ne 0 then indata = reform(indata,dimensions,/OVERWRITE)
 
         ; we are erasing the existing datastack
 

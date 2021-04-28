@@ -1046,6 +1046,20 @@ pro wmb_TableWindow::GUI_Init
                  accelerator='ctrl+c')
 
     
+;    table_id = widget_table(tlb, $  
+;                            value=indata, $
+;                            font=font, $
+;                            column_labels = col_labels, $
+;                            row_labels = row_labels, $
+;                            no_column_headers = ~has_col_headers, $
+;                            no_row_headers = ~has_row_headers, $
+;                 uvalue={Object:self, Method:'evt_table', Source:'table'}, $ 
+;                 ROW_MAJOR = row_major, $
+;                 COLUMN_MAJOR = col_major, $
+;                 /RESIZEABLE_COLUMNS, $
+;                 /CONTEXT_EVENTS, $
+;                 /ALL_EVENTS)
+
     table_id = widget_table(tlb, $  
                             value=indata, $
                             font=font, $
@@ -1057,10 +1071,7 @@ pro wmb_TableWindow::GUI_Init
                  ROW_MAJOR = row_major, $
                  COLUMN_MAJOR = col_major, $
                  /RESIZEABLE_COLUMNS, $
-                 /CONTEXT_EVENTS, $
-                 /ALL_EVENTS)
-
-
+                 /CONTEXT_EVENTS)
 
 ;ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1682,7 +1693,7 @@ pro testtable, table_out = otable, data_out = outdata
     
     tmp_names = replicate('peter', nrecs)
                           
-    tmp_ages = indgen(nrecs) + 30
+    tmp_ages = lindgen(nrecs) + 30
     
     for i = 0, nrecs-1 do begin
     

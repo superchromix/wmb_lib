@@ -972,7 +972,7 @@ function wmb_PlotWindow::Init, name, $
             
             ; only y data provided
             
-            xdata = indgen(N_elements(data1))
+            xdata = lindgen(N_elements(data1))
             ydata = data1
           
         endif else begin

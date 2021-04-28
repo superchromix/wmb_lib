@@ -60,7 +60,7 @@ function wmb_pinv, a, double=flag_dbl
 
     if count_valid gt 0 then begin
 
-        valid_diagonal_elements = (indgen(ncol))[loc_valid]*(ncol+1) 
+        valid_diagonal_elements = (lindgen(ncol))[loc_valid]*(ncol+1) 
         
         winv[valid_diagonal_elements] = one / w[loc_valid]
         

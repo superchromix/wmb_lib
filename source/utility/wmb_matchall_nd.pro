@@ -159,7 +159,7 @@ rad2 = maxdistance^2
 
 ; loop through all neighbouring cells
 ncell = 2L^ndimen
-powersof2 = 2L^indgen(ndimen)
+powersof2 = 2L^lindgen(ndimen)
 for ci=0L,ncell-1 do begin
   ; array of cell direction we're working on in each dimension
   di = (ci and powersof2)/powersof2
