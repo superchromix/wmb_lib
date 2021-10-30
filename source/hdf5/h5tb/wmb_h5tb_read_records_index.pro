@@ -52,7 +52,7 @@ pro wmb_h5tb_read_records_index, loc_id, $
     mem_size[0] = n_reads
     m_sid = h5s_create_simple(mem_size)
     
-    databuffer = h5d_read(did, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
+    databuffer = wmb_h5d_read(did, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
                                             
                             
     ; close

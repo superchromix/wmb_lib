@@ -142,12 +142,12 @@ pro wmb_h5tb_write_records_range, loc_id, $
     
     if negative_stride_flag eq 0 then begin
     
-        h5d_write, did, databuffer, $
+        wmb_h5d_write, did, databuffer, $
                    MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
                    
     endif else begin
         
-        h5d_write, did, reversed_databuffer, $
+        wmb_h5d_write, did, reversed_databuffer, $
                    MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
         
     endelse

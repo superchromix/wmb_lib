@@ -118,7 +118,7 @@ function wmb_h5_getdata_getvariable, loc_id, variable, bounds=bounds, $
     endif else if chkscalar or (npoints eq 1) or ~chkbounds then begin
     
         empty = 0
-        data = h5d_read(did)
+        data = wmb_h5d_read(did)
     
     endif else begin
     
@@ -139,7 +139,7 @@ function wmb_h5_getdata_getvariable, loc_id, variable, bounds=bounds, $
 
         h5s_select_hyperslab, sid, start, dims, STRIDE = stride, /RESET
                               
-        data = h5d_read(did, file_space=sid, memory_space=m_sid)
+        data = wmb_h5d_read(did, file_space=sid, memory_space=m_sid)
                         
         h5s_close, m_sid
     
@@ -280,7 +280,7 @@ pro wmb_h5_getdata_example
     if fn_info.exists then begin
     
         ; open the hdf5 file
-        fid = h5f_open(fn, /WRITE)
+        fid = wmb_h5f_open(fn, /WRITE)
     
     endif else begin
     

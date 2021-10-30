@@ -45,7 +45,7 @@ function wmb_h5_create_group, filename, groupname
 
     ; open the file
 
-    file_id = h5f_open(filename, /WRITE)
+    file_id = wmb_h5f_open(filename, /WRITE)
 
     loc_id = file_id
 

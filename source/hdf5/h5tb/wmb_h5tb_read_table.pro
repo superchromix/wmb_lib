@@ -29,7 +29,7 @@ pro wmb_h5tb_read_table, loc_id, $
     
     ; read the table
     
-    databuffer = h5d_read(did)
+    databuffer = wmb_h5d_read(did)
 
     ; close
     

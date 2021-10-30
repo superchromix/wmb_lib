@@ -90,10 +90,10 @@ pro wmb_h5tb_read_fields_index, loc_id, $
     
     ; read
     
-    databuffer = h5d_read(did, read_type_id, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
+    databuffer = wmb_h5d_read(did, read_type_id, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
 
     
-    ; close - note that due to a bug in h5d_read, h5d_read closes the 
+    ; close - note that due to a bug in wmb_h5d_read, wmb_h5d_read closes the 
     ; read_type_id and hence it should not need to be closed again
     
     h5s_close, m_sid

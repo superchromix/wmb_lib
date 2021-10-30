@@ -92,7 +92,7 @@ pro wmb_h5tb_add_records_from, loc_id, $
     mem_size[0] = read_nrecords
     m_sid = h5s_create_simple(mem_size)
     
-    tmp_buf = h5d_read(did_1, MEMORY_SPACE = m_sid, FILE_SPACE = sid_1)
+    tmp_buf = wmb_h5d_read(did_1, MEMORY_SPACE = m_sid, FILE_SPACE = sid_1)
     
     
     ;-------------------------------------------------------------------------

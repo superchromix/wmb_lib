@@ -38,7 +38,7 @@ pro wmb_h5tb_common_read_records, dataset_id, $
     mem_size[0] = count[0]
     m_sid = h5s_create_simple(mem_size)
     
-    databuffer = h5d_read(dataset_id, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
+    databuffer = wmb_h5d_read(dataset_id, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
                             
     ; close
     

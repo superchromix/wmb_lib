@@ -58,7 +58,7 @@
 ;                            there is no way to reduce the size of
 ;                            an existing dataset.
 ;
-;       H5TB_insert_field:   The version of H5D_write implemented by
+;       H5TB_insert_field:   The version of h5d_write implemented by
 ;       and                  IDL does not allow the specification of 
 ;       H5TB_delete_field    a "write datatype id", which is required
 ;                            to enable the selective writing of a subset
@@ -148,7 +148,7 @@ pro wmb_h5tb_make_table_example
     if fn_info.exists then begin
 
         ; open the hdf5 file
-        fid = h5f_open(fn, /WRITE)
+        fid = wmb_h5f_open(fn, /WRITE)
     
     endif else begin
     
@@ -243,7 +243,7 @@ pro wmb_h5tb_read_table_example
 
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     
     ; we will open the dataset 'test_hdf5_table'
@@ -293,7 +293,7 @@ pro wmb_h5tb_read_records_example
 
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     
@@ -339,7 +339,7 @@ pro wmb_h5tb_read_records_range_example
 
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     
@@ -387,7 +387,7 @@ pro wmb_h5tb_read_records_index_example
 
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     
@@ -442,7 +442,7 @@ pro wmb_h5tb_read_fields_by_name_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     
@@ -492,7 +492,7 @@ pro wmb_h5tb_read_fields_by_index_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     
@@ -571,7 +571,7 @@ pro wmb_h5tb_append_records_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     
     ; we will add the new records to the dataset created previously
@@ -642,7 +642,7 @@ pro wmb_h5tb_insert_records_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     
     ; we will add the new records to the dataset created previously
@@ -717,7 +717,7 @@ pro wmb_h5tb_overwrite_records_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     
     ; we will add the new records to the dataset created previously
@@ -791,7 +791,7 @@ pro wmb_h5tb_overwrite_records_range_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     
     ; we will add the new records to the dataset created previously
@@ -868,7 +868,7 @@ pro wmb_h5tb_overwrite_records_index_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     
     ; we will add the new records to the dataset created previously
@@ -933,7 +933,7 @@ pro wmb_h5tb_overwrite_fields_by_name_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     start_overwrite_position = 0
@@ -989,7 +989,7 @@ pro wmb_h5tb_overwrite_fields_by_index_example
     
     ; open the hdf5 file
     
-    fid = h5f_open(fn, /WRITE)
+    fid = wmb_h5f_open(fn, /WRITE)
     loc_id = fid
     dset_name = 'test_hdf5_table'
     start_overwrite_position = 20
@@ -1035,7 +1035,7 @@ pro wmb_h5tb_add_records_from_example
     if fn_info.exists then begin
 
         ; open the hdf5 file
-        fid = h5f_open(fn, /WRITE)
+        fid = wmb_h5f_open(fn, /WRITE)
     
     endif else begin
     
@@ -1170,7 +1170,7 @@ pro wmb_h5tb_combine_tables_example
     if fn_info.exists then begin
 
         ; open the hdf5 file
-        fid = h5f_open(fn, /WRITE)
+        fid = wmb_h5f_open(fn, /WRITE)
     
     endif else begin
     

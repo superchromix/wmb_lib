@@ -79,7 +79,7 @@ pro wmb_h5tb_write_records_index, loc_id, $
     
     ; write the data
     
-    h5d_write, did, databuffer, MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
+    wmb_h5d_write, did, databuffer, MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
                    
 
     ; close

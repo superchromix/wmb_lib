@@ -90,7 +90,7 @@ pro wmb_h5tb_make_table, table_title, $
 
     if N_elements(databuffer) ne 0 then begin
     
-        h5d_write, did, databuffer
+        wmb_h5d_write, did, databuffer
 
     endif
 

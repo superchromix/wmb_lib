@@ -674,7 +674,7 @@ pro wmb_DataTable::Check_autosave
         if rslt ne 1 then message, 'Error opening group'        
         
         ; open the file
-        fid = h5f_open(tmp_fn, /WRITE)
+        fid = wmb_h5f_open(tmp_fn, /WRITE)
 
         ; open the group
         loc_id = h5g_open(fid, grp_name)
@@ -1195,7 +1195,7 @@ pro wmb_DataTable::Reorder_table, reorder_index, $
         if rslt ne 1 then message, 'Error opening group'    
         
         ; open the file
-        tmp_fid = h5f_open(tmpfile, /WRITE)
+        tmp_fid = wmb_h5f_open(tmpfile, /WRITE)
 
         ; open the group
         tmp_loc_id = h5g_open(tmp_fid, full_group_name)
@@ -1667,7 +1667,7 @@ function wmb_DataTable::Load, filename, full_group_name, dset_name
     
     ; open the file
     
-    fid = h5f_open(filename, /WRITE)
+    fid = wmb_h5f_open(filename, /WRITE)
     
     loc_id = h5g_open(fid, full_group_name)
 
@@ -1884,7 +1884,7 @@ function wmb_DataTable::Save, filename, $
 
     ; open the file
     
-    fid = h5f_open(filename, /WRITE)
+    fid = wmb_h5f_open(filename, /WRITE)
 
 
     ; open the group
@@ -2096,7 +2096,7 @@ function wmb_DataTable::Vtable_Open, dset_name = dset_name
             filename = self.dt_autosave_filename
             groupname = 'autosave'
             
-            fid = h5f_open(filename,/WRITE)
+            fid = wmb_h5f_open(filename,/WRITE)
             loc_id = h5g_open(fid, groupname)
         
             self.dt_autosave_fid = fid
@@ -2119,7 +2119,7 @@ function wmb_DataTable::Vtable_Open, dset_name = dset_name
             filename = self.dt_vtable_filename
             groupname = self.dt_full_group_name
             
-            fid = h5f_open(filename,/WRITE)
+            fid = wmb_h5f_open(filename,/WRITE)
             loc_id = h5g_open(fid, groupname)
         
             self.dt_vtable_fid = fid

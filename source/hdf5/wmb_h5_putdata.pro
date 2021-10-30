@@ -268,8 +268,8 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
             
         endelse
 
-        if keyword_set(reference) then h5d_write, datasetId, ref_id $
-                                  else h5d_write, datasetId, data
+        if keyword_set(reference) then wmb_h5d_write, datasetId, ref_id $
+                                  else wmb_h5d_write, datasetId, data
 
         h5t_close, datatypeId
         h5s_close, dataspaceId
@@ -380,7 +380,7 @@ end
 ;   :Params:
 ;       file_id : in, required, type=long
 ;           File id of an HDF5 file to write the data into.
-;           Obtained from h5f_open or h5f_create.
+;           Obtained from wmb_h5f_open or h5f_create.
 ;       name : in, required, type=string
 ;           name of variable in HDF5 file
 ;       data : in, optional, type=any
@@ -458,7 +458,7 @@ pro wmb_h5_putdata_example
     if fn_info.exists then begin
     
         ; open the hdf5 file
-        fid = h5f_open(fn, /WRITE)
+        fid = wmb_h5f_open(fn, /WRITE)
     
     endif else begin
     
@@ -477,12 +477,12 @@ pro wmb_h5_putdata_example
     
     ; get the reference and check the value of the referenced object
     did = h5d_open(fid, 'ref2')
-    buf = h5d_read(did)
+    buf = wmb_h5d_read(did)
     
     ; buf should now be the reference id
     
     obj_did = h5r_dereference(fid, buf)
-    newbuf = h5d_read(obj_did)
+    newbuf = wmb_h5d_read(obj_did)
     
     print, newbuf
     

@@ -154,7 +154,7 @@ pro wmb_h5tb_combine_tables, loc_id1, $
     mem_size[0] = nrecords1
     m_sid = h5s_create_simple(mem_size)
     
-    tmp_buf = h5d_read(did_1, MEMORY_SPACE = m_sid, FILE_SPACE = sid_1)
+    tmp_buf = wmb_h5d_read(did_1, MEMORY_SPACE = m_sid, FILE_SPACE = sid_1)
     
     
     ;-------------------------------------------------------------------------
@@ -204,7 +204,7 @@ pro wmb_h5tb_combine_tables, loc_id1, $
     mem_size[0] = nrecords2
     m_sid = h5s_create_simple(mem_size)
     
-    tmp_buf = h5d_read(did_2, MEMORY_SPACE = m_sid, FILE_SPACE = sid_2)
+    tmp_buf = wmb_h5d_read(did_2, MEMORY_SPACE = m_sid, FILE_SPACE = sid_2)
     
     
     ;-------------------------------------------------------------------------

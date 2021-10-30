@@ -83,7 +83,7 @@ pro wmb_h5tb_insert_records, loc_id, $
     
     h5s_select_hyperslab, sid, offset, count, /RESET
     
-    h5d_write, did, databuffer, MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
+    wmb_h5d_write, did, databuffer, MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
     
     ; terminate access to the dataspace
     
@@ -111,7 +111,7 @@ pro wmb_h5tb_insert_records, loc_id, $
     
     h5s_select_hyperslab, sid, offset, count, /RESET
     
-    h5d_write, did, tmp_buf, MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
+    wmb_h5d_write, did, tmp_buf, MEMORY_SPACE_ID = m_sid, FILE_SPACE_ID = sid
     
     
     ; close

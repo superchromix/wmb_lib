@@ -43,7 +43,7 @@ pro wmb_h5tb_common_append_records, dataset_id, $
     
     ; write the records
     
-    h5d_write, dataset_id, databuffer, MEMORY_SPACE_ID = m_sid, $
+    wmb_h5d_write, dataset_id, databuffer, MEMORY_SPACE_ID = m_sid, $
                                        FILE_SPACE_ID = sid
                                        
 

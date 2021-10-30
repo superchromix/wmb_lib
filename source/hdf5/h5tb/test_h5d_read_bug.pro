@@ -168,24 +168,24 @@ pro test_h5d_read_bug
     
     ; read the data
     
-    databuffer = h5d_read(did, read_type_id, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
+    databuffer = wmb_h5d_read(did, read_type_id, MEMORY_SPACE=m_sid, FILE_SPACE=sid)
 
     ; display the data
     
     print, databuffer
     
     ; close the dataspace, datatype, and dataset references - note that due 
-    ; to a bug in h5d_read, h5d_read appears to close the read_type_id ?
+    ; to a bug in wmb_h5d_read, wmb_h5d_read appears to close the read_type_id ?
     
     h5s_close, m_sid
     h5s_close, sid
     
 
     ; BUG!  The program crashes here, because read_type_id is no longer a 
-    ; valid datatype ID after the call to h5d_read.  Comment out this line
+    ; valid datatype ID after the call to wmb_h5d_read.  Comment out this line
     ; and the program executes without error.  
     
-    ; Note that the datatype_id parameter should be added to h5d_write - 
+    ; Note that the datatype_id parameter should be added to wmb_h5d_write - 
     ; allowing parts of existing data tables to be selectively overwritten.
     h5t_close, read_type_id
 
