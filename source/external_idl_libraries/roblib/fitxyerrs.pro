@@ -8,9 +8,9 @@ EPS=1.0E-20
 N=N_ELEMENTS(U)
 IF WY GT WX THEN BEGIN
      S=SORT(U)
-     TX=U(S)  & TY=V(S)
-     X1=MED(TX(0:.5*N))  & X2=MED(TX(.5*N+1:N-1))
-     Y1=MED(TY(0:.5*N))  & Y2=MED(TY(.5*N+1:N-1))
+     TX=U[S]  & TY=V[S]
+     X1=MED(TX[0:.5*N])  & X2=MED(TX[.5*N+1:N-1])
+     Y1=MED(TY[0:.5*N])  & Y2=MED(TY[.5*N+1:N-1])
      IF ABS(X1-X2) LT EPS THEN BEGIN
          PRINT,'FITXYERRS: Initial Fit Failed. Range of X = 0.'
          RETURN,0.
@@ -19,9 +19,9 @@ IF WY GT WX THEN BEGIN
      YINT=Y1-SLOP*X1
 ENDIF ELSE BEGIN            ; X on Y
      S=SORT(V)
-     TX=V(S)  & TY=U(S)
-     X1=MED(TX(0:.5*N))  & X2=MED(TX(.5*N+1:N-1))
-     Y1=MED(TY(0:.5*N))  & Y2=MED(TY(.5*N+1:N-1))
+     TX=V[S]  & TY=U[S]
+     X1=MED(TX[0:.5*N])  & X2=MED(TX[.5*N+1:N-1])
+     Y1=MED(TY[0:.5*N])  & Y2=MED(TY[.5*N+1:N-1])
      IF ABS(X1-X2) LT EPS THEN BEGIN
         PRINT,'FITXYERRS: Initial Fit Failed. Range of Y = 0.'
         RETURN,0.
@@ -156,7 +156,7 @@ FOR L=0,N_SAMPLE-1 DO BEGIN
 ;    Uniform random numbers between 0 and N-1:
      PICK=RANDOMU(R,N)
      R=LONG(PICK*N)
-     U=X(R) & V=Y(R) & Eu=Ex(R) & Ev=Ey(R)
+     U=X[R] & V=Y[R] & Eu=Ex[R] & Ev=Ey[R]
   ENDELSE
 
 ; Fit Y vs X and X vs Y, iteratively:
@@ -169,8 +169,8 @@ FOR L=0,N_SAMPLE-1 DO BEGIN
 
 ; The "robustness" weights are functions of distance from the fitted line,
 ; so calculate that:
-  R=SQRT(1.+CC(1)^2)  & IF CC(0) GT 0. THEN R=-R
-  U1=CC(1)/R  &  U2=-1./R  &  U3=CC(0)/R 
+  R=SQRT(1.+CC[1]^2)  & IF CC[0] GT 0. THEN R=-R
+  U1=CC[1]/R  &  U2=-1./R  &  U3=CC[0]/R 
   DIST=U1*U+U2*V+U3  ; = orthog. distance to line
 
 ; Now iterate:
@@ -185,11 +185,11 @@ FOR L=0,N_SAMPLE-1 DO BEGIN
 ;    1/(Ex^2+Ey^2/b^2). Since we are doing both, and want to treat X and Y 
 ;    symmetrically, take the weighted sum. The weights are functions of
 ;    slope. 
-                                       SLOP=CC(1)^2 > 1.0E-18  ; slope^2
-     DY= Ev^2 + CC(1)^2*Eu^2 + eps  &  DX= Eu^2 + Ev^2/SLOP + eps
+                                       SLOP=CC[1]^2 > 1.0E-18  ; slope^2
+     DY= Ev^2 + CC[1]^2*Eu^2 + eps  &  DX= Eu^2 + Ev^2/SLOP + eps
 
 ;    The relative weights of the Y|X and X|Y fits:
-     FY = 1./(1.+CC(1)^2)         &  FX = 1.-FY  
+     FY = 1./(1.+CC[1]^2)         &  FX = 1.-FY  
 
 ;    Now the "measurement error" weights:
      WS=  1./DY * FY + 1./DX * FX 
@@ -219,17 +219,17 @@ FOR L=0,N_SAMPLE-1 DO BEGIN
 ;    Why the mid-averaged distance? It is more sensitive than the median but 
 ;    has a lower breakdown point: 25% vs 50%.
 
-     D=DIST(SORT(DIST))
+     D=DIST[SORT(DIST)]
      OLDMIDDIST=MIDDIST
-     MIDDIST=AVG(D(.25*N:.75*N))/.70 ; = 1 sigma if Gaussian
+     MIDDIST=AVG(D[.25*N:.75*N])/.70 ; = 1 sigma if Gaussian
      IF MIDDIST LT EPS THEN BEGIN
         PRINT,'FITXYERRS: Weird data. Fit attempt failed'
         CC=0.
         GOTO,DONE
      ENDIF
-     Q=WHERE(DIST LT MIDDIST,COUNT) & IF COUNT GT 0 THEN DIST(Q)=MIDDIST
+     Q=WHERE(DIST LT MIDDIST,COUNT) & IF COUNT GT 0 THEN DIST[Q]=MIDDIST
      W=WS/DIST^2
-     Q=WHERE(DIST GT (4.*MIDDIST),COUNT) & IF COUNT GT 0 THEN W(Q)=0.
+     Q=WHERE(DIST GT (4.*MIDDIST),COUNT) & IF COUNT GT 0 THEN W[Q]=0.
      SUMW = TOTAL(W)
      IF SUMW EQ 0. THEN BEGIN
         PRINT,'FITXYERRS: Weird data. Fit attempt failed'
@@ -261,29 +261,29 @@ FOR L=0,N_SAMPLE-1 DO BEGIN
 ; If the fit was successful, store the coefficients:
   IF (N_ELEMENTS(CC) EQ 2) THEN BEGIN 
      NGOOD=NGOOD+1
-     COEFF(*,NGOOD)=CC
+     COEFF[*,NGOOD]=CC
   ENDIF
 ENDFOR
 
 NGOOD = NGOOD+1
 IF NGOOD LT N_SAMPLE THEN BEGIN
    PRINT,'FITXYERRS: Some samples rejected.'
-   COEFF=COEFF(*,0:NGOOD-1)
+   COEFF=COEFF[*,0:NGOOD-1]
 ENDIF
 ; Take out the scale factors:
-COEFF(0,*)=COEFF(0,*)*YERR
-COEFF(1,*)=COEFF(1,*)*YERR/XERR
+COEFF[0,*]=COEFF[0,*]*YERR
+COEFF[1,*]=COEFF[1,*]*YERR/XERR
 
 ; Shift X and Y back to the original coordinate system and calculate the
 ; y-intercept, slope and their standard errors.
 
- SLOP = TOTAL(COEFF(1,*))/NGOOD
- COEFF(0,*) = COEFF(0,*) + Y0 - COEFF(1,*)*X0    ;Bug corrected 11/95
- YINT = TOTAL(COEFF(0,*))/NGOOD
+ SLOP = TOTAL(COEFF[1,*])/NGOOD
+ COEFF[0,*] = COEFF[0,*] + Y0 - COEFF[1,*]*X0    ;Bug corrected 11/95
+ YINT = TOTAL(COEFF[0,*])/NGOOD
 
  IF NGOOD GT 2 THEN BEGIN
-   SYINT = STDEV(COEFF(0,*))
-   SSLOP = STDEV(COEFF(1,*))
+   SYINT = STDEV(COEFF[0,*])
+   SSLOP = STDEV(COEFF[1,*])
  ENDIF ELSE BEGIN
    SYINT=0.
    SSLOP=0.

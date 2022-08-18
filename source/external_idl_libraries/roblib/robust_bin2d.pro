@@ -67,19 +67,19 @@ ENDFOR
 ; Average each non-empty bin:
 FOR I = 0, NX-1 DO BEGIN
   FOR J = 0, NY-1 DO BEGIN
-    MAP(I,J) = Z(I,J,0)
+    MAP[I,J] = Z(I,J,0)
     IF( NUM(I,J) GT 1 )THEN BEGIN
        IF( NUM(I,J) EQ 2 )THEN BEGIN
-          MAP(I,J) = (Z(0,I,J)+Z(1,I,J))*.5
+          MAP[I,J] = (Z(0,I,J)+Z(1,I,J))*.5
        ENDIF ELSE IF( NUM(I,J) EQ 3 )THEN BEGIN
           A = Z(0:2,I,J)
           A = A(SORT(A))
-          MAP(I,J) = A(2)
+          MAP[I,J] = A(2)
        ENDIF ELSE BEGIN
           A = Z(0:NUM(I,J)-1,I,J)
           MEAN = BIWEIGHT_MEAN(A,SIG) ;(slow)
 ;          RESISTANT_MEAN,A,2.,MEAN,SIG,NUMR ;(faster)
-          MAP(I,J) = MEAN
+          MAP[I,J] = MEAN
           IF GETSIG EQ 1 THEN SIGGMA(I,J)=SIG
        ENDELSE
     ENDIF

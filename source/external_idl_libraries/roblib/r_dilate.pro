@@ -62,7 +62,7 @@ AMAP = MAP
 FOR I=OFF,NX-OFF-1 DO BEGIN
   FOR J=OFF,NY-OFF-1 DO BEGIN
 ;   Extract the neighborhood:
-    A=MAP(I-OFF:I+OFF,J-OFF:J+OFF)
+    A=MAP[I-OFF:I+OFF,J-OFF:J+OFF]
     A=A(OK)
 ;   Are there enough non-zero points?
     S=WHERE(A GT EMPTY,N) 
