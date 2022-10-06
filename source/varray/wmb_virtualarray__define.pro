@@ -281,17 +281,27 @@ pro wmb_VirtualArray::Copy, dest_lun, $
 
     if all eq 1 then begin
         
-        source_data_range = list()
-        for i = 0, arr_rank-1 do source_data_range.Add, [0,-1,1]
+        subscript_ptr_arr = ptrarr(arr_rank)
+        for i = 0, arr_rank-1 do begin
+            tmprange = [0,-1,1]
+            subscript_ptr_arr[i] = ptr_new(tmprange)
+        endfor
         
-    endif
-
-    if N_elements(source_data_range) ne arr_rank then begin
+    endif else begin
         
-        message, 'Invalid source data range'
-
-    endif
+        if N_elements(source_data_range) ne arr_rank then begin
+            
+            message, 'Invalid source data range'
     
+        endif
+        
+        subscript_ptr_arr = ptrarr(arr_rank)
+        for i = 0, arr_rank-1 do begin
+            tmprange = source_data_range[i]
+            subscript_ptr_arr[i] = ptr_new(tmprange)
+        endfor
+        
+    endelse
 
     isrange = bytarr(arr_rank)
     isrange[*] = 1
@@ -300,7 +310,7 @@ pro wmb_VirtualArray::Copy, dest_lun, $
     
     for i = 0, arr_rank-1 do begin
         
-        tmpsub = source_data_range[i]
+        tmpsub = *subscript_ptr_arr[i]
         if N_elements(tmpsub) ne 3 then chkpass = 0
         
         if ~ wmb_Rangevalid(tmpsub, arr_dims[i]) then chkpass = 0
@@ -314,7 +324,7 @@ pro wmb_VirtualArray::Copy, dest_lun, $
     ; read positions
 
     wmb_varray_generate_read_sequence, isrange, $
-                                       source_data_range, $
+                                       subscript_ptr_arr, $
                                        arr_dims, $
                                        output_scalar, $
                                        output_dims, $
