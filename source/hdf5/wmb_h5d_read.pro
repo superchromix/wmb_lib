@@ -24,6 +24,7 @@ function wmb_h5d_read, dset_id, dtype_id, file_space = file_space, memory_space 
     if error_status ne 0 then begin
         
         PRINT, 'Error index: ', error_status
+        PRINT, 'Try: ', error_count
         PRINT, 'Error message: ', !ERROR_STATE.MSG
         error_message = !ERROR_STATE.MSG
         error_count += 1
