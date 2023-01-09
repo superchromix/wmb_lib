@@ -40,6 +40,10 @@ function wmb_h5f_open, filename, write = write
         
     endif
     
+    tmp_open_delay = 0.25
+    
+    wait, tmp_open_delay
+    
     result = h5f_open(filename, write = write)
     
     return, result
