@@ -21,6 +21,8 @@ function wmb_h5f_open, filename, write = write
     
     if error_status ne 0 then begin
         
+        PRINT, !ERROR_STATE
+        
         PRINT, 'Error index: ', error_status
         PRINT, 'Error message: ', !ERROR_STATE.MSG
         error_message = !ERROR_STATE.MSG
