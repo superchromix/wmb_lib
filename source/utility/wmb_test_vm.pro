@@ -20,8 +20,8 @@ function wmb_test_vm
     
     if error_status ne 0 then begin
         
-        PRINT, 'Error index: ', error_status
-        PRINT, 'Error message: ', !ERROR_STATE.MSG
+        ;PRINT, 'Error index: ', error_status
+        ;PRINT, 'Error message: ', !ERROR_STATE.MSG
         error_message = !ERROR_STATE.MSG
         error_count += 1
 
@@ -36,15 +36,21 @@ function wmb_test_vm
     
     test_vm = LMGR(/VM)
     
+    if test_vm eq 1 then return, 1
+    
+    test_rdp = getenv('SESSIONNAME') ne 'Console'
+    
+    if test_rdp eq 1 then return, 1
+    
     tmp_obj = obj_new('IDL_IDLBridge')
     
-    tmp_msg = 'a=1'
+    tmp_msg = 'test_demo = LMGR(/DEMO)'
 
     tmp_obj.Execute, tmp_msg
     
     obj_destroy, tmp_obj
     
-    if test_vm eq 1 or execute_error_check eq 1 then begin
+    if test_vm eq 1 or test_rdp eq 1 or execute_error_check eq 1 then begin
         
         return, 1
         
