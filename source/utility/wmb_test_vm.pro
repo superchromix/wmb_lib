@@ -45,6 +45,9 @@ function wmb_test_vm
     tmp_cmd = 'a = 1'
     result = execute(tmp_cmd)
     
+    test_rdp_dlm = wmb_dlm_lib_test_rdp()
+    if test_rdp_dlm eq 1 then return, 1
+    
     tmp_obj = obj_new('IDL_IDLBridge')
     tmp_msg = 'test_demo = LMGR(/DEMO)'
     tmp_obj.Execute, tmp_msg
@@ -55,6 +58,7 @@ function wmb_test_vm
     if test_vm eq 1 or $
        test_rdp eq 1 or $
        test_demo eq 1 or $
+       test_rdp_dlm eq 1 or $
        execute_error_check eq 1 then begin
         
         return, 1
