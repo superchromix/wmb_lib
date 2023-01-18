@@ -42,13 +42,20 @@ function wmb_test_vm
     test_rdp = getenv('SESSIONNAME') ne 'Console'
     if test_rdp eq 1 then return, 1
     
+    tmp_cmd = 'a = 1'
+    result = execute(tmp_cmd)
+    
     tmp_obj = obj_new('IDL_IDLBridge')
     tmp_msg = 'test_demo = LMGR(/DEMO)'
     tmp_obj.Execute, tmp_msg
-    
+    test_demo = tmp_obj.GetVar('test_demo')
+
     obj_destroy, tmp_obj
     
-    if test_vm eq 1 or test_rdp eq 1 or execute_error_check eq 1 then begin
+    if test_vm eq 1 or $
+       test_rdp eq 1 or $
+       test_demo eq 1 or $
+       execute_error_check eq 1 then begin
         
         return, 1
         
