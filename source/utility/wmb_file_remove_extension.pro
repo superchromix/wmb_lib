@@ -8,12 +8,22 @@
 ; not including the last occurrence of '.'
 ;   
 
-function wmb_file_remove_extension, fname
+function wmb_file_remove_extension, fname, remove_all=remove_all
 
     compile_opt idl2, strictarrsubs
     
+    if N_elements(remove_all) eq 0 then remove_all=0
+    
     if fname.contains('.') eq 0 then return, fname
     
-    return, fname.substring(0,fname.lastindexof('.')-1)
+    if remove_all eq 0 then begin
+    
+        return, fname.substring(0,fname.lastindexof('.')-1)
+
+    endif else begin
+        
+        return, fname.substring(0,fname.indexof('.')-1)
+        
+    endelse
 
 end
