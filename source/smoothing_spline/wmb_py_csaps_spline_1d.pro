@@ -100,7 +100,7 @@ pro wmb_py_csaps_spline_1d_test
     compile_opt idl2, strictarrsubs
 
     python_dir = 'C:\Mark\Software_development\IDL_projects\daxview\resource\python\Python311\'
-    binary_dir = 'C:\Mark\Software_development\C_projects\VS_2019_projects\wmb_py_csaps_repo\win64\Release\'
+    binary_dir = 'C:\Mark\Software_Development\IDL_projects\daxview\resource\binary\Release\'
 
     python_found = dv_find_python(python_dir = python_dir)
     if python_found eq 0 then message, 'Error: Python installation not found'
