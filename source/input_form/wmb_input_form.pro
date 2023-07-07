@@ -572,6 +572,7 @@ pro wmb_input_form_createwidget, widgetdef, inputdata, $
 ;        print, wlabel
 ;        print, size(wlabel)
     
+        wlabel = wlabel[0]
         wid_wlabel = widget_label(labelcolbase, value=wlabel, font=labelfont)
         
     endelse

@@ -160,7 +160,7 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
 
     endif
 
-    ; loc_id now points to where the data will be written
+    ; loc_id now points to the group where the data will be written
 
     
     ; check the IDL data type and dimension
@@ -168,10 +168,15 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
     tmp_dtype = size(data, /type)
     tmp_ndims = size(data, /n_dimensions)
 
+    ; check whether a stored variable of the same name exists at this location
+    chk_stored_var_exists = wmb_h5_putdata_varexists(loc_id, objname)
+
     if tmp_dtype eq 8 and tmp_ndims eq 1 then begin
     
+        ; this section handles writing of table data
+    
         ; delete the existing object if a table of the same name already exists
-        if wmb_h5_putdata_varexists(loc_id, objname) then h5g_unlink, loc_id, objname
+        if chk_stored_var_exists eq 1 then h5g_unlink, loc_id, objname
     
         ; we are writing a table
     
@@ -193,10 +198,14 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
 
     endif else begin
 
-        ; check if we are writing a reference - in this case the data variable
-        ; is a string containing the full path to the object to reference
+        ; this section handles writing of all other data types
+        
+        ; create the datatype    
         
         if keyword_set(reference) then begin
+    
+            ; check if we are writing a reference - in this case the data variable
+            ; is a string containing the full path to the object to reference
     
             ref_id = wmb_h5_putdata_getreference(file_id, data, refgroup)
     
@@ -226,7 +235,8 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
     
         endelse
 
-        ; scalars and arrays are created differently
+
+        ; create the dataspace
         
         if (size(data, /n_dimensions) eq 0L) then begin
     
@@ -238,17 +248,47 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
     
         endelse
 
-        if wmb_h5_putdata_varexists(loc_id, objname) then begin
+
+        ; handle the case where an object with the same name is already present
+        
+        if chk_stored_var_exists eq 1 then begin
         
             ; if the data is an array or a string, the size of the data must
             ; match the existing array or string - we can't easily change the
-            ; size of the existing array or string, so simply delete the old
-            ; object and create a new one in this case
+            ; size of the existing array or string
             
-            chk_array = size(data, /n_dimensions) ne 0L
-            chk_string = size(data, /TYPE) eq 7
+            chk_input_data_string = size(data, /TYPE) eq 7
             
-            if chk_array eq 1 or chk_string eq 1 then begin
+            ; determine if the stored array can be overwritten
+            stored_dset_id = h5d_open(loc_id, objname)
+            stored_dset_type = h5d_get_type(stored_dset_id)
+            stored_dset_space = h5d_get_space(stored_dset_id)
+
+            input_ndims = h5s_get_simple_extent_ndims(dataspaceId)
+            input_dims = h5s_get_simple_extent_dims(dataspaceId)
+            input_npoints = h5s_get_simple_extent_npoints(dataspaceId)
+            input_space_type = h5s_get_simple_extent_type(dataspaceId)
+            
+            stored_ndims = h5s_get_simple_extent_ndims(stored_dset_space)
+            stored_dims = h5s_get_simple_extent_dims(stored_dset_space)
+            stored_npoints = h5s_get_simple_extent_npoints(stored_dset_space)
+            stored_space_type = h5s_get_simple_extent_type(stored_dset_space)
+
+            chk_type_equal = h5t_equal(datatypeId, stored_dset_type)
+            
+            chk_space_equal = input_ndims eq stored_ndims and $
+                              min(input_dims eq stored_dims) eq 1 and $
+                              input_npoints eq stored_npoints and $
+                              input_space_type eq stored_space_type
+
+            if chk_type_equal eq 1 and $
+               chk_space_equal eq 1 and $
+               chk_input_data_string eq 0 then begin
+                
+                ; overwrite the stored variable   
+                datasetId = h5d_open(loc_id, objname)
+                
+            endif else begin
                 
                 ; delete the old object
                 h5g_unlink, loc_id, objname
@@ -256,11 +296,11 @@ pro wmb_h5_putdata_putvariable, file_id, name, data, reference=reference
                 ; create the new object
                 datasetId = h5d_create(loc_id, objname, datatypeId, dataspaceId)
                 
-            endif else begin
-        
-                datasetId = h5d_open(loc_id, objname)
-                
             endelse
+        
+            h5s_close, stored_dset_space
+            h5t_close, stored_dset_type
+            h5d_close, stored_dset_id
         
         endif else begin
         
