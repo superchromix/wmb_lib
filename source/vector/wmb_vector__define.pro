@@ -383,6 +383,9 @@ pro wmb_Vector::Consolidate
         
         ; update the vector parameters
         
+        ;print, 'Old size: ', self.vec_capacity
+        ;print, 'New size: ', new_array_size
+        
         self.vec_capacity = new_array_size
         self.vec_data = ptr_new(new_array, /NO_COPY)
         

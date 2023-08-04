@@ -350,9 +350,9 @@ pro wmb_TableWindow::Update_Widget_Geo, tlb_deltax = deltax, $
     
     ; get the current and stored geometry information
 
-    table_geo = widget_info(wid_table, /GEOMETRY)
-    table_col_widths = widget_info(wid_table, /COLUMN_WIDTHS)
-    table_row_heights = widget_info(wid_table, /ROW_HEIGHTS)
+    ;table_geo = widget_info(wid_table, /GEOMETRY)
+    ;table_col_widths = widget_info(wid_table, /COLUMN_WIDTHS)
+    ;table_row_heights = widget_info(wid_table, /ROW_HEIGHTS)
     
     
     stored_table_xsize = self.stat_table_scr_xsize

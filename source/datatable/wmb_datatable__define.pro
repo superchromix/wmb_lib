@@ -861,6 +861,7 @@ function wmb_DataTable::Read_column, col_name, $
             chunksize = 100000 < n_records
             
             n_chunks = ceil(double(n_records) / chunksize)
+            ;print, n_chunks
             
             last_rec = (start_index + n_records) - 1
             
