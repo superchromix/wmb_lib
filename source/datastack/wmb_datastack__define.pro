@@ -32,13 +32,13 @@ function wmb_DataStack::_overloadBracketsRightSide, isRange, sub1, $
         return, 0
     endif
     
-    if N_elements(sub2) eq 0 then sub2=[0,0,1]
-    if N_elements(sub3) eq 0 then sub3=[0,0,1]
-    if N_elements(sub4) eq 0 then sub4=[0,0,1]
-    if N_elements(sub5) eq 0 then sub5=[0,0,1]
-    if N_elements(sub6) eq 0 then sub6=[0,0,1]
-    if N_elements(sub7) eq 0 then sub7=[0,0,1]
-    if N_elements(sub8) eq 0 then sub8=[0,0,1]
+    if N_elements(sub2) eq 0 then sub2=[0,-1,1]
+    if N_elements(sub3) eq 0 then sub3=[0,-1,1]
+    if N_elements(sub4) eq 0 then sub4=[0,-1,1]
+    if N_elements(sub5) eq 0 then sub5=[0,-1,1]
+    if N_elements(sub6) eq 0 then sub6=[0,-1,1]
+    if N_elements(sub7) eq 0 then sub7=[0,-1,1]
+    if N_elements(sub8) eq 0 then sub8=[0,-1,1]
 
 
     ; determine the number of indices/ranges specified

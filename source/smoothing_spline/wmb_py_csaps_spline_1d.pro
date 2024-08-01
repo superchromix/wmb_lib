@@ -34,7 +34,7 @@ function wmb_py_csaps_spline_1d, xcoords, $
     
     ; find python installation
     
-    library_name = binary_dir + 'wmb_py_csaps.dll'
+    library_name = binary_dir + 'wmb_py_functions.dll'
     function_name='wmb_py_csaps_spline_1d_portable'
         
     data_len = N_elements(xcoords)
@@ -100,7 +100,8 @@ pro wmb_py_csaps_spline_1d_test
     compile_opt idl2, strictarrsubs
 
     python_dir = 'C:\Mark\Software_development\IDL_projects\daxview\resource\python\Python311\'
-    binary_dir = 'C:\Mark\Software_Development\IDL_projects\daxview\resource\binary\Release\'
+    ;binary_dir = 'C:\Mark\Software_Development\IDL_projects\daxview\resource\binary\RelWithDebInfo\'
+    binary_dir = 'C:\Mark\Software_development\C_projects\VS_2019_projects\wmb_py_functions_repo\win64\RelWithDebInfo\'
 
     python_found = dv_find_python(python_dir = python_dir)
     if python_found eq 0 then message, 'Error: Python installation not found'
