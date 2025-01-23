@@ -25,6 +25,9 @@ function wmb_array_nd_index_to_1d_index, ndim, input_array_indices, input_array_
 
     output_indices = total(tmp_indices, 1, /INTEGER)
 
+    ;tmp_index = where(output_indices gt product(input_array_dims)-1, n_errors)
+    ;if n_errors gt 0 then message, 'Algorithm failed'
+
     return, output_indices
 
 end
