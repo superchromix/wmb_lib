@@ -72,5 +72,31 @@ pro test_wmb_array_1d_index_to_nd_index
 end
 
 
+pro test_wmb_array_1d_index_to_nd_index_v2
 
+    compile_opt idl2, strictarrsubs
+    
+    seeda = systime(/SECONDS)
+    
+    n_indices = 1000
+    
+    arr_dims = long64([5,20,60,4,7])
+    n_arr_dims = N_elements(arr_dims)
+    
+    arr_dims_product = product(arr_dims, /INTEGER)
+    
+    input_1d_indices = long64(floor(randomu(seeda,n_indices) * arr_dims_product))
+    
+    tmp_timer = tic()
+    output_nd_indices_a = wmb_array_1d_index_to_nd_index(n_arr_dims,input_1d_indices,arr_dims)
+    exec_time_a = toc(tmp_timer)
+
+    tmp_timer = tic()
+    output_nd_indices_b = WMB_DLM_LIB_array_1d_index_to_nd_index(n_arr_dims,input_1d_indices,arr_dims)
+    exec_time_b = toc(tmp_timer)
+
+    print, 'Exec time A', exec_time_a
+    print, 'Exec time B', exec_time_b
+
+end
 

@@ -20,6 +20,8 @@ function wmb_histogram_findlib, libpath
     
     root = StrMid(sourcePath, 0, $
                   StrPos(sourcePath, Path_Sep(), /Reverse_Search) + 1)
+
+    ;result = DIALOG_MESSAGE('ROOT: ' + root, /INFO)
     
     myarch = !version.arch
     myos = !version.os
@@ -50,10 +52,18 @@ function wmb_histogram_findlib, libpath
     libpath = root + fname
     
     if ~file_test(libpath) then begin
+        
+        ; try an alternate path
+        
+        libpath = root + 'resource\binary\Release\' + fname
+        
+        if ~file_test(libpath) then begin
     
-        msgtxt = 'Error: ' + fname + ' not found'
-        result = DIALOG_MESSAGE(msgtxt, /ERROR)
-        return, 0
+            msgtxt = 'Error: ' + fname + ' not found'
+            result = DIALOG_MESSAGE(msgtxt, /ERROR)
+            return, 0
+        
+        endif
         
     endif
 

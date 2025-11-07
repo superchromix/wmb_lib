@@ -100,18 +100,18 @@ pro wmb_py_csaps_spline_1d_test
     compile_opt idl2, strictarrsubs
 
     python_dir = 'C:\Mark\Software_development\IDL_projects\daxview\resource\python\Python311\'
-    ;binary_dir = 'C:\Mark\Software_Development\IDL_projects\daxview\resource\binary\RelWithDebInfo\'
-    binary_dir = 'C:\Mark\Software_development\C_projects\VS_2019_projects\wmb_py_functions_repo\win64\RelWithDebInfo\'
+    binary_dir_gpuspl = 'C:\Mark\Software_development\C_projects\VS_2013_projects\Gpuspline_repo\win64\Debug\'
+    binary_dir = 'C:\Mark\Software_development\IDL_projects\daxview\resource\binary\Release\'
 
     python_found = dv_find_python(python_dir = python_dir)
     if python_found eq 0 then message, 'Error: Python installation not found'
 
     seeda = systime(/seconds)
     
-    npoints = 100
+    npoints = 12
     
-    xstart = -5.0
-    xend = 5.0
+    xstart = 0.0
+    xend = 11.0
     gnoise = 0.2
     
     dx = (xend-xstart)/(npoints-1)
@@ -124,7 +124,7 @@ pro wmb_py_csaps_spline_1d_test
     spl_coeffs = wmb_py_csaps_spline_1d(x, $
                                         y, $
                                         auto_smooth = 0, $
-                                        smoothing_factor = 0.35, $
+                                        smoothing_factor = 1.0, $
                                         normalized_smooth = 1, $
                                         execution_time = execution_time, $
                                         binary_dir = binary_dir, $
@@ -132,19 +132,230 @@ pro wmb_py_csaps_spline_1d_test
 
     spl_breaks = x
     
-    ysmooth = wmb_py_csaps_spline_1d_render(x, spl_breaks, spl_coeffs) 
+    
+    npoints_render = npoints/2
+    
+    dx_render = (xend-xstart)/(npoints_render-1)
+    
+    x_render = (lindgen(npoints_render) * dx_render) + xstart
+    
+    ysmooth_render = wmb_py_csaps_spline_1d_render(x_render, spl_breaks, spl_coeffs) 
 
     ;print, spl_coeffs[0:9]
 
-    ydat = fltarr(npoints,2)
-    ydat[0,0] = y
-    ydat[0,1] = ysmooth
-    result = daxview_plot_xy_data(x, $
-                                  ydat, $
-                                  LINESTYLE=[6,0], $
-                                  SYMBOL=[obj_new('IDLgrSymbol', 6), obj_new('IDLgrSymbol', 0)])
+    ydat = fltarr(npoints + npoints_render)
+    ydat[0] = y
+    ydat[npoints] = ysmooth_render
+    plot_x_dimsize = [npoints, npoints_render]
+    xdat = [x, x_render]
+    
+    pd = obj_new('dv_PlotdataStack3D', Indata = ydat, $
+                                     Nplots = 1, $
+                                     Nchannels = 2, $
+                                     Plot_x_dimsize = plot_x_dimsize, $
+                                     X_values = xdat)
+    
+    result = daxview_show_data(pd, $
+                               LINESTYLE=[6,0], $
+                               SYMBOL=[obj_new('IDLgrSymbol', 6), obj_new('IDLgrSymbol', 0)])
 
     ;mytext = 'Passed'
     ;result = dialog_message(mytext, /INFO)
+    
+    grid_spacing_x = dx
+    
+    std_coeffs = dv_an_proc_spline_convert_csaps_coeffs_1d(npoints, $
+                                                           grid_spacing_x, $
+                                                           spl_coeffs, $
+                                                           spline_coeff_dims = std_spline_coeff_dims, $
+                                                           binary_dir = binary_dir_gpuspl)
+
+    spline_pixel_sizes_um = [dx]
+    
+    new_stack_dims = [npoints_render]
+
+    std_spline = dv_an_proc_spline_render_1d(std_coeffs, $
+                                             std_spline_coeff_dims, $
+                                             spline_pixel_sizes_um, $
+                                             new_stack_dims, $
+                                             output_pixel_sizes, $
+                                             binary_dir = binary_dir_gpuspl)
+
+    std_spline = dv_an_proc_spline_render_idl_1d(std_coeffs, $
+                                                 std_spline_coeff_dims, $
+                                                 spline_pixel_sizes_um, $
+                                                 new_stack_dims, $
+                                                 output_pixel_sizes)
+                                             
+    ydat = fltarr(npoints + npoints_render)
+    ydat[0] = y
+    ydat[npoints] = std_spline
+    plot_x_dimsize = [npoints, npoints_render]
+    xdat = [x, x_render]
+    
+    pd = obj_new('dv_PlotdataStack3D', Indata = ydat, $
+                                     Nplots = 1, $
+                                     Nchannels = 2, $
+                                     Plot_x_dimsize = plot_x_dimsize, $
+                                     X_values = xdat)
+    
+    result = daxview_show_data(pd, $
+                               LINESTYLE=[6,0], $
+                               SYMBOL=[obj_new('IDLgrSymbol', 6), obj_new('IDLgrSymbol', 0)])
+                                  
+                                  
+    ;ydat = fltarr(npoints_render)
+    ;ydat[0] = ysmooth_render - std_spline
+
+    ;result = daxview_plot_xy_data(x_render, $
+    ;                              ydat)
+    
 
 end
+
+
+
+pro wmb_py_csaps_spline_1d_test_v2
+
+    compile_opt idl2, strictarrsubs
+
+    python_dir = 'C:\Mark\Software_development\IDL_projects\daxview\resource\python\Python311\'
+    binary_dir_gpuspl = 'C:\Mark\Software_development\C_projects\VS_2013_projects\Gpuspline_repo\win64\Debug\'
+    binary_dir = 'C:\Mark\Software_development\IDL_projects\daxview\resource\binary\Release\'
+
+    python_found = dv_find_python(python_dir = python_dir)
+    if python_found eq 0 then message, 'Error: Python installation not found'
+
+    seeda = systime(/seconds)
+
+    npoints = 22
+
+    xstart = 0.0
+    xend = 21.0
+    gnoise = 0.0
+
+    gauss_center = 10.0
+
+    dx = (xend-xstart)/(npoints-1)
+
+    x = (lindgen(npoints) * dx) + xstart
+
+    y = exp(-((x-gauss_center)/((xend-xstart)/4.0))^2) + randomu(seeda, npoints) * gnoise
+    ;y = findgen(npoints)
+
+    spl_coeffs = wmb_py_csaps_spline_1d(x, $
+                                        y, $
+                                        auto_smooth = 0, $
+                                        smoothing_factor = 1.0, $
+                                        normalized_smooth = 0, $
+                                        execution_time = execution_time, $
+                                        binary_dir = binary_dir, $
+                                        python_dir = python_dir)
+
+
+    std_coeffs = dv_an_proc_spline_convert_csaps_coeffs_1d(npoints, $
+                                                           dx, $
+                                                           spl_coeffs, $
+                                                           spline_coeff_dims = std_spline_coeff_dims, $
+                                                           binary_dir = binary_dir_gpuspl)
+
+    tmp_input_data = y
+    tmp_input_dims = [npoints, 1]
+
+    bspl_coeffs = dv_an_proc_bspline_calc_coefficients_1d(tmp_input_data, $
+                                                          input_dims = tmp_input_dims, $
+                                                          bpline_coeff_dims = bpline_coeff_dims, $
+                                                          binary_dir = binary_dir_gpuspl)
+
+
+    spl_breaks = x
+
+    npoints_render = npoints
+
+    dx_render = (xend-xstart)/(npoints_render-1)
+
+    x_render = (lindgen(npoints_render) * dx_render) + xstart
+
+    ysmooth_render = wmb_py_csaps_spline_1d_render(x_render, spl_breaks, spl_coeffs)
+
+    ;print, spl_coeffs[0:9]
+
+    ydat = fltarr(npoints + npoints_render)
+    ydat[0] = y
+    ydat[npoints] = ysmooth_render
+    plot_x_dimsize = [npoints, npoints_render]
+    xdat = [x, x_render]
+
+    pd = obj_new('dv_PlotdataStack3D', Indata = ydat, $
+                                       Nplots = 1, $
+                                       Nchannels = 2, $
+                                       Plot_x_dimsize = plot_x_dimsize, $
+                                       X_values = xdat)
+
+    result = daxview_show_data(pd, $
+        LINESTYLE=[6,0], $
+        SYMBOL=[obj_new('IDLgrSymbol', 6), obj_new('IDLgrSymbol', 0)], $
+        OBJ_NAME = 'CSAPS_SPLINE')
+
+
+
+    spline_pixel_sizes_um = [dx]
+
+    new_stack_dims = [npoints_render]
+
+    std_spline = dv_an_proc_spline_render_1d(std_coeffs, $
+        std_spline_coeff_dims, $
+        spline_pixel_sizes_um, $
+        new_stack_dims, $
+        output_pixel_sizes, $
+        output_x_coords = output_std_x_coords, $
+        binary_dir = binary_dir_gpuspl)
+
+    ydat = fltarr(npoints + npoints_render)
+    ydat[0] = y
+    ydat[npoints] = std_spline
+    plot_x_dimsize = [npoints, npoints_render]
+    xdat = [x, (output_std_x_coords * dx) + xstart]
+
+    pd = obj_new('dv_PlotdataStack3D', Indata = ydat, $
+        Nplots = 1, $
+        Nchannels = 2, $
+        Plot_x_dimsize = plot_x_dimsize, $
+        X_values = xdat)
+
+    result = daxview_show_data(pd, $
+        LINESTYLE=[6,0], $
+        SYMBOL=[obj_new('IDLgrSymbol', 6), obj_new('IDLgrSymbol', 0)], $
+        OBJ_NAME = 'STD_SPLINE')
+
+    
+    bspline = dv_an_proc_bspline_render_1d(bspl_coeffs, $
+                                           bpline_coeff_dims, $
+                                           spline_pixel_sizes_um, $
+                                           new_stack_dims, $
+                                           output_pixel_sizes, $
+                                           output_x_coords = output_bspl_x_coords, $
+                                           binary_dir = binary_dir_gpuspl)
+
+    ydat = fltarr(npoints + npoints_render)
+    ydat[0] = y
+    ydat[npoints] = bspline
+    plot_x_dimsize = [npoints, npoints_render]
+    xdat = [x, (output_bspl_x_coords * dx) + xstart]
+
+    pd = obj_new('dv_PlotdataStack3D', Indata = ydat, $
+        Nplots = 1, $
+        Nchannels = 2, $
+        Plot_x_dimsize = plot_x_dimsize, $
+        X_values = xdat)
+
+    result = daxview_show_data(pd, $
+        LINESTYLE=[6,0], $
+        SYMBOL=[obj_new('IDLgrSymbol', 6), obj_new('IDLgrSymbol', 0)], $
+        OBJ_NAME = 'BSPLINE')
+
+    a = 1
+
+end
+
+

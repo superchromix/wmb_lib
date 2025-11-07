@@ -138,7 +138,7 @@ function wmb_py_csaps_spline_nd_render, ndim, $
         
         f_out[i] = tmp_sum
         
-        if i mod 50000 eq 0 then print, (i/float(n_input_coords))
+        ;if i mod 50000 eq 0 then print, (i/float(n_input_coords))
         
     endfor
     

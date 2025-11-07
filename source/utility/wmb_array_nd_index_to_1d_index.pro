@@ -31,3 +31,34 @@ function wmb_array_nd_index_to_1d_index, ndim, input_array_indices, input_array_
     return, output_indices
 
 end
+
+
+pro test_wmb_array_nd_index_to_1d_index
+
+    compile_opt idl2, strictarrsubs
+    
+    seeda = systime(/SECONDS)
+    
+    n_indices = 1000000
+    
+    arr_dims = long64([5,20,60,4,7])
+    n_arr_dims = N_elements(arr_dims)
+    
+    tmpa = randomu(seeda,n_arr_dims,n_indices)
+    
+    for i = 0, n_arr_dims-1 do tmpa[i,*] *= arr_dims[i]
+    
+    input_nd_indices = long64(floor(tmpa))
+    
+    tmp_timer = tic()
+    output_1d_indices_a = wmb_array_nd_index_to_1d_index(n_arr_dims,input_nd_indices,arr_dims)
+    exec_time_a = toc(tmp_timer)
+
+    tmp_timer = tic()
+    output_1d_indices_b = WMB_DLM_LIB_array_nd_index_to_1d_index(n_arr_dims,input_nd_indices,arr_dims)
+    exec_time_b = toc(tmp_timer)
+
+    print, 'Exec time A', exec_time_a
+    print, 'Exec time B', exec_time_b
+
+end

@@ -23,6 +23,9 @@ function wmb_histogram, data, $
     
     input_dtype = size(data,/TYPE)   
     
+    data_mod = data
+    if size(data_mod, /N_DIMENSIONS) eq 0 then data_mod = [data_mod]
+    
     if set_opt_binsize eq 1 then begin
     
         ; an input binsize has not been specified
@@ -31,11 +34,8 @@ function wmb_histogram, data, $
         chk_double = input_dtype eq 5
 
         ; if the data is integer type, convert it to float
+        if chk_float eq 0 and chk_double eq 0 then data_mod = double(data_mod)
         
-        if chk_float eq 0 and chk_double eq 0 then data_mod = double(data) $
-                                              else data_mod = data
-        
-    
         data_iqr = wmb_iqr(data_mod)
         data_nsamples = N_elements(data_mod)
         
@@ -63,12 +63,12 @@ function wmb_histogram, data, $
         
         ; an input binsize has been specified
         
-        output_hist = histogram(data, binsize = binsize, $
-                                      locations = locations, $
-                                      omax = omax, $
-                                      omin = omin, $
-                                      reverse_indices = reverse_indices, $
-                                      _Extra = extra)
+        output_hist = histogram(data_mod, binsize = binsize, $
+                                          locations = locations, $
+                                          omax = omax, $
+                                          omin = omin, $
+                                          reverse_indices = reverse_indices, $
+                                          _Extra = extra)
 
         x_center_locations = locations + (binsize / 2.0)
 
